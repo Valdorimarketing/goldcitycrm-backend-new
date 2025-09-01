@@ -1,0 +1,227 @@
+import { IsOptional, IsString, IsNumber, IsBoolean, IsEmail } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+
+export class CreateCustomerDto {
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  user?: number;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  surname?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  title?: string;
+
+  @IsOptional()
+  @IsEmail()
+  @Expose()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  birthDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  phone?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  sourceId?: number;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  job?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  identityNumber?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  referanceCustomer?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  language?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Expose()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  status?: number;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  website?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  country?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  state?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  city?: number;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  district?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  postalCode?: number;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  address?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  relevantUser?: number;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  description?: string;
+
+  @IsOptional()
+  @Expose()
+  dynamicFields?: any[];
+}
+
+export class UpdateCustomerDto extends CreateCustomerDto {}
+
+export class CustomerResponseDto {
+  @Expose()
+  id: number;
+
+  @Expose()
+  user: number;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  surname: string;
+
+  @Expose()
+  title: string;
+
+  @Expose()
+  email: string;
+
+  @Expose()
+  gender: string;
+
+  @Expose()
+  birthDate: string;
+
+  @Expose()
+  phone: string;
+
+  @Expose()
+  sourceId: number;
+
+  @Expose()
+  job: string;
+
+  @Expose()
+  identityNumber: number;
+
+  @Expose()
+  referanceCustomer: number;
+
+  @Expose()
+  language: number;
+
+  @Expose()
+  isActive: boolean;
+
+  @Expose()
+  status: number;
+
+  @Expose()
+  website: string;
+
+  @Expose()
+  country: number;
+
+  @Expose()
+  state: number;
+
+  @Expose()
+  city: number;
+
+  @Expose()
+  district: string;
+
+  @Expose()
+  postalCode: number;
+
+  @Expose()
+  address: string;
+
+  @Expose()
+  relevantUser: number;
+
+  @Expose()
+  description: string;
+
+  @Expose()
+  createdAt: Date;
+
+  @Expose()
+  updatesAt: Date;
+
+  @Expose()
+  dynamicFieldValues?: any[];
+} 
