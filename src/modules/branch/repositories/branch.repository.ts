@@ -1,0 +1,15 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
+import { Branch } from '../entities/branch.entity';
+
+@Injectable()
+export class BranchRepository extends BaseRepositoryAbstract<Branch> {
+  constructor(
+    @InjectRepository(Branch)
+    private readonly branchRepository: Repository<Branch>,
+  ) {
+    super(branchRepository);
+  }
+}
