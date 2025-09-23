@@ -35,4 +35,4 @@ export class Sales extends CustomBaseEntity {
   constructor(partial?: Partial<Sales>) {
     super(partial);
   }
-} 
+}

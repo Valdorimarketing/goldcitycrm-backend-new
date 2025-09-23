@@ -9,7 +9,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { CountryService } from '../services/country.service';
-import { CreateCountryDto, UpdateCountryDto, CountryResponseDto } from '../dto/create-country.dto';
+import {
+  CreateCountryDto,
+  UpdateCountryDto,
+  CountryResponseDto,
+} from '../dto/create-country.dto';
 import { Country } from '../entities/country.entity';
 
 @Controller('countries')
@@ -17,7 +21,9 @@ export class CountryController {
   constructor(private readonly countryService: CountryService) {}
 
   @Post()
-  async create(@Body() createCountryDto: CreateCountryDto): Promise<CountryResponseDto> {
+  async create(
+    @Body() createCountryDto: CreateCountryDto,
+  ): Promise<CountryResponseDto> {
     return this.countryService.createCountry(createCountryDto);
   }
 
@@ -46,4 +52,4 @@ export class CountryController {
   async remove(@Param('id') id: string): Promise<Country> {
     return this.countryService.deleteCountry(+id);
   }
-} 
+}

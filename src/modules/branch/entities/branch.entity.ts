@@ -1,19 +1,22 @@
 import { Entity, Column, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
-import { Doctor } from '../../doctor/entities/doctor.entity';
-import { Doctor2Branch } from '../../doctor/entities/doctor2branch.entity';
+import { Expose } from 'class-transformer';
+import { Branch2Hospital } from './branch2hospital.entity';
 
-@Entity('branch')
+@Entity('branches')
 export class Branch extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 255 })
+  @Expose()
   name: string;
 
+  @Column({ type: 'varchar', length: 100, unique: true })
+  @Expose()
+  code: string;
+
   @Column({ type: 'text', nullable: true })
+  @Expose()
   description: string;
 
-  @OneToMany(() => Doctor, (doctor) => doctor.branch)
-  doctors: Doctor[];
-
-  @OneToMany(() => Doctor2Branch, (doctor2Branch) => doctor2Branch.branch)
-  doctorRelations: Doctor2Branch[];
+  @OneToMany(() => Branch2Hospital, (branch2Hospital) => branch2Hospital.branch)
+  branch2Hospitals: Branch2Hospital[];
 }

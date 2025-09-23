@@ -8,15 +8,21 @@ import { CustomerDynamicFieldValueModule } from '../customer-dynamic-field-value
 import { CustomerStatusChange } from '../customer-status-change/entities/customer-status-change.entity';
 import { CustomerStatusChangeRepository } from '../customer-status-change/repositories/customer-status-change.repository';
 import { FraudAlertModule } from '../fraud-alert/fraud-alert.module';
+import { CustomerHistoryModule } from '../customer-history/customer-history.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Customer, CustomerStatusChange]), 
+    TypeOrmModule.forFeature([Customer, CustomerStatusChange]),
     CustomerDynamicFieldValueModule,
-    FraudAlertModule
+    FraudAlertModule,
+    CustomerHistoryModule,
   ],
   controllers: [CustomerController],
-  providers: [CustomerService, CustomerRepository, CustomerStatusChangeRepository],
+  providers: [
+    CustomerService,
+    CustomerRepository,
+    CustomerStatusChangeRepository,
+  ],
   exports: [CustomerService, CustomerRepository],
 })
-export class CustomerModule {} 
+export class CustomerModule {}

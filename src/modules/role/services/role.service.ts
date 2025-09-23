@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Role } from '../entities/role.entity';
 import { RoleRepository } from '../repositories/role.repository';
-import { CreateRoleDto, UpdateRoleDto, RoleResponseDto } from '../dto/create-role.dto';
+import {
+  CreateRoleDto,
+  UpdateRoleDto,
+  RoleResponseDto,
+} from '../dto/create-role.dto';
 
 @Injectable()
 export class RoleService extends BaseService<Role> {
@@ -14,7 +18,10 @@ export class RoleService extends BaseService<Role> {
     return this.create(createRoleDto, RoleResponseDto);
   }
 
-  async updateRole(id: number, updateRoleDto: UpdateRoleDto): Promise<RoleResponseDto> {
+  async updateRole(
+    id: number,
+    updateRoleDto: UpdateRoleDto,
+  ): Promise<RoleResponseDto> {
     return this.update(updateRoleDto, id, RoleResponseDto);
   }
 
@@ -33,4 +40,4 @@ export class RoleService extends BaseService<Role> {
   async deleteRole(id: number): Promise<Role> {
     return this.remove(id);
   }
-} 
+}

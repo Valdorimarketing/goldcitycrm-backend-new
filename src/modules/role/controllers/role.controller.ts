@@ -9,7 +9,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { RoleService } from '../services/role.service';
-import { CreateRoleDto, UpdateRoleDto, RoleResponseDto } from '../dto/create-role.dto';
+import {
+  CreateRoleDto,
+  UpdateRoleDto,
+  RoleResponseDto,
+} from '../dto/create-role.dto';
 import { Role } from '../entities/role.entity';
 
 @Controller('roles')
@@ -47,4 +51,4 @@ export class RoleController {
   async remove(@Param('id') id: string): Promise<Role> {
     return this.roleService.deleteRole(+id);
   }
-} 
+}

@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, IsEmail } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsEmail,
+} from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 
 export class CreateCustomerDto {
@@ -224,4 +230,4 @@ export class CustomerResponseDto {
 
   @Expose()
   dynamicFieldValues?: any[];
-} 
+}

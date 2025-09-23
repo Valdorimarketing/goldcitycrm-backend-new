@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  nestjs:
+    image: registry.gitlab.com/valdori/valdoricrmapi:${TAG}
+    container_name: valdoricrmapi
+    stdin_open: true
+    tty: true
+    restart: always
+    volumes:
+      - ~/nest-volume/uploads:/app/public/uploads:rw
+      - ~/nest-volume/logs:/app/logs:rw
+
+networks:
+  default:
+    name: local-network
+    external: true

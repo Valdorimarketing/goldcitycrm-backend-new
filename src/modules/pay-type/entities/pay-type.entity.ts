@@ -19,4 +19,4 @@ export class PayType extends CustomBaseEntity {
   constructor(partial?: Partial<PayType>) {
     super(partial);
   }
-} 
+}

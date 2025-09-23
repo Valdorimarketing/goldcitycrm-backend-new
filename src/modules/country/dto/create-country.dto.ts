@@ -27,4 +27,4 @@ export class CountryResponseDto {
 
   @Expose()
   updatesAt: Date;
-} 
+}

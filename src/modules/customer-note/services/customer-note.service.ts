@@ -2,8 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { CustomerNote } from '../entities/customer-note.entity';
 import { CustomerNoteRepository } from '../repositories/customer-note.repository';
-import { CreateCustomerNoteDto, UpdateCustomerNoteDto, CustomerNoteResponseDto } from '../dto/create-customer-note.dto';
+import {
+  CreateCustomerNoteDto,
+  UpdateCustomerNoteDto,
+  CustomerNoteResponseDto,
+} from '../dto/create-customer-note.dto';
 import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
+import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 
 export interface CustomerNoteFilterOptions {
   customer?: number;
@@ -16,19 +22,44 @@ export interface CustomerNoteFilterOptions {
 
 @Injectable()
 export class CustomerNoteService extends BaseService<CustomerNote> {
-  constructor(private readonly customerNoteRepository: CustomerNoteRepository) {
+  constructor(
+    private readonly customerNoteRepository: CustomerNoteRepository,
+    private readonly customerHistoryService: CustomerHistoryService,
+  ) {
     super(customerNoteRepository, CustomerNote);
   }
 
-  async createCustomerNote(createCustomerNoteDto: CreateCustomerNoteDto, userId: number): Promise<CustomerNoteResponseDto> {
-    createCustomerNoteDto.user = userId || createCustomerNoteDto.user;
-    if (!createCustomerNoteDto.user) {
+  async createCustomerNote(
+    createCustomerNoteDto: CreateCustomerNoteDto,
+    userId: number,
+  ): Promise<CustomerNoteResponseDto> {
+    if (!userId) {
       throw new Error('User ID is required for creating customer notes');
     }
-    return this.create(createCustomerNoteDto, CustomerNoteResponseDto);
+    const noteData = {
+      ...createCustomerNoteDto,
+      user: userId,
+    };
+    const note = await this.create(noteData, CustomerNoteResponseDto);
+
+    // Log to customer history
+    await this.customerHistoryService.logCustomerAction(
+      createCustomerNoteDto.customer,
+      CustomerHistoryAction.NOTE_ADDED,
+      `Note added: ${createCustomerNoteDto.note}`,
+      createCustomerNoteDto,
+      null,
+      userId,
+      note.id,
+    );
+
+    return note;
   }
 
-  async updateCustomerNote(id: number, updateCustomerNoteDto: UpdateCustomerNoteDto): Promise<CustomerNoteResponseDto> {
+  async updateCustomerNote(
+    id: number,
+    updateCustomerNoteDto: UpdateCustomerNoteDto,
+  ): Promise<CustomerNoteResponseDto> {
     return this.update(updateCustomerNoteDto, id, CustomerNoteResponseDto);
   }
 
@@ -40,7 +71,9 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     return this.findAll();
   }
 
-  async getCustomerNotesByCustomer(customerId: number): Promise<CustomerNote[]> {
+  async getCustomerNotesByCustomer(
+    customerId: number,
+  ): Promise<CustomerNote[]> {
     return this.customerNoteRepository.findAll({
       where: { customer: customerId },
       order: { createdAt: 'DESC' },
@@ -58,7 +91,9 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     return this.remove(id);
   }
 
-  async getCustomerNotesByDateRange(filters: CustomerNoteFilterOptions): Promise<CustomerNote[]> {
+  async getCustomerNotesByDateRange(
+    filters: CustomerNoteFilterOptions,
+  ): Promise<CustomerNote[]> {
     const where: any = {};
 
     // Customer filtresi

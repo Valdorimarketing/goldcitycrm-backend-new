@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { City } from '../entities/city.entity';
 import { CityRepository } from '../repositories/city.repository';
-import { CreateCityDto, UpdateCityDto, CityResponseDto } from '../dto/create-city.dto';
+import {
+  CreateCityDto,
+  UpdateCityDto,
+  CityResponseDto,
+} from '../dto/create-city.dto';
 
 @Injectable()
 export class CityService extends BaseService<City> {
@@ -14,7 +18,10 @@ export class CityService extends BaseService<City> {
     return this.create(createCityDto, CityResponseDto);
   }
 
-  async updateCity(id: number, updateCityDto: UpdateCityDto): Promise<CityResponseDto> {
+  async updateCity(
+    id: number,
+    updateCityDto: UpdateCityDto,
+  ): Promise<CityResponseDto> {
     return this.update(updateCityDto, id, CityResponseDto);
   }
 
@@ -41,4 +48,4 @@ export class CityService extends BaseService<City> {
   async deleteCity(id: number): Promise<City> {
     return this.remove(id);
   }
-} 
+}

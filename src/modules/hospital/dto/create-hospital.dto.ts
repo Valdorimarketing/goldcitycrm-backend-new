@@ -1,19 +1,26 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 import { Expose } from 'class-transformer';
 
 export class CreateHospitalDto {
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   @Expose()
   name: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  @Expose()
+  code: string;
+
+  @IsString()
+  @IsOptional()
   @Expose()
   address?: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   @Expose()
   description?: string;
 }

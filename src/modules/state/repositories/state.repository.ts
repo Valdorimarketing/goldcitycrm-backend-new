@@ -25,4 +25,4 @@ export class StateRepository extends BaseRepositoryAbstract<State> {
       where: { country: countryId },
     });
   }
-} 
+}

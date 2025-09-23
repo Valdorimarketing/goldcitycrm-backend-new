@@ -23,4 +23,4 @@ export class BaseQueryFilterDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
-} 
+}

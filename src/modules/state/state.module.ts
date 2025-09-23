@@ -11,4 +11,4 @@ import { StateService } from './services/state.service';
   providers: [StateService, StateRepository],
   exports: [StateService, StateRepository],
 })
-export class StateModule {} 
+export class StateModule {}

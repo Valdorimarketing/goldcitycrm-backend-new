@@ -9,7 +9,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ProductService } from '../services/product.service';
-import { CreateProductDto, UpdateProductDto, ProductResponseDto } from '../dto/create-product.dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  ProductResponseDto,
+} from '../dto/create-product.dto';
 import { Product } from '../entities/product.entity';
 
 @Controller('products')
@@ -17,7 +21,9 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  async create(@Body() createProductDto: CreateProductDto): Promise<ProductResponseDto> {
+  async create(
+    @Body() createProductDto: CreateProductDto,
+  ): Promise<ProductResponseDto> {
     return this.productService.createProduct(createProductDto);
   }
 
@@ -30,7 +36,7 @@ export class ProductController {
     if (name) {
       return this.productService.getProductsByName(name);
     }
-    
+
     if (minPrice && maxPrice) {
       const min = parseFloat(minPrice);
       const max = parseFloat(maxPrice);
@@ -57,4 +63,4 @@ export class ProductController {
   async remove(@Param('id') id: string): Promise<Product> {
     return this.productService.deleteProduct(+id);
   }
-} 
+}

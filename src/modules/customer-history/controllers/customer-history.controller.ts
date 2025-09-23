@@ -9,16 +9,26 @@ import {
   Query,
 } from '@nestjs/common';
 import { CustomerHistoryService } from '../services/customer-history.service';
-import { CreateCustomerHistoryDto, UpdateCustomerHistoryDto, CustomerHistoryResponseDto } from '../dto/create-customer-history.dto';
+import {
+  CreateCustomerHistoryDto,
+  UpdateCustomerHistoryDto,
+  CustomerHistoryResponseDto,
+} from '../dto/create-customer-history.dto';
 import { CustomerHistory } from '../entities/customer-history.entity';
 
 @Controller('customer-history')
 export class CustomerHistoryController {
-  constructor(private readonly customerHistoryService: CustomerHistoryService) {}
+  constructor(
+    private readonly customerHistoryService: CustomerHistoryService,
+  ) {}
 
   @Post()
-  async create(@Body() createCustomerHistoryDto: CreateCustomerHistoryDto): Promise<CustomerHistoryResponseDto> {
-    return this.customerHistoryService.createCustomerHistory(createCustomerHistoryDto);
+  async create(
+    @Body() createCustomerHistoryDto: CreateCustomerHistoryDto,
+  ): Promise<CustomerHistoryResponseDto> {
+    return this.customerHistoryService.createCustomerHistory(
+      createCustomerHistoryDto,
+    );
   }
 
   @Get()
@@ -32,21 +42,21 @@ export class CustomerHistoryController {
     if (startDate || endDate || action) {
       let startDateTime = undefined;
       let endDateTime = undefined;
-      
+
       if (startDate) {
         startDateTime = new Date(startDate);
         if (startDate.length === 10) {
           startDateTime.setHours(0, 0, 0, 0);
         }
       }
-      
+
       if (endDate) {
         endDateTime = new Date(endDate);
         if (endDate.length === 10) {
           endDateTime.setHours(23, 59, 59, 999);
         }
       }
-      
+
       return this.customerHistoryService.getCustomerHistoryByDateRange({
         customer: customer ? +customer : undefined,
         action,
@@ -54,11 +64,13 @@ export class CustomerHistoryController {
         endDate: endDateTime,
       });
     }
-    
+
     if (customer) {
-      return this.customerHistoryService.getCustomerHistoryByCustomer(+customer);
+      return this.customerHistoryService.getCustomerHistoryByCustomer(
+        +customer,
+      );
     }
-    
+
     return this.customerHistoryService.getAllCustomerHistory();
   }
 
@@ -72,7 +84,10 @@ export class CustomerHistoryController {
     @Param('id') id: string,
     @Body() updateCustomerHistoryDto: UpdateCustomerHistoryDto,
   ): Promise<CustomerHistoryResponseDto> {
-    return this.customerHistoryService.updateCustomerHistory(+id, updateCustomerHistoryDto);
+    return this.customerHistoryService.updateCustomerHistory(
+      +id,
+      updateCustomerHistoryDto,
+    );
   }
 
   @Delete(':id')

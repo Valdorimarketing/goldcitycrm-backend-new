@@ -9,7 +9,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
-import { CreateUserDto, UpdateUserDto, UserResponseDto } from '../dto/create-user.dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserResponseDto,
+} from '../dto/create-user.dto';
 import { User } from '../entities/user.entity';
 
 @Controller('users')
@@ -46,4 +50,4 @@ export class UserController {
   async remove(@Param('id') id: string): Promise<User> {
     return this.userService.deleteUser(+id);
   }
-} 
+}

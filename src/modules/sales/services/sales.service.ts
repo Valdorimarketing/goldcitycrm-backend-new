@@ -2,13 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Sales } from '../entities/sales.entity';
 import { SalesRepository } from '../repositories/sales.repository';
-import { CreateSalesDto, UpdateSalesDto, SalesResponseDto } from '../dto/create-sales.dto';
+import {
+  CreateSalesDto,
+  UpdateSalesDto,
+  SalesResponseDto,
+} from '../dto/create-sales.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Meeting } from '../../meeting/entities/meeting.entity';
 import { Product } from '../../product/entities/product.entity';
 import { SalesProduct } from '../../sales-product/entities/sales-product.entity';
 import { CustomerNote } from '../../customer-note/entities/customer-note.entity';
+import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
+import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 
 @Injectable()
 export class SalesService extends BaseService<Sales> {
@@ -22,19 +28,39 @@ export class SalesService extends BaseService<Sales> {
     private readonly salesProductRepository: Repository<SalesProduct>,
     @InjectRepository(CustomerNote)
     private readonly customerNoteRepository: Repository<CustomerNote>,
+    private readonly customerHistoryService: CustomerHistoryService,
   ) {
     super(salesRepository, Sales);
   }
 
-  async createSales(createSalesDto: CreateSalesDto, userId?: number): Promise<SalesResponseDto> {
+  async createSales(
+    createSalesDto: CreateSalesDto,
+    userId?: number,
+  ): Promise<SalesResponseDto> {
     const sales = await this.create(createSalesDto, SalesResponseDto);
-    
+
+    // Log to customer history
+    if (createSalesDto.customer) {
+      await this.customerHistoryService.logCustomerAction(
+        createSalesDto.customer,
+        CustomerHistoryAction.SALE_CREATED,
+        `Sale created: ${createSalesDto.title || 'New Sale'} - ${createSalesDto.description || ''}`,
+        createSalesDto,
+        null,
+        userId || createSalesDto.user,
+        sales.id,
+      );
+    }
+
     await this.processActionLists(sales.id, userId);
-    
+
     return sales;
   }
 
-  private async processActionLists(salesId: number, userId?: number): Promise<void> {
+  private async processActionLists(
+    salesId: number,
+    userId?: number,
+  ): Promise<void> {
     const salesProducts = await this.salesProductRepository.find({
       where: { sales: salesId },
     });
@@ -73,7 +99,10 @@ export class SalesService extends BaseService<Sales> {
     }
   }
 
-  async updateSales(id: number, updateSalesDto: UpdateSalesDto): Promise<SalesResponseDto> {
+  async updateSales(
+    id: number,
+    updateSalesDto: UpdateSalesDto,
+  ): Promise<SalesResponseDto> {
     return this.update(updateSalesDto, id, SalesResponseDto);
   }
 
@@ -130,7 +159,9 @@ export class SalesService extends BaseService<Sales> {
         vat: 18,
         totalPrice: 17700,
       });
-      testResults.steps.push(`✅ Sales-Product oluşturuldu. ID: ${salesProduct.id}`);
+      testResults.steps.push(
+        `✅ Sales-Product oluşturuldu. ID: ${salesProduct.id}`,
+      );
 
       testResults.steps.push('3. Meeting kaydı oluşturuluyor...');
       const meetingDate = new Date('2025-08-25T10:00:00.000Z');
@@ -144,13 +175,17 @@ export class SalesService extends BaseService<Sales> {
         description: 'Saç ekimi operasyonu',
         salesProductId: salesProduct.id,
       });
-      testResults.steps.push(`✅ Meeting oluşturuldu. Tarih: ${meetingDate.toLocaleDateString('tr-TR')}`);
+      testResults.steps.push(
+        `✅ Meeting oluşturuldu. Tarih: ${meetingDate.toLocaleDateString('tr-TR')}`,
+      );
 
       testResults.steps.push('4. Action-list işleniyor...');
       await this.processActionLists(sales.id, 1);
       testResults.steps.push('✅ Action-list işlendi (User ID: 1)');
 
-      testResults.steps.push('5. Oluşan customer-note kayıtları kontrol ediliyor...');
+      testResults.steps.push(
+        '5. Oluşan customer-note kayıtları kontrol ediliyor...',
+      );
       const notes = await this.customerNoteRepository.find({
         where: {
           customer: 1,
@@ -161,7 +196,7 @@ export class SalesService extends BaseService<Sales> {
         },
       });
 
-      testResults.createdNotes = notes.map(note => ({
+      testResults.createdNotes = notes.map((note) => ({
         id: note.id,
         user: note.user,
         note: note.note,
@@ -169,7 +204,9 @@ export class SalesService extends BaseService<Sales> {
         formattedDate: new Date(note.remindingAt).toLocaleDateString('tr-TR'),
       }));
 
-      testResults.steps.push(`✅ ${notes.length} adet customer-note kaydı oluşturuldu`);
+      testResults.steps.push(
+        `✅ ${notes.length} adet customer-note kaydı oluşturuldu`,
+      );
 
       return {
         success: true,
@@ -185,4 +222,4 @@ export class SalesService extends BaseService<Sales> {
       };
     }
   }
-} 
+}

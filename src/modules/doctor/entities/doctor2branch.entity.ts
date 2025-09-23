@@ -11,11 +11,11 @@ export class Doctor2Branch extends CustomBaseEntity {
   @Column({ name: 'branch' })
   branchId: number;
 
-  @ManyToOne(() => Doctor, (doctor) => doctor.branchRelations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Doctor, (doctor) => doctor.doctor2Branches)
   @JoinColumn({ name: 'doctor' })
   doctor: Doctor;
 
-  @ManyToOne(() => Branch, (branch) => branch.doctorRelations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Branch)
   @JoinColumn({ name: 'branch' })
   branch: Branch;
 }

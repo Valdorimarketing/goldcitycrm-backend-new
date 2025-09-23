@@ -29,4 +29,4 @@ export class CustomBaseEntity extends BaseEntity {
   setPartial(partial: any) {
     Object.assign(this, partial);
   }
-} 
+}

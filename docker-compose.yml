@@ -1,0 +1,31 @@
+version: '3.8'
+name: 'valdoricrmapi'
+
+services:
+  nestjs:
+    build:
+      context: .
+      dockerfile: docker/local/api/Dockerfile
+    image: valdoricrmapi:latest
+    container_name: valdoricrmapi
+    stdin_open: true
+    tty: true
+    restart: always
+    volumes:
+      - ./src:/app/src:rw
+      - ./test:/app/test:rw
+      - ./public:/app/public:rw
+      - ./logs:/app/logs:rw
+      - ./.env:/app/.env:rw
+      - ./.eslintrc.js:/app/.eslintrc.js:rw
+      - ./.prettierrc:/app/.prettierrc:rw
+      - ./nest-cli.json:/app/nest-cli.json:rw
+      - ./tsconfig.json:/app/tsconfig.json:rw
+      - ./tsconfig.build.json:/app/tsconfig.build.json:rw
+    ports:
+      - '8091:3000'
+
+networks:
+  default:
+    name: local-network
+    external: true
