@@ -20,6 +20,8 @@ FROM deps AS nestjs
 
 COPY . /build
 WORKDIR /build
+# Copy environment file if it exists
+COPY ./docker/prod/api/env/.env /build/.env
 # Install all dependencies for building
 RUN npm install
 # Now build the application
@@ -36,7 +38,7 @@ RUN npm ci --omit=dev
 # Copy built application
 COPY --from=nestjs /build/.env .
 COPY --from=nestjs /build/dist ./dist
-COPY --from=nestjs /build/src/core/i18n ./dist/core/i18n
+# Copy public folder if it exists
 COPY --from=nestjs /build/public ./public
 VOLUME /app
 EXPOSE 3000
