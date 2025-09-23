@@ -35,8 +35,6 @@ COPY --from=nestjs /build/package*.json ./
 RUN npm ci --omit=dev
 # Copy built application
 COPY --from=nestjs /build/dist ./dist
-# Copy public folder if it exists
-COPY --from=nestjs /build/public ./public
 VOLUME /app
 EXPOSE 3000
 ENV HOST=0.0.0.0
