@@ -26,4 +26,4 @@ export class User extends CustomBaseEntity {
   constructor(partial?: Partial<User>) {
     super(partial);
   }
-} 
+}

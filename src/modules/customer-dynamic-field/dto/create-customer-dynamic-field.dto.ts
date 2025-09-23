@@ -17,4 +17,3 @@ export class CreateCustomerDynamicFieldDto {
   @IsOptional()
   order?: number;
 }
-

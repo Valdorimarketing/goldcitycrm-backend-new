@@ -15,4 +15,4 @@ export class State extends CustomBaseEntity {
   constructor(partial?: Partial<State>) {
     super(partial);
   }
-} 
+}

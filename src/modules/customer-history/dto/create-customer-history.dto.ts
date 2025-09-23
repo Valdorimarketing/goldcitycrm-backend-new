@@ -7,10 +7,20 @@ export class CreateCustomerHistoryDto {
   @Expose()
   customer: number;
 
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  user?: number;
+
   @IsNotEmpty()
   @IsString()
   @Expose()
   action: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  relatedId?: number;
 
   @IsOptional()
   @IsString()
@@ -63,7 +73,13 @@ export class CustomerHistoryResponseDto {
   customer: number;
 
   @Expose()
+  user: number;
+
+  @Expose()
   action: string;
+
+  @Expose()
+  relatedId: number;
 
   @Expose()
   description: string;

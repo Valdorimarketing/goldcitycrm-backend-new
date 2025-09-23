@@ -24,4 +24,4 @@ export class UserRepository extends BaseRepositoryAbstract<User> {
       where: { email },
     });
   }
-} 
+}

@@ -23,6 +23,11 @@ import { CustomerHistoryModule } from './modules/customer-history/customer-histo
 import { HospitalModule } from './modules/hospital/hospital.module';
 import { BranchModule } from './modules/branch/branch.module';
 import { DoctorModule } from './modules/doctor/doctor.module';
+import { SourceModule } from './modules/source/source.module';
+import { CustomerFileModule } from './modules/customer-file/customer-file.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { Customer2DoctorModule } from './modules/customer2doctor/customer2doctor.module';
+import { Customer2ProductModule } from './modules/customer2product/customer2product.module';
 
 @Module({
   imports: [
@@ -60,6 +65,11 @@ import { DoctorModule } from './modules/doctor/doctor.module';
     HospitalModule,
     BranchModule,
     DoctorModule,
+    SourceModule,
+    CustomerFileModule,
+    PaymentModule,
+    Customer2DoctorModule,
+    Customer2ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],

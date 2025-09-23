@@ -15,4 +15,4 @@ export class RoleUser extends CustomBaseEntity {
   constructor(partial?: Partial<RoleUser>) {
     super(partial);
   }
-} 
+}

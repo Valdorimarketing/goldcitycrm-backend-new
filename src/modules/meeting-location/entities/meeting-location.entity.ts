@@ -11,4 +11,4 @@ export class MeetingLocation extends CustomBaseEntity {
   constructor(partial?: Partial<MeetingLocation>) {
     super(partial);
   }
-} 
+}

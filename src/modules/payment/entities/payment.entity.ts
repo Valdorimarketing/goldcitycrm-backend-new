@@ -27,4 +27,4 @@ export class Payment extends CustomBaseEntity {
   constructor(partial?: Partial<Payment>) {
     super(partial);
   }
-} 
+}

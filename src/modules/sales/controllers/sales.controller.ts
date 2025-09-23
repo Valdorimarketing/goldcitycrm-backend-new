@@ -10,7 +10,11 @@ import {
   Request,
 } from '@nestjs/common';
 import { SalesService } from '../services/sales.service';
-import { CreateSalesDto, UpdateSalesDto, SalesResponseDto } from '../dto/create-sales.dto';
+import {
+  CreateSalesDto,
+  UpdateSalesDto,
+  SalesResponseDto,
+} from '../dto/create-sales.dto';
 import { Sales } from '../entities/sales.entity';
 
 @Controller('sales')
@@ -66,4 +70,4 @@ export class SalesController {
   async testActionList(): Promise<any> {
     return this.salesService.testActionListFeature();
   }
-} 
+}

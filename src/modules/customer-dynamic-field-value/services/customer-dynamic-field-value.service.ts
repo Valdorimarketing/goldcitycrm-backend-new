@@ -9,12 +9,20 @@ export class CustomerDynamicFieldValueService {
     private readonly customerDynamicFieldValueRepository: CustomerDynamicFieldValueRepository,
   ) {}
 
-  async create(createCustomerDynamicFieldValueDto: CreateCustomerDynamicFieldValueDto) {
-    return this.customerDynamicFieldValueRepository.save(createCustomerDynamicFieldValueDto);
+  async create(
+    createCustomerDynamicFieldValueDto: CreateCustomerDynamicFieldValueDto,
+  ) {
+    return this.customerDynamicFieldValueRepository.save(
+      createCustomerDynamicFieldValueDto,
+    );
   }
 
-  async createMany(createCustomerDynamicFieldValueDtos: CreateCustomerDynamicFieldValueDto[]) {
-    return this.customerDynamicFieldValueRepository.saveMany(createCustomerDynamicFieldValueDtos);
+  async createMany(
+    createCustomerDynamicFieldValueDtos: CreateCustomerDynamicFieldValueDto[],
+  ) {
+    return this.customerDynamicFieldValueRepository.saveMany(
+      createCustomerDynamicFieldValueDtos,
+    );
   }
 
   async findAll() {
@@ -25,9 +33,15 @@ export class CustomerDynamicFieldValueService {
     return this.customerDynamicFieldValueRepository.findOneById(id);
   }
 
-  async update(id: number, updateCustomerDynamicFieldValueDto: UpdateCustomerDynamicFieldValueDto) {
+  async update(
+    id: number,
+    updateCustomerDynamicFieldValueDto: UpdateCustomerDynamicFieldValueDto,
+  ) {
     const entity = await this.findOne(id);
-    return this.customerDynamicFieldValueRepository.save({ ...entity, ...updateCustomerDynamicFieldValueDto });
+    return this.customerDynamicFieldValueRepository.save({
+      ...entity,
+      ...updateCustomerDynamicFieldValueDto,
+    });
   }
 
   async remove(id: number) {
@@ -36,6 +50,8 @@ export class CustomerDynamicFieldValueService {
   }
 
   async deleteByCustomerId(customerId: number) {
-    return this.customerDynamicFieldValueRepository.deleteByCustomerId(customerId);
+    return this.customerDynamicFieldValueRepository.deleteByCustomerId(
+      customerId,
+    );
   }
 }

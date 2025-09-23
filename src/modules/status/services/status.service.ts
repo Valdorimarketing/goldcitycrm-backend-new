@@ -7,9 +7,7 @@ import { UpdateStatusDto } from '../dto/update-status.dto';
 
 @Injectable()
 export class StatusService extends BaseService<Status> {
-  constructor(
-    private readonly statusRepository: StatusRepository,
-  ) {
+  constructor(private readonly statusRepository: StatusRepository) {
     super(statusRepository, Status);
   }
 
@@ -17,7 +15,10 @@ export class StatusService extends BaseService<Status> {
     return this.repository.save(createStatusDto);
   }
 
-  async updateStatus(id: number, updateStatusDto: UpdateStatusDto): Promise<Status> {
+  async updateStatus(
+    id: number,
+    updateStatusDto: UpdateStatusDto,
+  ): Promise<Status> {
     const status = await this.findOneById(id);
     Object.assign(status, updateStatusDto);
     return this.repository.save(status);

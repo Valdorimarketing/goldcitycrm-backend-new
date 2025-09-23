@@ -49,4 +49,4 @@ export class Meeting extends CustomBaseEntity {
   constructor(partial?: Partial<Meeting>) {
     super(partial);
   }
-} 
+}

@@ -11,4 +11,4 @@ export class Role extends CustomBaseEntity {
   constructor(partial?: Partial<Role>) {
     super(partial);
   }
-} 
+}

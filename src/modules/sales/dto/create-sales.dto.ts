@@ -74,4 +74,4 @@ export class SalesResponseDto {
 
   @Expose()
   updatesAt: Date;
-} 
+}

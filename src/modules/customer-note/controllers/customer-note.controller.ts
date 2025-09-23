@@ -7,24 +7,32 @@ import {
   Param,
   Delete,
   Query,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 import { CustomerNoteService } from '../services/customer-note.service';
-import { CreateCustomerNoteDto, UpdateCustomerNoteDto, CustomerNoteResponseDto } from '../dto/create-customer-note.dto';
+import {
+  CreateCustomerNoteDto,
+  UpdateCustomerNoteDto,
+  CustomerNoteResponseDto,
+} from '../dto/create-customer-note.dto';
 import { CustomerNote } from '../entities/customer-note.entity';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUserId } from '../../../core/decorators/current-user.decorator';
 
 @Controller('customer-notes')
+@UseGuards(JwtAuthGuard)
 export class CustomerNoteController {
   constructor(private readonly customerNoteService: CustomerNoteService) {}
 
   @Post()
   async create(
     @Body() createCustomerNoteDto: CreateCustomerNoteDto,
-    @Request() req: any,
+    @CurrentUserId() userId: number,
   ): Promise<CustomerNoteResponseDto> {
-    const userId = req.user?.id || createCustomerNoteDto.user || 1; // Fallback to 1 if no user in request
-    return this.customerNoteService.createCustomerNote(createCustomerNoteDto, userId);
+    return this.customerNoteService.createCustomerNote(
+      createCustomerNoteDto,
+      userId,
+    );
   }
 
   @Get()
@@ -41,26 +49,31 @@ export class CustomerNoteController {
     if (today === 'true') {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
-      
+
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
-      
+
       return this.customerNoteService.getCustomerNotesByDateRange({
         customer: customer ? +customer : undefined,
         user: user ? +user : undefined,
         startDate: todayStart,
         endDate: todayEnd,
-        isReminding: isReminding === 'true' ? true : isReminding === 'false' ? false : undefined,
+        isReminding:
+          isReminding === 'true'
+            ? true
+            : isReminding === 'false'
+              ? false
+              : undefined,
         noteType,
       });
     }
-    
+
     // Tarih filtrelemesi varsa
     if (startDate || endDate) {
       // Eğer sadece tarih geliyorsa (2025-08-22 gibi), saat ekle
       let startDateTime = undefined;
       let endDateTime = undefined;
-      
+
       if (startDate) {
         startDateTime = new Date(startDate);
         // Eğer sadece tarih ise, günün başına ayarla
@@ -68,7 +81,7 @@ export class CustomerNoteController {
           startDateTime.setHours(0, 0, 0, 0);
         }
       }
-      
+
       if (endDate) {
         endDateTime = new Date(endDate);
         // Eğer sadece tarih ise, günün sonuna ayarla
@@ -76,17 +89,22 @@ export class CustomerNoteController {
           endDateTime.setHours(23, 59, 59, 999);
         }
       }
-      
+
       return this.customerNoteService.getCustomerNotesByDateRange({
         customer: customer ? +customer : undefined,
         user: user ? +user : undefined,
         startDate: startDateTime,
         endDate: endDateTime,
-        isReminding: isReminding === 'true' ? true : isReminding === 'false' ? false : undefined,
+        isReminding:
+          isReminding === 'true'
+            ? true
+            : isReminding === 'false'
+              ? false
+              : undefined,
         noteType,
       });
     }
-    
+
     if (customer) {
       return this.customerNoteService.getCustomerNotesByCustomer(+customer);
     }
@@ -105,8 +123,13 @@ export class CustomerNoteController {
   async update(
     @Param('id') id: string,
     @Body() updateCustomerNoteDto: UpdateCustomerNoteDto,
+    @CurrentUserId() userId: number,
   ): Promise<CustomerNoteResponseDto> {
-    return this.customerNoteService.updateCustomerNote(+id, updateCustomerNoteDto);
+    const dtoWithUser = {
+      ...updateCustomerNoteDto,
+      user: userId,
+    };
+    return this.customerNoteService.updateCustomerNote(+id, dtoWithUser);
   }
 
   @Delete(':id')

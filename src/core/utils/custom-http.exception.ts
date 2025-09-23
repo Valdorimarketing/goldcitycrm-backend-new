@@ -6,7 +6,10 @@ export class CustomHttpException extends HttpException {
   }
 
   static notFound(entityName: string): CustomHttpException {
-    return new CustomHttpException(`${entityName} not found`, HttpStatus.NOT_FOUND);
+    return new CustomHttpException(
+      `${entityName} not found`,
+      HttpStatus.NOT_FOUND,
+    );
   }
 
   static badRequest(message: string): CustomHttpException {
@@ -24,4 +27,4 @@ export class CustomHttpException extends HttpException {
   static conflict(message: string): CustomHttpException {
     return new CustomHttpException(message, HttpStatus.CONFLICT);
   }
-} 
+}

@@ -1,58 +1,95 @@
 import { Injectable } from '@nestjs/common';
 import { Branch } from '../entities/branch.entity';
 import { BranchRepository } from '../repositories/branch.repository';
+import { BaseService } from '../../../core/base/services/base.service';
+import { LogMethod } from '../../../core/decorators/log.decorator';
+import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { SelectQueryBuilder } from 'typeorm';
+import { Branch2HospitalRepository } from '../repositories/branch2hospital.repository';
 import { CreateBranchDto } from '../dto/create-branch.dto';
 import { UpdateBranchDto } from '../dto/update-branch.dto';
-import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { Branch2Hospital } from '../entities/branch2hospital.entity';
 
 @Injectable()
-export class BranchService {
-  constructor(private readonly branchRepository: BranchRepository) {}
-
-  async create(createBranchDto: CreateBranchDto): Promise<Branch> {
-    return this.branchRepository.save(createBranchDto);
+export class BranchService extends BaseService<Branch> {
+  constructor(
+    private readonly branchRepository: BranchRepository,
+    private readonly branch2HospitalRepository: Branch2HospitalRepository,
+  ) {
+    super(branchRepository, Branch);
   }
 
-  async findAll(): Promise<Branch[]> {
-    return this.branchRepository.findAll();
+  @LogMethod()
+  async findByCode(code: string): Promise<Branch | null> {
+    return this.branchRepository.findByCondition({ where: { code } });
   }
 
-  async paginate(query: BaseQueryFilterDto) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await this.branchRepository.findAll({
-      skip,
-      take: limit,
-      order: { id: query.order || 'DESC' },
-    }).then(async (items) => {
-      const allItems = await this.branchRepository.findAll();
-      return [items, allItems.length];
-    });
-
-    return {
-      data,
-      meta: {
-        page,
-        limit,
-        total,
-      },
-    };
+  async findByFiltersBaseQuery(
+    filters: BaseQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Branch>> {
+    return this.branchRepository.findByFiltersBaseQuery(filters);
   }
 
+  @LogMethod()
+  async createBranch(createBranchDto: CreateBranchDto): Promise<Branch> {
+    const { hospitalIds, ...branchData } = createBranchDto;
+
+    const branch = await this.branchRepository.save(branchData);
+
+    if (hospitalIds && hospitalIds.length > 0) {
+      const branch2Hospitals = hospitalIds.map((hospitalId) => ({
+        branchId: branch.id,
+        hospitalId,
+      }));
+
+      await this.branch2HospitalRepository.saveMany(branch2Hospitals);
+    }
+
+    return this.findById(branch.id);
+  }
+
+  @LogMethod()
+  async updateBranch(
+    id: number,
+    updateBranchDto: UpdateBranchDto,
+  ): Promise<Branch> {
+    const { hospitalIds, ...branchData } = updateBranchDto;
+
+    await this.branchRepository.update(id, branchData);
+
+    if (hospitalIds !== undefined) {
+      await this.branch2HospitalRepository.removeByCondition({
+        branchId: id,
+      });
+
+      if (hospitalIds.length > 0) {
+        const branch2Hospitals = hospitalIds.map((hospitalId) => ({
+          branchId: id,
+          hospitalId,
+        }));
+
+        await this.branch2HospitalRepository.saveMany(branch2Hospitals);
+      }
+    }
+
+    return this.findById(id);
+  }
+
+  @LogMethod()
   async findById(id: number): Promise<Branch> {
-    return this.branchRepository.findOneById(id);
+    return this.branchRepository.findByCondition({
+      where: { id },
+      relations: ['branch2Hospitals', 'branch2Hospitals.hospital'],
+    });
   }
 
-  async update(id: number, updateBranchDto: UpdateBranchDto): Promise<Branch> {
-    const branch = await this.findById(id);
-    Object.assign(branch, updateBranchDto);
-    return this.branchRepository.save(branch);
-  }
+  @LogMethod()
+  async findAllWithHospitals(query?: BaseQueryFilterDto): Promise<Branch[]> {
+    const queryBuilder = await this.findByFiltersBaseQuery(query || {});
+    queryBuilder
+      .leftJoinAndSelect('branch.branch2Hospitals', 'branch2Hospitals')
+      .leftJoinAndSelect('branch2Hospitals.hospital', 'hospital');
 
-  async remove(id: number): Promise<void> {
-    const branch = await this.findById(id);
-    await this.branchRepository.remove(branch);
+    return queryBuilder.getMany();
   }
 }

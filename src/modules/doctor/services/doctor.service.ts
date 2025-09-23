@@ -1,129 +1,208 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Doctor } from '../entities/doctor.entity';
 import { DoctorRepository } from '../repositories/doctor.repository';
-import { Doctor2Hospital } from '../entities/doctor2hospital.entity';
-import { Doctor2Branch } from '../entities/doctor2branch.entity';
+import { BaseService } from '../../../core/base/services/base.service';
+import { LogMethod } from '../../../core/decorators/log.decorator';
+import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { SelectQueryBuilder } from 'typeorm';
+import { Doctor2BranchRepository } from '../repositories/doctor2branch.repository';
+import { Doctor2HospitalRepository } from '../repositories/doctor2hospital.repository';
 import { CreateDoctorDto } from '../dto/create-doctor.dto';
 import { UpdateDoctorDto } from '../dto/update-doctor.dto';
-import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
 
 @Injectable()
-export class DoctorService {
+export class DoctorService extends BaseService<Doctor> {
   constructor(
     private readonly doctorRepository: DoctorRepository,
-    @InjectRepository(Doctor2Hospital)
-    private readonly doctor2HospitalRepository: Repository<Doctor2Hospital>,
-    @InjectRepository(Doctor2Branch)
-    private readonly doctor2BranchRepository: Repository<Doctor2Branch>,
-  ) {}
-
-  async create(createDoctorDto: CreateDoctorDto): Promise<Doctor> {
-    const { hospitalIds, branchIds, ...doctorData } = createDoctorDto;
-    
-    const savedDoctor = await this.doctorRepository.save(doctorData);
-
-    if (hospitalIds && hospitalIds.length > 0) {
-      const hospitalRelations = hospitalIds.map(hospitalId => 
-        this.doctor2HospitalRepository.create({
-          doctorId: savedDoctor.id,
-          hospitalId,
-        })
-      );
-      await this.doctor2HospitalRepository.save(hospitalRelations);
-    }
-
-    if (branchIds && branchIds.length > 0) {
-      const branchRelations = branchIds.map(branchId => 
-        this.doctor2BranchRepository.create({
-          doctorId: savedDoctor.id,
-          branchId,
-        })
-      );
-      await this.doctor2BranchRepository.save(branchRelations);
-    }
-
-    return this.doctorRepository.findWithRelations(savedDoctor.id);
+    private readonly doctor2BranchRepository: Doctor2BranchRepository,
+    private readonly doctor2HospitalRepository: Doctor2HospitalRepository,
+  ) {
+    super(doctorRepository, Doctor);
   }
 
-  async update(id: number, updateDoctorDto: UpdateDoctorDto): Promise<Doctor> {
-    const { hospitalIds, branchIds, ...doctorData } = updateDoctorDto;
-    
-    if (Object.keys(doctorData).length > 0) {
-      const doctor = await this.findById(id);
-      Object.assign(doctor, doctorData);
-      await this.doctorRepository.save(doctor);
+  @LogMethod()
+  async findWithRelations(id: number): Promise<Doctor> {
+    const doctor = await this.doctorRepository.findByCondition({
+      where: { id },
+      relations: [
+        'branch',
+        'doctor2Branches',
+        'doctor2Branches.branch',
+        'doctor2Hospitals',
+        'doctor2Hospitals.hospital',
+      ],
+    });
+
+    if (!doctor) {
+      return null;
+    }
+
+    return doctor;
+  }
+
+  async findByFiltersBaseQuery(
+    filters: BaseQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Doctor>> {
+    return this.doctorRepository.findByFiltersBaseQuery(filters);
+  }
+
+  @LogMethod()
+  async findDoctorsByHospitalId(hospitalId: number): Promise<Doctor[]> {
+    const doctor2Hospitals =
+      await this.doctor2HospitalRepository.findDoctorsByHospitalId(hospitalId);
+    return doctor2Hospitals.map((d2h) => d2h.doctor);
+  }
+
+  @LogMethod()
+  async findHospitalsByDoctorId(doctorId: number): Promise<any[]> {
+    const doctor2Hospitals =
+      await this.doctor2HospitalRepository.findHospitalsByDoctorId(doctorId);
+    return doctor2Hospitals.map((d2h) => d2h.hospital);
+  }
+
+  @LogMethod()
+  async findDoctorsByHospitalAndBranch(
+    hospitalId: number,
+    branchId: number,
+  ): Promise<Doctor[]> {
+    try {
+      // Hastanedeki doktor ID'lerini al
+      const hospitalDoctorIds =
+        await this.doctor2HospitalRepository.findDoctorIdsByHospitalId(
+          hospitalId,
+        );
+      console.log('Hospital doctor IDs:', hospitalDoctorIds);
+
+      // Branch'teki doktor ID'lerini al
+      const branchDoctorIds =
+        await this.doctor2BranchRepository.findDoctorIdsByBranchId(branchId);
+      console.log('Branch doctor IDs:', branchDoctorIds);
+
+      // İki kümenin kesişimini bul
+      const commonDoctorIds = hospitalDoctorIds.filter((id) =>
+        branchDoctorIds.includes(id),
+      );
+      console.log('Common doctor IDs:', commonDoctorIds);
+
+      if (commonDoctorIds.length === 0) {
+        return [];
+      }
+
+      // Ortak doktorların detaylı bilgilerini getir
+      const allDoctors = [];
+      for (const doctorId of commonDoctorIds) {
+        const doctor = await this.doctorRepository.findByCondition({
+          where: { id: doctorId },
+          relations: [
+            'branch',
+            'doctor2Hospitals.hospital',
+            'doctor2Branches.branch',
+          ],
+        });
+        if (doctor) {
+          allDoctors.push(doctor);
+        }
+      }
+      return allDoctors;
+    } catch (error) {
+      console.error('Error in findDoctorsByHospitalAndBranch:', error);
+      throw error;
+    }
+  }
+
+  @LogMethod()
+  async createDoctor(createDoctorDto: CreateDoctorDto): Promise<Doctor> {
+    const { branchIds, hospitalIds, ...doctorData } = createDoctorDto;
+
+    const doctor = await this.doctorRepository.save(doctorData);
+
+    if (branchIds && branchIds.length > 0) {
+      const doctor2Branches = branchIds.map((branchId) => ({
+        doctorId: doctor.id,
+        branchId,
+      }));
+
+      await this.doctor2BranchRepository.saveMany(doctor2Branches);
+    }
+
+    if (hospitalIds && hospitalIds.length > 0) {
+      const doctor2Hospitals = hospitalIds.map((hospitalId) => ({
+        doctorId: doctor.id,
+        hospitalId,
+      }));
+
+      await this.doctor2HospitalRepository.saveMany(doctor2Hospitals);
+    }
+
+    return this.findById(doctor.id);
+  }
+
+  @LogMethod()
+  async updateDoctor(
+    id: number,
+    updateDoctorDto: UpdateDoctorDto,
+  ): Promise<Doctor> {
+    const { branchIds, hospitalIds, ...doctorData } = updateDoctorDto;
+
+    await this.doctorRepository.update(id, doctorData);
+
+    if (branchIds !== undefined) {
+      await this.doctor2BranchRepository.removeByCondition({
+        doctorId: id,
+      });
+
+      if (branchIds.length > 0) {
+        const doctor2Branches = branchIds.map((branchId) => ({
+          doctorId: id,
+          branchId,
+        }));
+
+        await this.doctor2BranchRepository.saveMany(doctor2Branches);
+      }
     }
 
     if (hospitalIds !== undefined) {
-      await this.doctor2HospitalRepository.delete({ doctorId: id });
-      
+      await this.doctor2HospitalRepository.removeByCondition({
+        doctorId: id,
+      });
+
       if (hospitalIds.length > 0) {
-        const hospitalRelations = hospitalIds.map(hospitalId => 
-          this.doctor2HospitalRepository.create({
-            doctorId: id,
-            hospitalId,
-          })
-        );
-        await this.doctor2HospitalRepository.save(hospitalRelations);
+        const doctor2Hospitals = hospitalIds.map((hospitalId) => ({
+          doctorId: id,
+          hospitalId,
+        }));
+
+        await this.doctor2HospitalRepository.saveMany(doctor2Hospitals);
       }
     }
 
-    if (branchIds !== undefined) {
-      await this.doctor2BranchRepository.delete({ doctorId: id });
-      
-      if (branchIds.length > 0) {
-        const branchRelations = branchIds.map(branchId => 
-          this.doctor2BranchRepository.create({
-            doctorId: id,
-            branchId,
-          })
-        );
-        await this.doctor2BranchRepository.save(branchRelations);
-      }
-    }
-
-    return this.doctorRepository.findWithRelations(id);
+    return this.findById(id);
   }
 
-  async paginate(query: BaseQueryFilterDto) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
-    const skip = (page - 1) * limit;
-
-    const queryBuilder = this.doctorRepository.createQueryBuilder('doctor')
-      .leftJoinAndSelect('doctor.branch', 'branch')
-      .leftJoinAndSelect('doctor.hospitalRelations', 'hospitalRelations')
-      .leftJoinAndSelect('hospitalRelations.hospital', 'hospital')
-      .leftJoinAndSelect('doctor.branchRelations', 'branchRelations')
-      .leftJoinAndSelect('branchRelations.branch', 'relatedBranch')
-      .skip(skip)
-      .take(limit)
-      .orderBy('doctor.id', query.order || 'DESC');
-
-    const [data, total] = await queryBuilder.getManyAndCount();
-
-    return {
-      data,
-      meta: {
-        page,
-        limit,
-        total,
-      },
-    };
-  }
-
+  @LogMethod()
   async findById(id: number): Promise<Doctor> {
-    return this.doctorRepository.findWithRelations(id);
+    return this.doctorRepository.findByCondition({
+      where: { id },
+      relations: [
+        'branch',
+        'doctor2Branches',
+        'doctor2Branches.branch',
+        'doctor2Hospitals',
+        'doctor2Hospitals.hospital',
+      ],
+    });
   }
 
-  async findAll(): Promise<Doctor[]> {
-    return this.doctorRepository.findAllWithRelations();
-  }
+  @LogMethod()
+  async findAllWithRelations(query?: BaseQueryFilterDto): Promise<Doctor[]> {
+    const queryBuilder = await this.findByFiltersBaseQuery(query || {});
+    queryBuilder
+      .leftJoinAndSelect('doctor.branch', 'branch')
+      .leftJoinAndSelect('doctor.doctor2Branches', 'doctor2Branches')
+      .leftJoinAndSelect('doctor2Branches.branch', 'd2b_branch')
+      .leftJoinAndSelect('doctor.doctor2Hospitals', 'doctor2Hospitals')
+      .leftJoinAndSelect('doctor2Hospitals.hospital', 'd2h_hospital');
 
-  async remove(id: number): Promise<void> {
-    const doctor = await this.findById(id);
-    await this.doctorRepository.remove(doctor);
+    return queryBuilder.getMany();
   }
 }

@@ -3,6 +3,7 @@ import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
 import { User } from '../../user/entities/user.entity';
 import { CustomerDynamicFieldValue } from '../../customer-dynamic-field-value/entities/customer-dynamic-field-value.entity';
+import { Customer2Doctor } from '../../customer2doctor/entities/customer2doctor.entity';
 
 @Entity('customer')
 export class Customer extends CustomBaseEntity {
@@ -102,11 +103,20 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   description: string;
 
-  @OneToMany(() => CustomerDynamicFieldValue, (dynamicFieldValue) => dynamicFieldValue.customerRelation)
+  @OneToMany(
+    () => CustomerDynamicFieldValue,
+    (dynamicFieldValue) => dynamicFieldValue.customerRelation,
+  )
   @Expose()
   dynamicFieldValues: CustomerDynamicFieldValue[];
+
+  @OneToMany(
+    () => Customer2Doctor,
+    (customer2doctor) => customer2doctor.customer,
+  )
+  customer2doctors: Customer2Doctor[];
 
   constructor(partial?: Partial<Customer>) {
     super(partial);
   }
-} 
+}

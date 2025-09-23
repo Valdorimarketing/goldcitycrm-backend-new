@@ -8,6 +8,7 @@ import { Meeting } from '../meeting/entities/meeting.entity';
 import { Product } from '../product/entities/product.entity';
 import { SalesProduct } from '../sales-product/entities/sales-product.entity';
 import { CustomerNote } from '../customer-note/entities/customer-note.entity';
+import { CustomerHistoryModule } from '../customer-history/customer-history.module';
 
 @Module({
   imports: [
@@ -18,9 +19,10 @@ import { CustomerNote } from '../customer-note/entities/customer-note.entity';
       SalesProduct,
       CustomerNote,
     ]),
+    CustomerHistoryModule,
   ],
   controllers: [SalesController],
   providers: [SalesService, SalesRepository],
   exports: [SalesService, SalesRepository],
 })
-export class SalesModule {} 
+export class SalesModule {}

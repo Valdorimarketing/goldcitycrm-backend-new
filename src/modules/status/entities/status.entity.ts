@@ -39,4 +39,4 @@ export class Status extends CustomBaseEntity {
   constructor(partial?: Partial<Status>) {
     super(partial);
   }
-} 
+}

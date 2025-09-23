@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, IsDate, IsNotEmpty } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsDate,
+  IsNotEmpty,
+} from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 
 export class CreateCustomerNoteDto {
@@ -6,11 +13,6 @@ export class CreateCustomerNoteDto {
   @IsNumber()
   @Expose()
   customer: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  @Expose()
-  user: number;
 
   @IsNotEmpty()
   @IsString()
@@ -39,11 +41,6 @@ export class UpdateCustomerNoteDto {
   @IsNumber()
   @Expose()
   customer?: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  @Expose()
-  user: number;
 
   @IsOptional()
   @IsString()

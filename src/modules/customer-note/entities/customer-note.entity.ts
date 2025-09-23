@@ -37,4 +37,4 @@ export class CustomerNote extends CustomBaseEntity {
   constructor(partial?: Partial<CustomerNote>) {
     super(partial);
   }
-} 
+}

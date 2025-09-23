@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsEmail, IsNotEmpty, IsBoolean, MinLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEmail,
+  IsNotEmpty,
+  IsBoolean,
+  MinLength,
+} from 'class-validator';
 import { Expose } from 'class-transformer';
 
 export class CreateUserDto {
@@ -78,4 +85,4 @@ export class UserResponseDto {
 
   @Expose()
   updatesAt: Date;
-} 
+}

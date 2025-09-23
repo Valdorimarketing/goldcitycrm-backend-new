@@ -9,7 +9,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { CityService } from '../services/city.service';
-import { CreateCityDto, UpdateCityDto, CityResponseDto } from '../dto/create-city.dto';
+import {
+  CreateCityDto,
+  UpdateCityDto,
+  CityResponseDto,
+} from '../dto/create-city.dto';
 import { City } from '../entities/city.entity';
 
 @Controller('cities')
@@ -56,4 +60,4 @@ export class CityController {
   async remove(@Param('id') id: string): Promise<City> {
     return this.cityService.deleteCity(+id);
   }
-} 
+}

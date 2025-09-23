@@ -108,4 +108,14 @@ export abstract class BaseRepositoryAbstract<T extends HasId>
   ): Promise<void> {
     await this.entity.delete(condition);
   }
-} 
+
+  public async update(id: number, data: DeepPartial<T>): Promise<void> {
+    await this.entity.update(id, data as any);
+  }
+
+  public async removeByCondition(
+    condition: FindOptionsWhere<T>,
+  ): Promise<void> {
+    await this.entity.delete(condition);
+  }
+}

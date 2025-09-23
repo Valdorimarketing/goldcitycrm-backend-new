@@ -10,7 +10,7 @@ async function bootstrap() {
   try {
     // Create a test user
     const hashedPassword = await bcrypt.hash('test123', 10);
-    
+
     const userData = {
       email: 'jwt-test@example.com',
       password: hashedPassword,

@@ -103,4 +103,4 @@ export abstract class BaseService<T extends HasId> implements IBaseService<T> {
     const data = await this.repository.findOneById(id);
     return this.repository.remove(data);
   }
-} 
+}

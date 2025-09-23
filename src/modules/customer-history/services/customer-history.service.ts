@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { CustomerHistory } from '../entities/customer-history.entity';
 import { CustomerHistoryRepository } from '../repositories/customer-history.repository';
-import { CreateCustomerHistoryDto, UpdateCustomerHistoryDto, CustomerHistoryResponseDto } from '../dto/create-customer-history.dto';
+import {
+  CreateCustomerHistoryDto,
+  UpdateCustomerHistoryDto,
+  CustomerHistoryResponseDto,
+} from '../dto/create-customer-history.dto';
 import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 
 export interface CustomerHistoryFilterOptions {
@@ -14,16 +18,27 @@ export interface CustomerHistoryFilterOptions {
 
 @Injectable()
 export class CustomerHistoryService extends BaseService<CustomerHistory> {
-  constructor(private readonly customerHistoryRepository: CustomerHistoryRepository) {
+  constructor(
+    private readonly customerHistoryRepository: CustomerHistoryRepository,
+  ) {
     super(customerHistoryRepository, CustomerHistory);
   }
 
-  async createCustomerHistory(createCustomerHistoryDto: CreateCustomerHistoryDto): Promise<CustomerHistoryResponseDto> {
+  async createCustomerHistory(
+    createCustomerHistoryDto: CreateCustomerHistoryDto,
+  ): Promise<CustomerHistoryResponseDto> {
     return this.create(createCustomerHistoryDto, CustomerHistoryResponseDto);
   }
 
-  async updateCustomerHistory(id: number, updateCustomerHistoryDto: UpdateCustomerHistoryDto): Promise<CustomerHistoryResponseDto> {
-    return this.update(updateCustomerHistoryDto, id, CustomerHistoryResponseDto);
+  async updateCustomerHistory(
+    id: number,
+    updateCustomerHistoryDto: UpdateCustomerHistoryDto,
+  ): Promise<CustomerHistoryResponseDto> {
+    return this.update(
+      updateCustomerHistoryDto,
+      id,
+      CustomerHistoryResponseDto,
+    );
   }
 
   async getCustomerHistoryById(id: number): Promise<CustomerHistory> {
@@ -34,14 +49,18 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
     return this.findAll();
   }
 
-  async getCustomerHistoryByCustomer(customerId: number): Promise<CustomerHistory[]> {
+  async getCustomerHistoryByCustomer(
+    customerId: number,
+  ): Promise<CustomerHistory[]> {
     return this.customerHistoryRepository.findAll({
       where: { customer: customerId },
       order: { createdAt: 'DESC' },
     });
   }
 
-  async getCustomerHistoryByDateRange(filters: CustomerHistoryFilterOptions): Promise<CustomerHistory[]> {
+  async getCustomerHistoryByDateRange(
+    filters: CustomerHistoryFilterOptions,
+  ): Promise<CustomerHistory[]> {
     const where: any = {};
 
     if (filters.customer) {
@@ -76,15 +95,22 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
     description?: string,
     requestData?: any,
     responseData?: any,
+    userId?: number,
+    relatedId?: number,
   ): Promise<CustomerHistory> {
     const historyData = {
       customer: customerId,
+      user: userId,
       action,
+      relatedId,
       description,
       requestData: requestData ? JSON.stringify(requestData) : null,
       responseData: responseData ? JSON.stringify(responseData) : null,
     };
 
-    return this.create(historyData as CreateCustomerHistoryDto, CustomerHistory);
+    return this.create(
+      historyData as CreateCustomerHistoryDto,
+      CustomerHistory,
+    );
   }
 }
