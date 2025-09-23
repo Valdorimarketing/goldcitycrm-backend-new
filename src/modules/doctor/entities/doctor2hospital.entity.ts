@@ -11,11 +11,11 @@ export class Doctor2Hospital extends CustomBaseEntity {
   @Column({ name: 'hospital' })
   hospitalId: number;
 
-  @ManyToOne(() => Doctor, (doctor) => doctor.hospitalRelations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Doctor, (doctor) => doctor.doctor2Hospitals)
   @JoinColumn({ name: 'doctor' })
   doctor: Doctor;
 
-  @ManyToOne(() => Hospital, (hospital) => hospital.doctorRelations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Hospital)
   @JoinColumn({ name: 'hospital' })
   hospital: Hospital;
 }

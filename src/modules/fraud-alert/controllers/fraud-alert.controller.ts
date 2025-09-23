@@ -20,7 +20,9 @@ export class FraudAlertController {
   constructor(private readonly fraudAlertService: FraudAlertService) {}
 
   @Post()
-  async create(@Body() createFraudAlertDto: CreateFraudAlertDto): Promise<FraudAlertResponseDto> {
+  async create(
+    @Body() createFraudAlertDto: CreateFraudAlertDto,
+  ): Promise<FraudAlertResponseDto> {
     return this.fraudAlertService.createFraudAlert(createFraudAlertDto);
   }
 
@@ -31,10 +33,14 @@ export class FraudAlertController {
     @Query('unchecked') unchecked?: string,
   ): Promise<FraudAlert[]> {
     if (unread === 'true') {
-      return this.fraudAlertService.getUnreadFraudAlerts(user ? +user : undefined);
+      return this.fraudAlertService.getUnreadFraudAlerts(
+        user ? +user : undefined,
+      );
     }
     if (unchecked === 'true') {
-      return this.fraudAlertService.getUncheckedFraudAlerts(user ? +user : undefined);
+      return this.fraudAlertService.getUncheckedFraudAlerts(
+        user ? +user : undefined,
+      );
     }
     if (user) {
       return this.fraudAlertService.getFraudAlertsByUser(+user);
@@ -43,14 +49,22 @@ export class FraudAlertController {
   }
 
   @Get('count/unread')
-  async getUnreadCount(@Query('user') user?: string): Promise<{ count: number }> {
-    const count = await this.fraudAlertService.getUnreadCount(user ? +user : undefined);
+  async getUnreadCount(
+    @Query('user') user?: string,
+  ): Promise<{ count: number }> {
+    const count = await this.fraudAlertService.getUnreadCount(
+      user ? +user : undefined,
+    );
     return { count };
   }
 
   @Get('count/unchecked')
-  async getUncheckedCount(@Query('user') user?: string): Promise<{ count: number }> {
-    const count = await this.fraudAlertService.getUncheckedCount(user ? +user : undefined);
+  async getUncheckedCount(
+    @Query('user') user?: string,
+  ): Promise<{ count: number }> {
+    const count = await this.fraudAlertService.getUncheckedCount(
+      user ? +user : undefined,
+    );
     return { count };
   }
 
@@ -78,13 +92,17 @@ export class FraudAlertController {
   }
 
   @Put('mark-all-read')
-  async markAllAsRead(@Query('user') user?: string): Promise<{ message: string }> {
+  async markAllAsRead(
+    @Query('user') user?: string,
+  ): Promise<{ message: string }> {
     await this.fraudAlertService.markAllAsRead(user ? +user : undefined);
     return { message: 'All fraud alerts marked as read' };
   }
 
   @Put('mark-all-checked')
-  async markAllAsChecked(@Query('user') user?: string): Promise<{ message: string }> {
+  async markAllAsChecked(
+    @Query('user') user?: string,
+  ): Promise<{ message: string }> {
     await this.fraudAlertService.markAllAsChecked(user ? +user : undefined);
     return { message: 'All fraud alerts marked as checked' };
   }

@@ -13,20 +13,22 @@ export class DoctorRepository extends BaseRepositoryAbstract<Doctor> {
     super(doctorRepository);
   }
 
-  public createQueryBuilder(alias?: string) {
-    return super.createQueryBuilder(alias);
-  }
-
   async findWithRelations(id: number): Promise<Doctor> {
     return this.doctorRepository.findOne({
       where: { id },
-      relations: ['branch', 'hospitalRelations', 'hospitalRelations.hospital', 'branchRelations', 'branchRelations.branch'],
+      relations: [
+        'branch',
+        'doctor2Branches',
+        'doctor2Branches.branch',
+        'doctor2Hospitals',
+        'doctor2Hospitals.hospital',
+      ],
     });
   }
 
   async findAllWithRelations(): Promise<Doctor[]> {
     return this.doctorRepository.find({
-      relations: ['branch', 'hospitalRelations', 'hospitalRelations.hospital', 'branchRelations', 'branchRelations.branch'],
+      relations: ['branch'],
     });
   }
 }

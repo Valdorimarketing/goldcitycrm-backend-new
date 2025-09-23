@@ -11,4 +11,4 @@ import { CityService } from './services/city.service';
   providers: [CityService, CityRepository],
   exports: [CityService, CityRepository],
 })
-export class CityModule {} 
+export class CityModule {}

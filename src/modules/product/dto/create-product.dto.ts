@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsNotEmpty, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 
 export class ActionListItemDto {
@@ -73,4 +80,4 @@ export class ProductResponseDto {
 
   @Expose()
   actionList: ActionListItemDto[];
-} 
+}

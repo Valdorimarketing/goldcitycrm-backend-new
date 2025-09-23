@@ -23,4 +23,4 @@ export class Product extends CustomBaseEntity {
   constructor(partial?: Partial<Product>) {
     super(partial);
   }
-} 
+}

@@ -11,4 +11,4 @@ export class Country extends CustomBaseEntity {
   constructor(partial?: Partial<Country>) {
     super(partial);
   }
-} 
+}

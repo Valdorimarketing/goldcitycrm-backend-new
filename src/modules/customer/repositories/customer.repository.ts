@@ -40,7 +40,10 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
   async findOneWithDynamicFields(id: number): Promise<Customer> {
     return this.getRepository().findOne({
       where: { id },
-      relations: ['dynamicFieldValues', 'dynamicFieldValues.customerDynamicFieldRelation'],
+      relations: [
+        'dynamicFieldValues',
+        'dynamicFieldValues.customerDynamicFieldRelation',
+      ],
     });
   }
-} 
+}

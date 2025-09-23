@@ -10,7 +10,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MeetingService } from '../services/meeting.service';
-import { CreateMeetingDto, UpdateMeetingDto, MeetingResponseDto } from '../dto/create-meeting.dto';
+import {
+  CreateMeetingDto,
+  UpdateMeetingDto,
+  MeetingResponseDto,
+} from '../dto/create-meeting.dto';
 import { Meeting } from '../entities/meeting.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUserId } from '../../../core/decorators/current-user.decorator';

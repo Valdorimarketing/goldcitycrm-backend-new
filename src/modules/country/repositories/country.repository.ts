@@ -19,4 +19,4 @@ export class CountryRepository extends BaseRepositoryAbstract<Country> {
       .where('country.name LIKE :name', { name: `%${name}%` })
       .getMany();
   }
-} 
+}

@@ -8,17 +8,20 @@ import { FraudAlertResponseDto } from '../dto/fraud-alert-response.dto';
 
 @Injectable()
 export class FraudAlertService extends BaseService<FraudAlert> {
-  constructor(
-    private readonly fraudAlertRepository: FraudAlertRepository,
-  ) {
+  constructor(private readonly fraudAlertRepository: FraudAlertRepository) {
     super(fraudAlertRepository, FraudAlert);
   }
 
-  async createFraudAlert(createFraudAlertDto: CreateFraudAlertDto): Promise<FraudAlertResponseDto> {
+  async createFraudAlert(
+    createFraudAlertDto: CreateFraudAlertDto,
+  ): Promise<FraudAlertResponseDto> {
     return this.create(createFraudAlertDto, FraudAlertResponseDto);
   }
 
-  async updateFraudAlert(id: number, updateFraudAlertDto: UpdateFraudAlertDto): Promise<FraudAlertResponseDto> {
+  async updateFraudAlert(
+    id: number,
+    updateFraudAlertDto: UpdateFraudAlertDto,
+  ): Promise<FraudAlertResponseDto> {
     return this.update(updateFraudAlertDto, id, FraudAlertResponseDto);
   }
 

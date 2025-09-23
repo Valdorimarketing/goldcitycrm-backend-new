@@ -9,11 +9,13 @@ export class CustomerDynamicFieldValueRepository extends BaseRepositoryAbstract<
     super(dataSource.getRepository(CustomerDynamicFieldValue));
   }
 
-  async findByCustomerId(customerId: number): Promise<CustomerDynamicFieldValue[]> {
+  async findByCustomerId(
+    customerId: number,
+  ): Promise<CustomerDynamicFieldValue[]> {
     return this.getRepository().find({
       where: { customer: customerId },
       relations: ['customerDynamicFieldRelation'],
-      order: { order: 'ASC' }
+      order: { order: 'ASC' },
     });
   }
 
@@ -21,4 +23,3 @@ export class CustomerDynamicFieldValueRepository extends BaseRepositoryAbstract<
     await this.getRepository().delete({ customer: customerId });
   }
 }
-

@@ -20,7 +20,10 @@ export class ProductRepository extends BaseRepositoryAbstract<Product> {
       .getMany();
   }
 
-  async findByPriceRange(minPrice: number, maxPrice: number): Promise<Product[]> {
+  async findByPriceRange(
+    minPrice: number,
+    maxPrice: number,
+  ): Promise<Product[]> {
     return this.getRepository()
       .createQueryBuilder('product')
       .where('product.price >= :minPrice AND product.price <= :maxPrice', {
@@ -29,4 +32,4 @@ export class ProductRepository extends BaseRepositoryAbstract<Product> {
       })
       .getMany();
   }
-} 
+}

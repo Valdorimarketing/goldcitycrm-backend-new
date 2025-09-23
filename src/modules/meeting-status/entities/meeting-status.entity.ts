@@ -11,4 +11,4 @@ export class MeetingStatus extends CustomBaseEntity {
   constructor(partial?: Partial<MeetingStatus>) {
     super(partial);
   }
-} 
+}

@@ -26,4 +26,4 @@ export class RoleResponseDto {
 
   @Expose()
   updatesAt: Date;
-} 
+}

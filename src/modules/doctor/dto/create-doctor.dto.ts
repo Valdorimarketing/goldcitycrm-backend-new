@@ -1,29 +1,35 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  MaxLength,
+  IsArray,
+} from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 
 export class CreateDoctorDto {
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   @Expose()
   name: string;
 
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   @Type(() => Number)
   @Expose()
   branchId?: number;
 
-  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
-  @Type(() => Number)
-  @Expose()
-  hospitalIds?: number[];
-
   @IsOptional()
-  @IsArray()
-  @IsNumber({}, { each: true })
-  @Type(() => Number)
   @Expose()
   branchIds?: number[];
+
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @IsOptional()
+  @Expose()
+  hospitalIds?: number[];
 }

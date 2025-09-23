@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-      it('should return "Valdori CRM API"', () => {
-    expect(appController.getHello()).toBe('Valdori CRM API');
+    it('should return "Valdori CRM API"', () => {
+      expect(appController.getHello()).toBe('Valdori CRM API');
     });
   });
 });

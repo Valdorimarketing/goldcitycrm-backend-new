@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { State } from '../entities/state.entity';
 import { StateRepository } from '../repositories/state.repository';
-import { CreateStateDto, UpdateStateDto, StateResponseDto } from '../dto/create-state.dto';
+import {
+  CreateStateDto,
+  UpdateStateDto,
+  StateResponseDto,
+} from '../dto/create-state.dto';
 
 @Injectable()
 export class StateService extends BaseService<State> {
@@ -14,7 +18,10 @@ export class StateService extends BaseService<State> {
     return this.create(createStateDto, StateResponseDto);
   }
 
-  async updateState(id: number, updateStateDto: UpdateStateDto): Promise<StateResponseDto> {
+  async updateState(
+    id: number,
+    updateStateDto: UpdateStateDto,
+  ): Promise<StateResponseDto> {
     return this.update(updateStateDto, id, StateResponseDto);
   }
 
@@ -37,4 +44,4 @@ export class StateService extends BaseService<State> {
   async deleteState(id: number): Promise<State> {
     return this.remove(id);
   }
-} 
+}

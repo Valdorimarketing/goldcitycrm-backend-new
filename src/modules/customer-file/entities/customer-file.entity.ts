@@ -19,4 +19,4 @@ export class CustomerFile extends CustomBaseEntity {
   constructor(partial?: Partial<CustomerFile>) {
     super(partial);
   }
-} 
+}

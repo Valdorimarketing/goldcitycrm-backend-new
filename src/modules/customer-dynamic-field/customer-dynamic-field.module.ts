@@ -12,4 +12,3 @@ import { CustomerDynamicField } from './entities/customer-dynamic-field.entity';
   exports: [CustomerDynamicFieldService],
 })
 export class CustomerDynamicFieldModule {}
-

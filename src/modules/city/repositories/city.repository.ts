@@ -33,4 +33,4 @@ export class CityRepository extends BaseRepositoryAbstract<City> {
       .where('state.country = :countryId', { countryId })
       .getMany();
   }
-} 
+}

@@ -11,7 +11,9 @@ export class ActionListService extends BaseService<ActionList> {
     super(actionListRepository, ActionList);
   }
 
-  async createActionList(createActionListDto: CreateActionListDto): Promise<ActionList> {
+  async createActionList(
+    createActionListDto: CreateActionListDto,
+  ): Promise<ActionList> {
     const actionList = this.actionListRepository.create({
       ...createActionListDto,
       user: { id: createActionListDto.user } as any,
@@ -20,13 +22,16 @@ export class ActionListService extends BaseService<ActionList> {
     return await this.actionListRepository.save(actionList);
   }
 
-  async updateActionList(id: number, updateActionListDto: UpdateActionListDto): Promise<ActionList> {
+  async updateActionList(
+    id: number,
+    updateActionListDto: UpdateActionListDto,
+  ): Promise<ActionList> {
     const updateData: any = { ...updateActionListDto };
-    
+
     if (updateActionListDto.user) {
       updateData.user = { id: updateActionListDto.user };
     }
-    
+
     if (updateActionListDto.product) {
       updateData.product = { id: updateActionListDto.product };
     }

@@ -15,4 +15,4 @@ export class Language extends CustomBaseEntity {
   constructor(partial?: Partial<Language>) {
     super(partial);
   }
-} 
+}

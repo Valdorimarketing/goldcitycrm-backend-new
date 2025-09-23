@@ -1,14 +1,34 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  IsArray,
+  IsNumber,
+} from 'class-validator';
 import { Expose } from 'class-transformer';
 
 export class CreateBranchDto {
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   @Expose()
   name: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  @Expose()
+  code: string;
+
+  @IsString()
+  @IsOptional()
   @Expose()
   description?: string;
+
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @IsOptional()
+  @Expose()
+  hospitalIds?: number[];
 }

@@ -8,17 +8,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'valdori-crm-super-secret-key-2024',
+      secretOrKey:
+        process.env.JWT_SECRET || 'valdori-crm-super-secret-key-2024',
     });
   }
 
   async validate(payload: any) {
     // JWT payload'dan user bilgilerini döndür
     // Bu bilgiler request.user'a atanacak
-    return { 
+    return {
       id: payload.sub, // subject (user id)
       email: payload.email,
-      name: payload.name 
+      name: payload.name,
     };
   }
 }

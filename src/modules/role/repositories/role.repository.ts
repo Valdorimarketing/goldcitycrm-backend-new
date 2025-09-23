@@ -18,4 +18,4 @@ export class RoleRepository extends BaseRepositoryAbstract<Role> {
       where: { name },
     });
   }
-} 
+}

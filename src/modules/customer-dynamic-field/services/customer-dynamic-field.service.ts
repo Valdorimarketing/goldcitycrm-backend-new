@@ -7,7 +7,9 @@ import { UpdateCustomerDynamicFieldDto } from '../dto/update-customer-dynamic-fi
 
 @Injectable()
 export class CustomerDynamicFieldService extends BaseService<CustomerDynamicField> {
-  constructor(private customerDynamicFieldRepository: CustomerDynamicFieldRepository) {
+  constructor(
+    private customerDynamicFieldRepository: CustomerDynamicFieldRepository,
+  ) {
     super(customerDynamicFieldRepository, CustomerDynamicField);
   }
 }

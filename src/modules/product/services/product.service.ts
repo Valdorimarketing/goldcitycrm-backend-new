@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Product } from '../entities/product.entity';
 import { ProductRepository } from '../repositories/product.repository';
-import { CreateProductDto, UpdateProductDto, ProductResponseDto } from '../dto/create-product.dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  ProductResponseDto,
+} from '../dto/create-product.dto';
 
 @Injectable()
 export class ProductService extends BaseService<Product> {
@@ -10,11 +14,16 @@ export class ProductService extends BaseService<Product> {
     super(productRepository, Product);
   }
 
-  async createProduct(createProductDto: CreateProductDto): Promise<ProductResponseDto> {
+  async createProduct(
+    createProductDto: CreateProductDto,
+  ): Promise<ProductResponseDto> {
     return this.create(createProductDto, ProductResponseDto);
   }
 
-  async updateProduct(id: number, updateProductDto: UpdateProductDto): Promise<ProductResponseDto> {
+  async updateProduct(
+    id: number,
+    updateProductDto: UpdateProductDto,
+  ): Promise<ProductResponseDto> {
     return this.update(updateProductDto, id, ProductResponseDto);
   }
 
@@ -30,11 +39,14 @@ export class ProductService extends BaseService<Product> {
     return this.productRepository.findByName(name);
   }
 
-  async getProductsByPriceRange(minPrice: number, maxPrice: number): Promise<Product[]> {
+  async getProductsByPriceRange(
+    minPrice: number,
+    maxPrice: number,
+  ): Promise<Product[]> {
     return this.productRepository.findByPriceRange(minPrice, maxPrice);
   }
 
   async deleteProduct(id: number): Promise<Product> {
     return this.remove(id);
   }
-} 
+}
