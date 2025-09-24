@@ -24,3 +24,6 @@ logs:
 exec:
 	docker exec -it valdoricrmapi sh
 
+
+	
+
