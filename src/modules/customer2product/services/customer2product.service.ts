@@ -152,7 +152,9 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
   }
 
   @LogMethod()
-  async findByFilters(options: BaseQueryFilterDto & { customer?: number }): Promise<Customer2Product[]> {
+  async findByFilters(
+    options: BaseQueryFilterDto & { customer?: number },
+  ): Promise<Customer2Product[]> {
     // If customer filter is present, use the optimized findByCustomer method
     if (options.customer) {
       return await this.findByCustomer(+options.customer);
@@ -175,13 +177,10 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
 
     // Apply date filters if present
     if (options.startDate && options.endDate) {
-      queryBuilder.andWhere(
-        'cp.createdAt BETWEEN :startDate AND :endDate',
-        {
-          startDate: new Date(options.startDate),
-          endDate: new Date(options.endDate),
-        },
-      );
+      queryBuilder.andWhere('cp.createdAt BETWEEN :startDate AND :endDate', {
+        startDate: new Date(options.startDate),
+        endDate: new Date(options.endDate),
+      });
     }
 
     // Apply ordering if present

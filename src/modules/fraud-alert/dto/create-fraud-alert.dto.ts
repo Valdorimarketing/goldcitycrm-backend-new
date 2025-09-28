@@ -6,7 +6,7 @@ export class CreateFraudAlertDto {
   @IsNumber()
   @Type(() => Number)
   @Expose()
-  user?: number;
+  userId?: number;
 
   @IsOptional()
   @IsString()

@@ -1,11 +1,26 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+
+export class UserInfo {
+  @Expose()
+  id: number;
+
+  @Expose()
+  name: string;
+
+  @Expose()
+  email: string;
+}
 
 export class FraudAlertResponseDto {
   @Expose()
   id: number;
 
   @Expose()
-  user: number;
+  userId: number;
+
+  @Expose()
+  @Type(() => UserInfo)
+  user: UserInfo;
 
   @Expose()
   message: string;

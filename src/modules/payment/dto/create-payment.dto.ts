@@ -6,7 +6,7 @@ export class CreatePaymentDto {
   @IsNumber()
   @Type(() => Number)
   @Expose()
-  sales: number;
+  customerId: number;
 
   @IsNotEmpty()
   @IsNumber()
@@ -37,7 +37,7 @@ export class UpdatePaymentDto {
   @IsNumber()
   @Type(() => Number)
   @Expose()
-  sales?: number;
+  customerId?: number;
 
   @IsOptional()
   @IsNumber()
@@ -68,7 +68,10 @@ export class PaymentResponseDto {
   id: number;
 
   @Expose()
-  sales: number;
+  customerId: number;
+
+  @Expose()
+  customer?: any;
 
   @Expose()
   payType: number;
