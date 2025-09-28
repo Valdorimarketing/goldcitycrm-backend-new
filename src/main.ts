@@ -43,7 +43,14 @@ async function bootstrap() {
 
   // CORS ayarları
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:8092',
+      'http://crmdev.valdori.com',
+      'https://crmdev.valdori.com',
+      'http://crmdevapi.valdori.com',
+      'https://crmdevapi.valdori.com',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [

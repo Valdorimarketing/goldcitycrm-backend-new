@@ -33,9 +33,9 @@ export class PaymentController {
   }
 
   @Get()
-  async findAll(@Query('sales') sales?: string): Promise<Payment[]> {
-    if (sales) {
-      return this.paymentService.getPaymentsBySales(+sales);
+  async findAll(@Query('customerId') customerId?: string): Promise<Payment[]> {
+    if (customerId) {
+      return this.paymentService.getPaymentsByCustomer(+customerId);
     }
     return this.paymentService.getAllPayments();
   }

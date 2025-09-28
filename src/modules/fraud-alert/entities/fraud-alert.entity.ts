@@ -1,12 +1,18 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
+import { User } from '../../user/entities/user.entity';
 
 @Entity('fraud_alert')
 export class FraudAlert extends CustomBaseEntity {
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true, name: 'user_id' })
   @Expose()
-  user: number;
+  userId: number;
+
+  @ManyToOne(() => User, { eager: true })
+  @JoinColumn({ name: 'user_id' })
+  @Expose()
+  user: User;
 
   @Column({ type: 'text', nullable: true })
   @Expose()

@@ -111,7 +111,7 @@ export class CustomerService extends BaseService<Customer> {
       if (uniqueCustomerChanges >= 3) {
         // Create fraud alert
         await this.fraudAlertService.createFraudAlert({
-          user: updateCustomerDto.user,
+          userId: updateCustomerDto.user,
           message: `Kullanıcı ${updateCustomerDto.user} son 5 dakika içinde ${uniqueCustomerChanges} farklı müşterinin durumunu ${updateCustomerDto.status} olarak değiştirdi. Olası anormal aktivite tespit edildi.`,
           isRead: false,
           isChecked: false,

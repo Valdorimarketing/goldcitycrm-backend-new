@@ -9,14 +9,12 @@ import {
 } from '../dto/create-payment.dto';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
-import { SalesService } from '../../sales/services/sales.service';
 
 @Injectable()
 export class PaymentService extends BaseService<Payment> {
   constructor(
     private readonly paymentRepository: PaymentRepository,
     private readonly customerHistoryService: CustomerHistoryService,
-    private readonly salesService: SalesService,
   ) {
     super(paymentRepository, Payment);
   }
@@ -27,13 +25,10 @@ export class PaymentService extends BaseService<Payment> {
   ): Promise<PaymentResponseDto> {
     const payment = await this.create(createPaymentDto, PaymentResponseDto);
 
-    // Get sales info to find customer
-    const sales = await this.salesService.getSalesById(createPaymentDto.sales);
-
-    if (sales && sales.customer) {
-      // Log to customer history
+    // Log to customer history if customer is provided
+    if (createPaymentDto.customerId) {
       await this.customerHistoryService.logCustomerAction(
-        sales.customer,
+        createPaymentDto.customerId,
         CustomerHistoryAction.PAYMENT_CREATED,
         `Payment recorded: Amount ${createPaymentDto.amount} - ${createPaymentDto.description || ''}`,
         createPaymentDto,
@@ -61,9 +56,9 @@ export class PaymentService extends BaseService<Payment> {
     return this.findAll();
   }
 
-  async getPaymentsBySales(salesId: number): Promise<Payment[]> {
+  async getPaymentsByCustomer(customerId: number): Promise<Payment[]> {
     return this.paymentRepository.findAll({
-      where: { sales: salesId },
+      where: { customerId: customerId },
       order: { createdAt: 'DESC' },
     });
   }
