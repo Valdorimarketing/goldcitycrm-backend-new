@@ -15,7 +15,8 @@ export class FraudAlertRepository extends BaseRepositoryAbstract<FraudAlert> {
 
   async findByUser(userId: number): Promise<FraudAlert[]> {
     return this.getRepository().find({
-      where: { user: userId },
+      where: { userId: userId },
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -23,10 +24,11 @@ export class FraudAlertRepository extends BaseRepositoryAbstract<FraudAlert> {
   async findUnread(userId?: number): Promise<FraudAlert[]> {
     const where: any = { isRead: false };
     if (userId) {
-      where.user = userId;
+      where.userId = userId;
     }
     return this.getRepository().find({
       where,
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -34,12 +36,31 @@ export class FraudAlertRepository extends BaseRepositoryAbstract<FraudAlert> {
   async findUnchecked(userId?: number): Promise<FraudAlert[]> {
     const where: any = { isChecked: false };
     if (userId) {
-      where.user = userId;
+      where.userId = userId;
     }
     return this.getRepository().find({
       where,
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findAll(): Promise<FraudAlert[]> {
+    return this.getRepository().find({
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findOneById(id: number): Promise<FraudAlert> {
+    const entity = await this.getRepository().findOne({
+      where: { id } as any,
+      relations: ['user'],
+    });
+    if (!entity) {
+      throw new Error(`${this.entityName} not found`);
+    }
+    return entity;
   }
 
   async markAsRead(id: number): Promise<FraudAlert> {
@@ -55,7 +76,7 @@ export class FraudAlertRepository extends BaseRepositoryAbstract<FraudAlert> {
   async markAllAsRead(userId?: number): Promise<void> {
     const where: any = { isRead: false };
     if (userId) {
-      where.user = userId;
+      where.userId = userId;
     }
     await this.getRepository().update(where, { isRead: true });
   }
@@ -63,7 +84,7 @@ export class FraudAlertRepository extends BaseRepositoryAbstract<FraudAlert> {
   async markAllAsChecked(userId?: number): Promise<void> {
     const where: any = { isChecked: false };
     if (userId) {
-      where.user = userId;
+      where.userId = userId;
     }
     await this.getRepository().update(where, { isChecked: true });
   }

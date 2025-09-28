@@ -34,7 +34,7 @@ export class FraudAlertService extends BaseService<FraudAlert> {
   }
 
   async getAllFraudAlerts(): Promise<FraudAlert[]> {
-    return this.findAll();
+    return this.fraudAlertRepository.findAll();
   }
 
   async getFraudAlertsByUser(userId: number): Promise<FraudAlert[]> {

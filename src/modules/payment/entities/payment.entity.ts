@@ -1,12 +1,18 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
+import { Customer } from '../../customer/entities/customer.entity';
 
 @Entity('payment')
 export class Payment extends CustomBaseEntity {
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true, name: 'customer_id' })
   @Expose()
-  sales: number;
+  customerId: number;
+
+  @ManyToOne(() => Customer)
+  @JoinColumn({ name: 'customer_id' })
+  @Expose()
+  customer: Customer;
 
   @Column({ type: 'int', name: 'pay_type' })
   @Expose()
