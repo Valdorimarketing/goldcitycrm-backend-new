@@ -30,7 +30,7 @@ export class MeetingService extends BaseService<Meeting> {
       await this.customerHistoryService.logCustomerAction(
         createMeetingDto.customer,
         CustomerHistoryAction.MEETING_CREATED,
-        `Meeting scheduled: ${createMeetingDto.description || 'New Meeting'}`,
+        `Toplantı planlandı: ${createMeetingDto.description || 'Yeni Toplantı'}`,
         createMeetingDto,
         null,
         createMeetingDto.user,
@@ -69,7 +69,7 @@ export class MeetingService extends BaseService<Meeting> {
       await this.customerHistoryService.logCustomerAction(
         currentMeeting.customer,
         CustomerHistoryAction.MEETING_STATUS_CHANGE,
-        `Meeting status changed from ${oldStatus || 'None'} to ${updateMeetingDto.meetingStatus}`,
+        `Toplantı durumu ${oldStatus || 'Yok'}'dan ${updateMeetingDto.meetingStatus}'e değiştirildi`,
         { oldStatus, newStatus: updateMeetingDto.meetingStatus },
         null,
         updateMeetingDto.user,

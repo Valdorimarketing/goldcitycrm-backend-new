@@ -44,7 +44,7 @@ export class SalesService extends BaseService<Sales> {
       await this.customerHistoryService.logCustomerAction(
         createSalesDto.customer,
         CustomerHistoryAction.SALE_CREATED,
-        `Sale created: ${createSalesDto.title || 'New Sale'} - ${createSalesDto.description || ''}`,
+        `Satış oluşturuldu: ${createSalesDto.title || 'Yeni Satış'} - ${createSalesDto.description || ''}`,
         createSalesDto,
         null,
         userId || createSalesDto.user,

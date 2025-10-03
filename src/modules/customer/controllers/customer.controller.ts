@@ -8,7 +8,10 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CustomerService } from '../services/customer.service';
 import {
   CreateCustomerDto,
@@ -25,6 +28,8 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('customers')
@@ -35,6 +40,8 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Post()
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Create a new customer' })
   @ApiResponse({
     status: 201,
@@ -44,7 +51,11 @@ export class CustomerController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   async create(
     @Body() createCustomerDto: CreateCustomerDto,
+    @UploadedFile() file?: Express.Multer.File,
   ): Promise<CustomerResponseDto> {
+    if (file) {
+      createCustomerDto.image = file.path;
+    }
     return this.customerService.createCustomer(createCustomerDto);
   }
 
@@ -94,16 +105,23 @@ export class CustomerController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
   async update(
     @Param('id') id: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
     @CurrentUserId() userId: number,
+    @UploadedFile() file?: Express.Multer.File,
   ): Promise<CustomerResponseDto> {
     // User ID'yi DTO'ya ekle
     const dtoWithUser = {
       ...updateCustomerDto,
       user: userId,
     };
+
+    if (file) {
+      dtoWithUser.image = file.path;
+    }
 
     return this.customerService.updateCustomer(+id, dtoWithUser);
   }
