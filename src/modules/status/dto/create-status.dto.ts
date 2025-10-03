@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsNumber } from 'class-validator';
 import { Expose } from 'class-transformer';
 
 export class CreateStatusDto {
@@ -11,6 +11,26 @@ export class CreateStatusDto {
   @IsString()
   @Expose()
   description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Expose()
+  isRemindable?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  remindingDay?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Expose()
+  isDoctor?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @Expose()
+  isPricing?: boolean;
 
   @IsOptional()
   @IsString()

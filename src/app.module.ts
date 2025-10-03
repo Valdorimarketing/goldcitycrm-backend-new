@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
+import { UserGroupModule } from './modules/user-group/user-group.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { RoleModule } from './modules/role/role.module';
 import { SalesModule } from './modules/sales/sales.module';
@@ -47,6 +48,7 @@ import { Customer2ProductModule } from './modules/customer2product/customer2prod
     }),
     AuthModule,
     UserModule,
+    UserGroupModule,
     CustomerModule,
     RoleModule,
     SalesModule,

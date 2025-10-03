@@ -32,7 +32,7 @@ export class CustomerFileService extends BaseService<CustomerFile> {
     await this.customerHistoryService.logCustomerAction(
       createCustomerFileDto.customer,
       CustomerHistoryAction.FILE_ADDED,
-      `File uploaded: ${createCustomerFileDto.file} - ${createCustomerFileDto.description || ''}`,
+      `Dosya yüklendi: ${createCustomerFileDto.file} - ${createCustomerFileDto.description || ''}`,
       createCustomerFileDto,
       null,
       userId,

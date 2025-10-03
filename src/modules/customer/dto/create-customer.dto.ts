@@ -140,6 +140,21 @@ export class CreateCustomerDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  @Expose()
+  image?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
+  relatedTransaction?: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  @Expose()
+  remindingDate?: Date;
+
+  @IsOptional()
   @Expose()
   dynamicFields?: any[];
 }
@@ -221,6 +236,15 @@ export class CustomerResponseDto {
 
   @Expose()
   description: string;
+
+  @Expose()
+  image: string;
+
+  @Expose()
+  relatedTransaction: string;
+
+  @Expose()
+  remindingDate: Date;
 
   @Expose()
   createdAt: Date;

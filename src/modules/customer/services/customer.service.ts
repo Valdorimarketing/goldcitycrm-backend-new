@@ -13,6 +13,7 @@ import { CustomerStatusChangeRepository } from '../../customer-status-change/rep
 import { FraudAlertService } from '../../fraud-alert/services/fraud-alert.service';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
+import { StatusRepository } from '../../status/repositories/status.repository';
 
 @Injectable()
 export class CustomerService extends BaseService<Customer> {
@@ -22,6 +23,7 @@ export class CustomerService extends BaseService<Customer> {
     private readonly customerStatusChangeRepository: CustomerStatusChangeRepository,
     private readonly fraudAlertService: FraudAlertService,
     private readonly customerHistoryService: CustomerHistoryService,
+    private readonly statusRepository: StatusRepository,
   ) {
     super(customerRepository, Customer);
   }
@@ -63,10 +65,38 @@ export class CustomerService extends BaseService<Customer> {
     const currentCustomer = await this.findOneById(id);
     const oldStatus = currentCustomer?.status;
 
+    // Handle reminding_date based on status
+    if (updateCustomerDto.status) {
+      const status = await this.statusRepository.findOneById(
+        updateCustomerDto.status,
+      );
+
+      if (status?.isRemindable && status.remindingDay) {
+        // Calculate reminding date by adding reminding_day to today
+        const today = new Date();
+        const remindingDate = new Date(today);
+        remindingDate.setDate(today.getDate() + status.remindingDay);
+        updateCustomerDto.remindingDate = remindingDate;
+      } else {
+        // If status is not remindable, set reminding_date to null
+        updateCustomerDto.remindingDate = null;
+      }
+    }
+
     const customer = await this.update(
       updateCustomerDto,
       id,
       CustomerResponseDto,
+    );
+
+    // Log customer update to history
+    await this.customerHistoryService.logCustomerAction(
+      id,
+      CustomerHistoryAction.CUSTOMER_UPDATED,
+      'Müşteri bilgileri güncellendi',
+      updateCustomerDto,
+      customer,
+      updateCustomerDto.user,
     );
 
     // Check for status change and fraud detection
@@ -87,7 +117,7 @@ export class CustomerService extends BaseService<Customer> {
       await this.customerHistoryService.logCustomerAction(
         id,
         CustomerHistoryAction.STATUS_CHANGE,
-        `Status changed from ${oldStatus || 0} to ${updateCustomerDto.status}`,
+        `Durum ${oldStatus || 0}'dan ${updateCustomerDto.status}'e değiştirildi`,
         { oldStatus: oldStatus || 0, newStatus: updateCustomerDto.status },
         null,
         updateCustomerDto.user,

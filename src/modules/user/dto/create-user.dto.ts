@@ -4,6 +4,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsBoolean,
+  IsNumber,
   MinLength,
 } from 'class-validator';
 import { Expose } from 'class-transformer';
@@ -34,6 +35,11 @@ export class CreateUserDto {
   @IsBoolean()
   @Expose()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  userGroupId?: number;
 }
 
 export class UpdateUserDto {
@@ -62,6 +68,11 @@ export class UpdateUserDto {
   @IsBoolean()
   @Expose()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  userGroupId?: number;
 }
 
 export class UserResponseDto {
@@ -79,6 +90,9 @@ export class UserResponseDto {
 
   @Expose()
   isActive: boolean;
+
+  @Expose()
+  userGroupId: number;
 
   @Expose()
   createdAt: Date;
