@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import 'multer';
 import { extname } from 'path';
 import { CustomerFileService } from '../services/customer-file.service';
 import {
@@ -49,7 +50,7 @@ export class CustomerFileController {
     }),
   )
   async create(
-    @UploadedFile() file: any,
+    @UploadedFile() file: Express.Multer.File,
     @Body('customer') customer: string,
     @Body('description') description?: string,
     @CurrentUserId() userId?: number,
