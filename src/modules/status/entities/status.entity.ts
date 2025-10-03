@@ -16,6 +16,10 @@ export class Status extends CustomBaseEntity {
   @Expose()
   isRemindable: boolean;
 
+  @Column({ type: 'int', nullable: true, name: 'reminding_day' })
+  @Expose()
+  remindingDay: number;
+
   @Column({ type: 'boolean', default: false, name: 'is_first' })
   @Expose()
   isFirst: boolean;
@@ -27,6 +31,14 @@ export class Status extends CustomBaseEntity {
   @Column({ type: 'boolean', default: false, name: 'is_sale' })
   @Expose()
   isSale: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'is_doctor' })
+  @Expose()
+  isDoctor: boolean;
+
+  @Column({ type: 'boolean', default: false, name: 'is_pricing' })
+  @Expose()
+  isPricing: boolean;
 
   @Column({ type: 'varchar', length: 7, nullable: true })
   @Expose()

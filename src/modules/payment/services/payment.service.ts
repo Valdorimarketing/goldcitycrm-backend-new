@@ -30,7 +30,7 @@ export class PaymentService extends BaseService<Payment> {
       await this.customerHistoryService.logCustomerAction(
         createPaymentDto.customerId,
         CustomerHistoryAction.PAYMENT_CREATED,
-        `Payment recorded: Amount ${createPaymentDto.amount} - ${createPaymentDto.description || ''}`,
+        `Ödeme kaydedildi: Tutar ${createPaymentDto.amount} - ${createPaymentDto.description || ''}`,
         createPaymentDto,
         null,
         userId,

@@ -10,6 +10,7 @@ export enum CustomerHistoryAction {
   FILE_ADDED = 'FILE_ADDED',
   MEETING_STATUS_CHANGE = 'MEETING_STATUS_CHANGE',
   PAYMENT_CREATED = 'PAYMENT_CREATED',
+  CUSTOMER_UPDATED = 'CUSTOMER_UPDATED',
 }
 
 @Entity('customer_history')

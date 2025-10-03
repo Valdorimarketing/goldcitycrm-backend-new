@@ -1,6 +1,7 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
+import { UserGroup } from '../../user-group/entities/user-group.entity';
 
 @Entity('user')
 export class User extends CustomBaseEntity {
@@ -22,6 +23,15 @@ export class User extends CustomBaseEntity {
   @Column({ type: 'boolean', default: true })
   @Expose()
   isActive: boolean;
+
+  @Column({ type: 'int', nullable: true })
+  @Expose()
+  userGroupId: number;
+
+  @ManyToOne(() => UserGroup, (userGroup) => userGroup.users)
+  @JoinColumn({ name: 'userGroupId' })
+  @Expose()
+  userGroup: UserGroup;
 
   constructor(partial?: Partial<User>) {
     super(partial);

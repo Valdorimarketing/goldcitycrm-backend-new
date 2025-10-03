@@ -103,6 +103,18 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   description: string;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Expose()
+  image: string;
+
+  @Column({ type: 'text', nullable: true, name: 'related_transaction' })
+  @Expose()
+  relatedTransaction: string;
+
+  @Column({ type: 'datetime', nullable: true, name: 'reminding_date' })
+  @Expose()
+  remindingDate: Date;
+
   @OneToMany(
     () => CustomerDynamicFieldValue,
     (dynamicFieldValue) => dynamicFieldValue.customerRelation,
