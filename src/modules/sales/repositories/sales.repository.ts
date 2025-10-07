@@ -30,4 +30,21 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       where: { responsibleUser: userId },
     });
   }
+
+  async findSalesWithoutAppointment(): Promise<Sales[]> {
+    return this.getRepository()
+      .createQueryBuilder('sales')
+      .where((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('1')
+          .from('meeting', 'meeting')
+          .where('meeting.customer = sales.customer')
+          .getQuery();
+        return `NOT EXISTS ${subQuery}`;
+      })
+      .andWhere('sales.customer IS NOT NULL')
+      .orderBy('sales.createdAt', 'DESC')
+      .getMany();
+  }
 }
