@@ -39,6 +39,28 @@ export class Customer2ProductRepository extends BaseRepositoryAbstract<Customer2
       .getMany();
   }
 
+  async findUnsoldByCustomer(customerId: number): Promise<Customer2Product[]> {
+    return this.createQueryBuilder('cp')
+      .leftJoinAndSelect('cp.product', 'product')
+      .leftJoinAndSelect('cp.customer', 'customer')
+      .where('cp.customer = :customerId', { customerId })
+      .andWhere('cp.is_sold = :isSold', { isSold: false })
+      .getMany();
+  }
+
+  async findByIdsAndCustomer(
+    ids: number[],
+    customerId: number,
+  ): Promise<Customer2Product[]> {
+    return this.createQueryBuilder('cp')
+      .leftJoinAndSelect('cp.product', 'product')
+      .leftJoinAndSelect('cp.customer', 'customer')
+      .whereInIds(ids)
+      .andWhere('cp.customer = :customerId', { customerId })
+      .andWhere('cp.is_sold = :isSold', { isSold: false })
+      .getMany();
+  }
+
   async findByProduct(productId: number): Promise<Customer2Product[]> {
     return this.createQueryBuilder('cp')
       .leftJoinAndSelect('cp.product', 'product')

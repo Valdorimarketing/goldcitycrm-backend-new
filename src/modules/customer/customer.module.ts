@@ -14,10 +14,17 @@ import { FraudAlertModule } from '../fraud-alert/fraud-alert.module';
 import { CustomerHistoryModule } from '../customer-history/customer-history.module';
 import { Status } from '../status/entities/status.entity';
 import { StatusRepository } from '../status/repositories/status.repository';
+import { Customer2Product } from '../customer2product/entities/customer2product.entity';
+import { Customer2ProductRepository } from '../customer2product/repositories/customer2product.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Customer, CustomerStatusChange, Status]),
+    TypeOrmModule.forFeature([
+      Customer,
+      CustomerStatusChange,
+      Status,
+      Customer2Product,
+    ]),
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads/customers',
@@ -40,6 +47,7 @@ import { StatusRepository } from '../status/repositories/status.repository';
     CustomerRepository,
     CustomerStatusChangeRepository,
     StatusRepository,
+    Customer2ProductRepository,
   ],
   exports: [CustomerService, CustomerRepository],
 })

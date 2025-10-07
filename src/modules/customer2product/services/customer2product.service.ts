@@ -1,15 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Customer2Product } from '../entities/customer2product.entity';
 import { Customer2ProductRepository } from '../repositories/customer2product.repository';
 import { BaseService } from '../../../core/base/services/base.service';
 import { CreateCustomer2ProductDto } from '../dto/create-customer2product.dto';
 import { UpdateCustomer2ProductDto } from '../dto/update-customer2product.dto';
 import { BulkCreateCustomer2ProductDto } from '../dto/bulk-create-customer2product.dto';
+import { ConvertToSaleDto } from '../dto/convert-to-sale.dto';
 import { CustomerService } from '../../customer/services/customer.service';
 import { CustomerRepository } from '../../customer/repositories/customer.repository';
 import { ProductService } from '../../product/services/product.service';
 import { LogMethod } from '../../../core/decorators/log.decorator';
 import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
+import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
+import { Sales } from '../../sales/entities/sales.entity';
+import { SalesProduct } from '../../sales-product/entities/sales-product.entity';
 
 @Injectable()
 export class Customer2ProductService extends BaseService<Customer2Product> {
@@ -18,6 +25,11 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
     private readonly customerService: CustomerService,
     private readonly customerRepository: CustomerRepository,
     private readonly productService: ProductService,
+    private readonly customerHistoryService: CustomerHistoryService,
+    @InjectRepository(Sales)
+    private readonly salesRepository: Repository<Sales>,
+    @InjectRepository(SalesProduct)
+    private readonly salesProductRepository: Repository<SalesProduct>,
   ) {
     super(customer2ProductRepository, Customer2Product);
   }
@@ -53,7 +65,20 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
       offer: createDto.offer,
     };
 
-    return await this.customer2ProductRepository.save(entity);
+    const result = await this.customer2ProductRepository.save(entity);
+
+    // Log to customer history
+    const productName = product?.name || 'Bilinmeyen Ürün';
+    await this.customerHistoryService.logCustomerAction(
+      createDto.customer,
+      CustomerHistoryAction.CUSTOMER_UPDATED,
+      `'${productName}' ürünü ile eşleştirme yapıldı`,
+      createDto,
+      result,
+      (createDto as any).user || null,
+    );
+
+    return result;
   }
 
   @LogMethod()
@@ -62,6 +87,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
   ): Promise<Customer2Product[]> {
     const entities = [];
     const customerIds = new Set<number>();
+    const customerProductMap = new Map<number, string[]>();
 
     for (const item of bulkCreateDto.items) {
       const customer = await this.customerService.findById(item.customer);
@@ -81,6 +107,12 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
       // Collect unique customer IDs to update their status
       customerIds.add(customer.id);
 
+      // Track products for each customer for history logging
+      if (!customerProductMap.has(customer.id)) {
+        customerProductMap.set(customer.id, []);
+      }
+      customerProductMap.get(customer.id).push(product.name);
+
       entities.push({
         customer,
         product,
@@ -96,7 +128,21 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
       await this.customerRepository.update(customerId, { status: 7 });
     }
 
-    return await this.customer2ProductRepository.bulkCreate(entities);
+    const results = await this.customer2ProductRepository.bulkCreate(entities);
+
+    // Log to customer history for each customer
+    for (const [customerId, productNames] of customerProductMap.entries()) {
+      await this.customerHistoryService.logCustomerAction(
+        customerId,
+        CustomerHistoryAction.CUSTOMER_UPDATED,
+        `${productNames.length} adet ürün ile toplu eşleştirme yapıldı: ${productNames.join(', ')}`,
+        bulkCreateDto,
+        null,
+        (bulkCreateDto as any).user || null,
+      );
+    }
+
+    return results;
   }
 
   @LogMethod()
@@ -110,6 +156,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
     }
 
     const updateData: Partial<Customer2Product> = {};
+    let productName = existing.product?.name || 'Bilinmeyen Ürün';
 
     if (updateDto.customer !== undefined) {
       const customer = await this.customerService.findById(updateDto.customer);
@@ -129,6 +176,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
         );
       }
       updateData.product = product;
+      productName = product.name;
     }
 
     if (updateDto.note !== undefined) updateData.note = updateDto.note;
@@ -138,12 +186,36 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
     if (updateDto.offer !== undefined) updateData.offer = updateDto.offer;
 
     await this.customer2ProductRepository.update(id, updateData);
-    return await this.findById(id);
+    const result = await this.findById(id);
+
+    // Log to customer history
+    const customerId =
+      updateDto.customer !== undefined
+        ? updateDto.customer
+        : existing.customer?.id || (existing as any).customer;
+
+    await this.customerHistoryService.logCustomerAction(
+      customerId,
+      CustomerHistoryAction.CUSTOMER_UPDATED,
+      `'${productName}' ürünü ile ilgili bilgiler güncellendi`,
+      updateDto,
+      result,
+      (updateDto as any).user || null,
+    );
+
+    return result;
   }
 
   @LogMethod()
   async findByCustomer(customerId: number): Promise<Customer2Product[]> {
     return await this.customer2ProductRepository.findByCustomer(customerId);
+  }
+
+  @LogMethod()
+  async findUnsoldByCustomer(customerId: number): Promise<Customer2Product[]> {
+    return await this.customer2ProductRepository.findUnsoldByCustomer(
+      customerId,
+    );
   }
 
   @LogMethod()
@@ -192,5 +264,77 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
     }
 
     return await queryBuilder.getMany();
+  }
+
+  @LogMethod()
+  async convertToSale(convertDto: ConvertToSaleDto): Promise<Sales> {
+    // Verify customer exists
+    const customer = await this.customerService.findById(convertDto.customerId);
+    if (!customer) {
+      throw new NotFoundException(
+        `Customer with ID ${convertDto.customerId} not found`,
+      );
+    }
+
+    // Fetch all customer2product records
+    const customer2Products =
+      await this.customer2ProductRepository.findByIdsAndCustomer(
+        convertDto.customer2ProductIds,
+        convertDto.customerId,
+      );
+
+    if (customer2Products.length === 0) {
+      throw new NotFoundException(
+        'Seçili ürünlerden satışa çevrilebilecek ürün bulunamadı',
+      );
+    }
+
+    // Create sales record
+    const productNames = customer2Products
+      .map((cp) => cp.product.name)
+      .join(', ');
+    const sales = await this.salesRepository.save({
+      customer: convertDto.customerId,
+      user: convertDto.userId,
+      title: convertDto.title || `Satış - ${productNames}`,
+      description: convertDto.description,
+      responsibleUser: convertDto.responsibleUser,
+      followerUser: convertDto.followerUser,
+      maturityDate: convertDto.maturityDate,
+    });
+
+    // Create sales_product records for each customer2product
+    const salesProducts = [];
+    for (const cp of customer2Products) {
+      const salesProduct = await this.salesProductRepository.save({
+        sales: sales.id,
+        product: cp.product.id,
+        currency: 'TRY', // Default currency
+        price: cp.price || 0,
+        discount: cp.discount || 0,
+        vat: 0, // Can be calculated or set to 0
+        totalPrice: (cp.price || 0) - (cp.discount || 0),
+      });
+      salesProducts.push(salesProduct);
+
+      // Update customer2product record
+      await this.customer2ProductRepository.update(cp.id, {
+        isSold: true,
+        saleId: sales.id,
+      });
+    }
+
+    // Log to customer history
+    await this.customerHistoryService.logCustomerAction(
+      convertDto.customerId,
+      CustomerHistoryAction.SALE_CREATED,
+      `${customer2Products.length} adet ürün satışa çevrildi: ${productNames}`,
+      convertDto,
+      sales,
+      convertDto.userId,
+      sales.id,
+    );
+
+    return sales;
   }
 }

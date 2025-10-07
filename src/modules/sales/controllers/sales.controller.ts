@@ -30,6 +30,11 @@ export class SalesController {
     return this.salesService.createSales(createSalesDto, userId);
   }
 
+  @Get('without-appointment')
+  async findSalesWithoutAppointment(): Promise<Sales[]> {
+    return this.salesService.getSalesWithoutAppointment();
+  }
+
   @Get()
   async findAll(
     @Query('customer') customer?: string,

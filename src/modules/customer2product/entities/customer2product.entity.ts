@@ -24,4 +24,10 @@ export class Customer2Product extends CustomBaseEntity {
 
   @Column({ type: 'float', nullable: true })
   offer: number;
+
+  @Column({ type: 'int', nullable: true, name: 'sale_id' })
+  saleId: number;
+
+  @Column({ type: 'boolean', default: false, name: 'is_sold' })
+  isSold: boolean;
 }

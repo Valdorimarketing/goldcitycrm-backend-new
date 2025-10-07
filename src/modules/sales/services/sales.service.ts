@@ -126,6 +126,10 @@ export class SalesService extends BaseService<Sales> {
     return this.salesRepository.findByResponsibleUser(userId);
   }
 
+  async getSalesWithoutAppointment(): Promise<Sales[]> {
+    return this.salesRepository.findSalesWithoutAppointment();
+  }
+
   async deleteSales(id: number): Promise<Sales> {
     return this.remove(id);
   }

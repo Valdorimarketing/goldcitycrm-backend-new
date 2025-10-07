@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Customer } from '../entities/customer.entity';
 import { CustomerRepository } from '../repositories/customer.repository';
@@ -14,6 +14,7 @@ import { FraudAlertService } from '../../fraud-alert/services/fraud-alert.servic
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 import { StatusRepository } from '../../status/repositories/status.repository';
+import { Customer2ProductRepository } from '../../customer2product/repositories/customer2product.repository';
 
 @Injectable()
 export class CustomerService extends BaseService<Customer> {
@@ -24,6 +25,7 @@ export class CustomerService extends BaseService<Customer> {
     private readonly fraudAlertService: FraudAlertService,
     private readonly customerHistoryService: CustomerHistoryService,
     private readonly statusRepository: StatusRepository,
+    private readonly customer2ProductRepository: Customer2ProductRepository,
   ) {
     super(customerRepository, Customer);
   }
@@ -71,6 +73,19 @@ export class CustomerService extends BaseService<Customer> {
         updateCustomerDto.status,
       );
 
+      // Check if status is a sale status
+      if (status?.isSale) {
+        // Check if customer has any products assigned
+        const customer2Products =
+          await this.customer2ProductRepository.findByCustomer(id);
+
+        if (!customer2Products || customer2Products.length === 0) {
+          throw new BadRequestException(
+            'Durumu satışa çekemezsiniz. Müşteriye hizmet girilmemiş',
+          );
+        }
+      }
+
       if (status?.isRemindable && status.remindingDay) {
         // Calculate reminding date by adding reminding_day to today
         const today = new Date();
@@ -113,11 +128,22 @@ export class CustomerService extends BaseService<Customer> {
         new_status: updateCustomerDto.status,
       });
 
+      // Get status names for history log
+      const oldStatusEntity = oldStatus
+        ? await this.statusRepository.findOneById(oldStatus)
+        : null;
+      const newStatusEntity = await this.statusRepository.findOneById(
+        updateCustomerDto.status,
+      );
+
+      const oldStatusName = oldStatusEntity?.name || 'Belirtilmemiş';
+      const newStatusName = newStatusEntity?.name || 'Belirtilmemiş';
+
       // Log to customer history
       await this.customerHistoryService.logCustomerAction(
         id,
         CustomerHistoryAction.STATUS_CHANGE,
-        `Durum ${oldStatus || 0}'dan ${updateCustomerDto.status}'e değiştirildi`,
+        `Durum '${oldStatusName}' durumundan '${newStatusName}' durumuna değiştirildi`,
         { oldStatus: oldStatus || 0, newStatus: updateCustomerDto.status },
         null,
         updateCustomerDto.user,

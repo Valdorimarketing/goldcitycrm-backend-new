@@ -3,14 +3,14 @@ import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
 
 export enum CustomerHistoryAction {
-  STATUS_CHANGE = 'STATUS_CHANGE',
-  NOTE_ADDED = 'NOTE_ADDED',
-  SALE_CREATED = 'SALE_CREATED',
-  MEETING_CREATED = 'MEETING_CREATED',
-  FILE_ADDED = 'FILE_ADDED',
-  MEETING_STATUS_CHANGE = 'MEETING_STATUS_CHANGE',
-  PAYMENT_CREATED = 'PAYMENT_CREATED',
-  CUSTOMER_UPDATED = 'CUSTOMER_UPDATED',
+  STATUS_CHANGE = 'Durum Değiştirildi',
+  NOTE_ADDED = 'Not Eklendi',
+  SALE_CREATED = 'Satış Oluşturuldu',
+  MEETING_CREATED = 'Görüşme Oluşturuldu',
+  FILE_ADDED = 'Dosya Eklendi',
+  MEETING_STATUS_CHANGE = 'Görüşme Durumu Değiştirildi',
+  PAYMENT_CREATED = 'Ödeme Oluşturuldu',
+  CUSTOMER_UPDATED = 'Müşteri Güncellendi',
 }
 
 @Entity('customer_history')

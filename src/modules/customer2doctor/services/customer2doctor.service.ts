@@ -5,12 +5,17 @@ import { Customer2DoctorRepository } from '../repositories/customer2doctor.repos
 import { CreateCustomer2DoctorDto } from '../dto/create-customer2doctor.dto';
 import { LogMethod } from '../../../core/decorators/log.decorator';
 import { CustomerService } from '../../customer/services/customer.service';
+import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
+import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
+import { DoctorService } from '../../doctor/services/doctor.service';
 
 @Injectable()
 export class Customer2DoctorService extends BaseService<Customer2Doctor> {
   constructor(
     private readonly customer2DoctorRepository: Customer2DoctorRepository,
     private readonly customerService: CustomerService,
+    private readonly customerHistoryService: CustomerHistoryService,
+    private readonly doctorService: DoctorService,
   ) {
     super(customer2DoctorRepository, Customer2Doctor);
   }
@@ -25,12 +30,62 @@ export class Customer2DoctorService extends BaseService<Customer2Doctor> {
         createDto.doctorId,
       );
 
+    // Get doctor name for history log
+    const doctor = await this.doctorService.findById(createDto.doctorId);
+    const doctorName = doctor?.name || 'Bilinmeyen Doktor';
+
     if (existing) {
-      return await this.update(createDto, existing.id, Customer2Doctor);
+      const result = await this.update(createDto, existing.id, Customer2Doctor);
+
+      // Log to customer history for update
+      await this.customerHistoryService.logCustomerAction(
+        createDto.customerId,
+        CustomerHistoryAction.CUSTOMER_UPDATED,
+        `'${doctorName}' doktoru ile ilgili bilgiler güncellendi`,
+        createDto,
+        result,
+        createDto.user,
+      );
+
+      // Log if doctor comment is added/updated
+      if (createDto.doctorComment) {
+        await this.customerHistoryService.logCustomerAction(
+          createDto.customerId,
+          CustomerHistoryAction.NOTE_ADDED,
+          `'${doctorName}' doktoru için görüş eklendi/güncellendi`,
+          { doctorComment: createDto.doctorComment },
+          null,
+          createDto.user,
+        );
+      }
+
+      return result;
     }
 
     // Create the new customer2doctor record
     const result = await super.create(createDto, Customer2Doctor);
+
+    // Log to customer history for creation
+    await this.customerHistoryService.logCustomerAction(
+      createDto.customerId,
+      CustomerHistoryAction.CUSTOMER_UPDATED,
+      `'${doctorName}' doktoru ile eşleştirme yapıldı`,
+      createDto,
+      result,
+      createDto.user,
+    );
+
+    // Log if doctor comment is added
+    if (createDto.doctorComment) {
+      await this.customerHistoryService.logCustomerAction(
+        createDto.customerId,
+        CustomerHistoryAction.NOTE_ADDED,
+        `'${doctorName}' doktoru için görüş eklendi`,
+        { doctorComment: createDto.doctorComment },
+        null,
+        createDto.user,
+      );
+    }
 
     // Update customer status to 5 when a new customer2doctor record is created
     await this.customerService.updateCustomer(createDto.customerId, {
