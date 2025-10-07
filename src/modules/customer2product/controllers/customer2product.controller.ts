@@ -13,6 +13,7 @@ import { Customer2ProductService } from '../services/customer2product.service';
 import { CreateCustomer2ProductDto } from '../dto/create-customer2product.dto';
 import { UpdateCustomer2ProductDto } from '../dto/update-customer2product.dto';
 import { BulkCreateCustomer2ProductDto } from '../dto/bulk-create-customer2product.dto';
+import { ConvertToSaleDto } from '../dto/convert-to-sale.dto';
 import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
@@ -48,6 +49,11 @@ export class Customer2ProductController {
     return this.customer2ProductService.findByCustomer(+customerId);
   }
 
+  @Get('customer/:customerId/unsold')
+  findUnsoldByCustomer(@Param('customerId') customerId: string) {
+    return this.customer2ProductService.findUnsoldByCustomer(+customerId);
+  }
+
   @Get('product/:productId')
   findByProduct(@Param('productId') productId: string) {
     return this.customer2ProductService.findByProduct(+productId);
@@ -64,5 +70,10 @@ export class Customer2ProductController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.customer2ProductService.remove(+id);
+  }
+
+  @Post('convert-to-sale')
+  convertToSale(@Body() convertDto: ConvertToSaleDto) {
+    return this.customer2ProductService.convertToSale(convertDto);
   }
 }
