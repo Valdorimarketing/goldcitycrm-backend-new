@@ -5,11 +5,19 @@ import { FraudAlertRepository } from '../repositories/fraud-alert.repository';
 import { CreateFraudAlertDto } from '../dto/create-fraud-alert.dto';
 import { UpdateFraudAlertDto } from '../dto/update-fraud-alert.dto';
 import { FraudAlertResponseDto } from '../dto/fraud-alert-response.dto';
+import { FraudAlertQueryFilterDto } from '../dto/fraud-alert-query-filter.dto';
+import { SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
 export class FraudAlertService extends BaseService<FraudAlert> {
   constructor(private readonly fraudAlertRepository: FraudAlertRepository) {
     super(fraudAlertRepository, FraudAlert);
+  }
+
+  async findByFiltersBaseQuery(
+    filters: FraudAlertQueryFilterDto,
+  ): Promise<SelectQueryBuilder<FraudAlert>> {
+    return this.fraudAlertRepository.findByFiltersBaseQuery(filters);
   }
 
   async createFraudAlert(

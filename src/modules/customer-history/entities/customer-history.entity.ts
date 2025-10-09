@@ -8,6 +8,7 @@ export enum CustomerHistoryAction {
   SALE_CREATED = 'Satış Oluşturuldu',
   MEETING_CREATED = 'Görüşme Oluşturuldu',
   FILE_ADDED = 'Dosya Eklendi',
+  FILE_DELETED = 'Dosya Silindi',
   MEETING_STATUS_CHANGE = 'Görüşme Durumu Değiştirildi',
   PAYMENT_CREATED = 'Ödeme Oluşturuldu',
   CUSTOMER_UPDATED = 'Müşteri Güncellendi',

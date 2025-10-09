@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Doctor } from '../entities/doctor.entity';
+import { DoctorQueryFilterDto } from '../dto/doctor-query-filter.dto';
 
 @Injectable()
 export class DoctorRepository extends BaseRepositoryAbstract<Doctor> {
@@ -11,6 +12,21 @@ export class DoctorRepository extends BaseRepositoryAbstract<Doctor> {
     private readonly doctorRepository: Repository<Doctor>,
   ) {
     super(doctorRepository);
+  }
+
+  async findByFiltersBaseQuery(
+    filters: DoctorQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Doctor>> {
+    const queryBuilder = await super.findByFiltersBaseQuery(filters);
+
+    // Search functionality
+    if (filters.search) {
+      queryBuilder.andWhere('doctor.name LIKE :search', {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    return queryBuilder;
   }
 
   async findWithRelations(id: number): Promise<Doctor> {

@@ -7,6 +7,8 @@ import {
   UpdateCustomerDto,
   CustomerResponseDto,
 } from '../dto/create-customer.dto';
+import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
+import { SelectQueryBuilder } from 'typeorm';
 import { CustomerDynamicFieldValueService } from '../../customer-dynamic-field-value/services/customer-dynamic-field-value.service';
 import { CreateCustomerDynamicFieldValueDto } from '../../customer-dynamic-field-value/dto/create-customer-dynamic-field-value.dto';
 import { CustomerStatusChangeRepository } from '../../customer-status-change/repositories/customer-status-change.repository';
@@ -28,6 +30,12 @@ export class CustomerService extends BaseService<Customer> {
     private readonly customer2ProductRepository: Customer2ProductRepository,
   ) {
     super(customerRepository, Customer);
+  }
+
+  async findByFiltersBaseQuery(
+    filters: CustomerQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Customer>> {
+    return this.customerRepository.findByFiltersBaseQuery(filters);
   }
 
   async createCustomer(

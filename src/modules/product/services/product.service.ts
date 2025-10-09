@@ -7,11 +7,19 @@ import {
   UpdateProductDto,
   ProductResponseDto,
 } from '../dto/create-product.dto';
+import { ProductQueryFilterDto } from '../dto/product-query-filter.dto';
+import { SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
 export class ProductService extends BaseService<Product> {
   constructor(private readonly productRepository: ProductRepository) {
     super(productRepository, Product);
+  }
+
+  async findByFiltersBaseQuery(
+    filters: ProductQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Product>> {
+    return this.productRepository.findByFiltersBaseQuery(filters);
   }
 
   async createProduct(

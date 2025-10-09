@@ -5,7 +5,7 @@ import { User } from '../../user/entities/user.entity';
 
 @Entity('user_group')
 export class UserGroup extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, unique: true })
   @Expose()
   name: string;
 
