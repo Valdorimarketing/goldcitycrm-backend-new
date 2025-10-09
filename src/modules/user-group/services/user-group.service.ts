@@ -8,6 +8,7 @@ import { UserGroupResponseDto } from '../dto/user-group-response.dto';
 import { User } from '../../user/entities/user.entity';
 import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
 import { SelectQueryBuilder } from 'typeorm';
+import { CustomHttpException } from '../../../core/utils/custom-http.exception';
 
 @Injectable()
 export class UserGroupService extends BaseService<UserGroup> {
@@ -24,6 +25,16 @@ export class UserGroupService extends BaseService<UserGroup> {
   async createUserGroup(
     createDto: CreateUserGroupDto,
   ): Promise<UserGroupResponseDto> {
+    // Check if user group with same name already exists
+    const existingGroup = await this.userGroupRepository.findByName(
+      createDto.name,
+    );
+    if (existingGroup) {
+      throw CustomHttpException.conflict(
+        'Bu isimde bir kullanıcı grubu zaten mevcut',
+      );
+    }
+
     return super.create(createDto, UserGroupResponseDto);
   }
 
@@ -31,6 +42,18 @@ export class UserGroupService extends BaseService<UserGroup> {
     id: number,
     updateDto: UpdateUserGroupDto,
   ): Promise<UserGroupResponseDto> {
+    // Check if updating name to a name that already exists
+    if (updateDto.name) {
+      const existingGroup = await this.userGroupRepository.findByName(
+        updateDto.name,
+      );
+      if (existingGroup && existingGroup.id !== id) {
+        throw CustomHttpException.conflict(
+          'Bu isimde bir kullanıcı grubu zaten mevcut',
+        );
+      }
+    }
+
     return super.update(updateDto, id, UserGroupResponseDto);
   }
 

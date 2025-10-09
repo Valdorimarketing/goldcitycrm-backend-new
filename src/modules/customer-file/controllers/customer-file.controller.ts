@@ -15,7 +15,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { CustomerFileService } from '../services/customer-file.service';
 import {
   CreateCustomerFileDto,
@@ -35,8 +36,15 @@ export class CustomerFileController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/customer-files',
-        filename: (req, file, callback) => {
+        destination: (_req, _file, callback) => {
+          const uploadPath = join(process.cwd(), 'uploads', 'customer-files');
+          // Ensure directory exists
+          if (!existsSync(uploadPath)) {
+            mkdirSync(uploadPath, { recursive: true });
+          }
+          callback(null, uploadPath);
+        },
+        filename: (_req, file, callback) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
@@ -44,6 +52,24 @@ export class CustomerFileController {
           callback(null, filename);
         },
       }),
+      fileFilter: (_req, file, callback) => {
+        const allowedMimeTypes = [
+          'application/pdf',
+          'image/png',
+          'image/jpg',
+          'image/jpeg',
+        ];
+        if (allowedMimeTypes.includes(file.mimetype)) {
+          callback(null, true);
+        } else {
+          callback(
+            new BadRequestException(
+              'Sadece PDF, PNG ve JPG dosyaları yüklenebilir',
+            ),
+            false,
+          );
+        }
+      },
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
       },
@@ -70,7 +96,7 @@ export class CustomerFileController {
 
     const createCustomerFileDto: CreateCustomerFileDto = {
       customer: customerId,
-      file: file.path,
+      file: `uploads/customer-files/${file.filename}`,
       description: description,
     };
 
@@ -105,7 +131,10 @@ export class CustomerFileController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<CustomerFile> {
-    return this.customerFileService.deleteCustomerFile(+id);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUserId() userId?: number,
+  ): Promise<CustomerFile> {
+    return this.customerFileService.deleteCustomerFile(+id, userId);
   }
 }

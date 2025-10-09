@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Customer } from '../entities/customer.entity';
+import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
 
 @Injectable()
 export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
@@ -11,6 +12,36 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     private readonly customerRepository: Repository<Customer>,
   ) {
     super(customerRepository);
+  }
+
+  async findByFiltersBaseQuery(
+    filters: CustomerQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Customer>> {
+    const queryBuilder = await super.findByFiltersBaseQuery(filters);
+
+    // Search functionality
+    if (filters.search) {
+      queryBuilder.andWhere(
+        '(customer.name LIKE :search OR customer.surname LIKE :search OR customer.email LIKE :search OR customer.phone LIKE :search OR customer.identity_number LIKE :search)',
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    // Status filter
+    if (filters.status !== undefined && filters.status !== null) {
+      queryBuilder.andWhere('customer.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    // Active state filter
+    if (filters.isActive !== undefined && filters.isActive !== null) {
+      queryBuilder.andWhere('customer.isActive = :isActive', {
+        isActive: filters.isActive,
+      });
+    }
+
+    return queryBuilder;
   }
 
   async findByEmail(email: string): Promise<Customer[]> {

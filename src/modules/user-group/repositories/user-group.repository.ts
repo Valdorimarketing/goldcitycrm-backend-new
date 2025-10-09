@@ -19,4 +19,10 @@ export class UserGroupRepository extends BaseRepositoryAbstract<UserGroup> {
       relations: ['users'],
     });
   }
+
+  async findByName(name: string): Promise<UserGroup> {
+    return this.userGroupRepository.findOne({
+      where: { name },
+    });
+  }
 }

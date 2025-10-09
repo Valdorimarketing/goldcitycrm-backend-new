@@ -66,7 +66,24 @@ export class CustomerFileService extends BaseService<CustomerFile> {
     });
   }
 
-  async deleteCustomerFile(id: number): Promise<CustomerFile> {
-    return this.remove(id);
+  async deleteCustomerFile(id: number, userId?: number): Promise<CustomerFile> {
+    // Get file info before deletion
+    const file = await this.getCustomerFileById(id);
+
+    // Delete the file
+    const deletedFile = await this.remove(id);
+
+    // Log to customer history
+    await this.customerHistoryService.logCustomerAction(
+      file.customer,
+      CustomerHistoryAction.FILE_DELETED,
+      `Dosya silindi: ${file.file} - ${file.description || ''}`,
+      null,
+      null,
+      userId,
+      id,
+    );
+
+    return deletedFile;
   }
 }

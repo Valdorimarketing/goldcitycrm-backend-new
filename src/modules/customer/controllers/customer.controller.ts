@@ -19,18 +19,16 @@ import {
   UpdateCustomerDto,
   CustomerResponseDto,
 } from '../dto/create-customer.dto';
+import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
 import { Customer } from '../entities/customer.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUserId } from '../../../core/decorators/current-user.decorator';
-import { Public } from '../../../core/decorators/public.decorator';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiQuery,
   ApiConsumes,
-  ApiBody,
 } from '@nestjs/swagger';
 
 @ApiTags('customers')
@@ -39,6 +37,89 @@ import {
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
+
+  /**
+   * Transform multipart form data to CreateCustomerDto/UpdateCustomerDto
+   * Converts string values to appropriate types (numbers, booleans, arrays)
+   */
+  private transformCustomerDto(
+    body: any,
+  ): CreateCustomerDto | UpdateCustomerDto {
+    const dto: any = {};
+
+    // String fields - no transformation needed
+    const stringFields = [
+      'name',
+      'surname',
+      'title',
+      'email',
+      'gender',
+      'birthDate',
+      'phone',
+      'job',
+      'website',
+      'district',
+      'address',
+      'description',
+      'image',
+      'relatedTransaction',
+    ];
+
+    stringFields.forEach((field) => {
+      if (body[field] !== undefined && body[field] !== '') {
+        dto[field] = body[field];
+      }
+    });
+
+    // Number fields - convert from string to number
+    const numberFields = [
+      'user',
+      'sourceId',
+      'identityNumber',
+      'referanceCustomer',
+      'language',
+      'status',
+      'country',
+      'state',
+      'city',
+      'postalCode',
+      'relevantUser',
+    ];
+
+    numberFields.forEach((field) => {
+      if (body[field] !== undefined && body[field] !== '') {
+        const value = parseInt(body[field], 10);
+        if (!isNaN(value)) {
+          dto[field] = value;
+        }
+      }
+    });
+
+    // Boolean field
+    if (body.isActive !== undefined && body.isActive !== '') {
+      dto.isActive = body.isActive === 'true' || body.isActive === true;
+    }
+
+    // Date field
+    if (body.remindingDate !== undefined && body.remindingDate !== '') {
+      dto.remindingDate = new Date(body.remindingDate);
+    }
+
+    // Dynamic fields - parse JSON string if needed
+    if (body.dynamicFields !== undefined) {
+      try {
+        dto.dynamicFields =
+          typeof body.dynamicFields === 'string'
+            ? JSON.parse(body.dynamicFields)
+            : body.dynamicFields;
+      } catch {
+        // If JSON parsing fails, keep as-is or set to empty array
+        dto.dynamicFields = [];
+      }
+    }
+
+    return dto;
+  }
 
   @Post()
   @UseInterceptors(FileInterceptor('image'))
@@ -51,9 +132,11 @@ export class CustomerController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async create(
-    @Body() createCustomerDto: CreateCustomerDto,
+    @Body() body: any,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<CustomerResponseDto> {
+    const createCustomerDto = this.transformCustomerDto(body);
+
     if (file) {
       createCustomerDto.image = file.path;
     }
@@ -61,43 +144,15 @@ export class CustomerController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all customers with optional filters' })
-  @ApiQuery({ name: 'email', required: false, description: 'Filter by email' })
-  @ApiQuery({ name: 'phone', required: false, description: 'Filter by phone' })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    description: 'Filter by status',
-  })
-  @ApiQuery({
-    name: 'active',
-    required: false,
-    description: 'Filter by active state',
-  })
+  @ApiOperation({ summary: 'Get all customers with pagination and search' })
   @ApiResponse({
     status: 200,
     description: 'Customers retrieved successfully',
-    type: [Customer],
   })
-  async findAll(
-    @Query('email') email?: string,
-    @Query('phone') phone?: string,
-    @Query('status') status?: string,
-    @Query('active') active?: string,
-  ): Promise<Customer[]> {
-    if (email) {
-      return this.customerService.getCustomersByEmail(email);
-    }
-    if (phone) {
-      return this.customerService.getCustomersByPhone(phone);
-    }
-    if (status) {
-      return this.customerService.getCustomersByStatus(+status);
-    }
-    if (active === 'true') {
-      return this.customerService.getActiveCustomers();
-    }
-    return this.customerService.getAllCustomers();
+  async findAll(@Query() query: CustomerQueryFilterDto) {
+    const queryBuilder =
+      await this.customerService.findByFiltersBaseQuery(query);
+    return this.customerService.paginate(queryBuilder, query, Customer);
   }
 
   @Get(':id')
@@ -110,10 +165,12 @@ export class CustomerController {
   @ApiConsumes('multipart/form-data')
   async update(
     @Param('id') id: string,
-    @Body() updateCustomerDto: UpdateCustomerDto,
+    @Body() body: any,
     @CurrentUserId() userId: number,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<CustomerResponseDto> {
+    const updateCustomerDto = this.transformCustomerDto(body);
+
     // User ID'yi DTO'ya ekle
     const dtoWithUser = {
       ...updateCustomerDto,

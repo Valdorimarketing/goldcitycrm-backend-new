@@ -12,7 +12,7 @@ import {
 import { DoctorService } from '../services/doctor.service';
 import { CreateDoctorDto } from '../dto/create-doctor.dto';
 import { UpdateDoctorDto } from '../dto/update-doctor.dto';
-import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { DoctorQueryFilterDto } from '../dto/doctor-query-filter.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
@@ -42,9 +42,9 @@ export class DoctorController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all doctors with pagination' })
+  @ApiOperation({ summary: 'Get all doctors with pagination and search' })
   @ApiResponse({ status: 200, description: 'Doctors retrieved successfully' })
-  async findAll(@Query() query: BaseQueryFilterDto) {
+  async findAll(@Query() query: DoctorQueryFilterDto) {
     const queryBuilder = await this.doctorService.findByFiltersBaseQuery(query);
     queryBuilder.leftJoinAndSelect('doctor.branch', 'branch');
     return this.doctorService.paginate(queryBuilder, query, Doctor);

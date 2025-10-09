@@ -3,7 +3,7 @@ import { Doctor } from '../entities/doctor.entity';
 import { DoctorRepository } from '../repositories/doctor.repository';
 import { BaseService } from '../../../core/base/services/base.service';
 import { LogMethod } from '../../../core/decorators/log.decorator';
-import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { DoctorQueryFilterDto } from '../dto/doctor-query-filter.dto';
 import { SelectQueryBuilder } from 'typeorm';
 import { Doctor2BranchRepository } from '../repositories/doctor2branch.repository';
 import { Doctor2HospitalRepository } from '../repositories/doctor2hospital.repository';
@@ -41,7 +41,7 @@ export class DoctorService extends BaseService<Doctor> {
   }
 
   async findByFiltersBaseQuery(
-    filters: BaseQueryFilterDto,
+    filters: DoctorQueryFilterDto,
   ): Promise<SelectQueryBuilder<Doctor>> {
     return this.doctorRepository.findByFiltersBaseQuery(filters);
   }
@@ -194,7 +194,7 @@ export class DoctorService extends BaseService<Doctor> {
   }
 
   @LogMethod()
-  async findAllWithRelations(query?: BaseQueryFilterDto): Promise<Doctor[]> {
+  async findAllWithRelations(query?: DoctorQueryFilterDto): Promise<Doctor[]> {
     const queryBuilder = await this.findByFiltersBaseQuery(query || {});
     queryBuilder
       .leftJoinAndSelect('doctor.branch', 'branch')
