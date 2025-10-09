@@ -12,7 +12,7 @@ import {
 import { BranchService } from '../services/branch.service';
 import { CreateBranchDto } from '../dto/create-branch.dto';
 import { UpdateBranchDto } from '../dto/update-branch.dto';
-import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { BranchQueryFilterDto } from '../dto/branch-query-filter.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
@@ -42,9 +42,9 @@ export class BranchController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all branches with pagination' })
+  @ApiOperation({ summary: 'Get all branches with pagination and search' })
   @ApiResponse({ status: 200, description: 'Branches retrieved successfully' })
-  async findAll(@Query() query: BaseQueryFilterDto) {
+  async findAll(@Query() query: BranchQueryFilterDto) {
     const queryBuilder = await this.branchService.findByFiltersBaseQuery(query);
     return this.branchService.paginate(queryBuilder, query, Branch);
   }

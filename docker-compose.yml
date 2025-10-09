@@ -16,6 +16,7 @@ services:
       - ./test:/app/test:rw
       - ./public:/app/public:rw
       - ./logs:/app/logs:rw
+      - ./uploads:/app/uploads:rw
       - ./.env:/app/.env:rw
       - ./.eslintrc.js:/app/.eslintrc.js:rw
       - ./.prettierrc:/app/.prettierrc:rw

@@ -12,7 +12,7 @@ import {
 import { HospitalService } from '../services/hospital.service';
 import { CreateHospitalDto } from '../dto/create-hospital.dto';
 import { UpdateHospitalDto } from '../dto/update-hospital.dto';
-import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
+import { HospitalQueryFilterDto } from '../dto/hospital-query-filter.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
@@ -44,9 +44,9 @@ export class HospitalController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all hospitals with pagination' })
+  @ApiOperation({ summary: 'Get all hospitals with pagination and search' })
   @ApiResponse({ status: 200, description: 'Hospitals retrieved successfully' })
-  async findAll(@Query() query: BaseQueryFilterDto) {
+  async findAll(@Query() query: HospitalQueryFilterDto) {
     const queryBuilder =
       await this.hospitalService.findByFiltersBaseQuery(query);
     return this.hospitalService.paginate(queryBuilder, query, Hospital);
