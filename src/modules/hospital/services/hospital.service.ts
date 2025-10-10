@@ -5,6 +5,7 @@ import { BaseService } from '../../../core/base/services/base.service';
 import { LogMethod } from '../../../core/decorators/log.decorator';
 import { HospitalQueryFilterDto } from '../dto/hospital-query-filter.dto';
 import { SelectQueryBuilder } from 'typeorm';
+import { Doctor } from '../../doctor/entities/doctor.entity';
 
 @Injectable()
 export class HospitalService extends BaseService<Hospital> {
@@ -21,5 +22,10 @@ export class HospitalService extends BaseService<Hospital> {
     filters: HospitalQueryFilterDto,
   ): Promise<SelectQueryBuilder<Hospital>> {
     return this.hospitalRepository.findByFiltersBaseQuery(filters);
+  }
+
+  @LogMethod()
+  async getDoctorsByHospitalId(hospitalId: number): Promise<Doctor[]> {
+    return this.hospitalRepository.getDoctorsByHospitalId(hospitalId);
   }
 }

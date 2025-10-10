@@ -4,6 +4,7 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Hospital } from '../entities/hospital.entity';
 import { HospitalQueryFilterDto } from '../dto/hospital-query-filter.dto';
+import { Doctor } from '../../doctor/entities/doctor.entity';
 
 @Injectable()
 export class HospitalRepository extends BaseRepositoryAbstract<Hospital> {
@@ -28,5 +29,16 @@ export class HospitalRepository extends BaseRepositoryAbstract<Hospital> {
     }
 
     return queryBuilder;
+  }
+
+  async getDoctorsByHospitalId(hospitalId: number): Promise<Doctor[]> {
+    const doctors = await this.hospitalRepository.manager
+      .createQueryBuilder(Doctor, 'doctor')
+      .innerJoin('doctor.doctor2Hospitals', 'd2h')
+      .leftJoinAndSelect('doctor.branch', 'branch')
+      .where('d2h.hospitalId = :hospitalId', { hospitalId })
+      .getMany();
+
+    return doctors;
   }
 }

@@ -2,6 +2,8 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
 import { SalesProduct } from '../../sales-product/entities/sales-product.entity';
+import { Hospital } from '../../hospital/entities/hospital.entity';
+import { Doctor } from '../../doctor/entities/doctor.entity';
 
 @Entity('meeting')
 export class Meeting extends CustomBaseEntity {
@@ -9,9 +11,23 @@ export class Meeting extends CustomBaseEntity {
   @Expose()
   customer: number;
 
-  @Column({ type: 'int', name: 'meeting_location' })
+  @Column({ type: 'int', nullable: true, name: 'hospital_id' })
   @Expose()
-  meetingLocation: number;
+  hospitalId: number;
+
+  @ManyToOne(() => Hospital, { nullable: true })
+  @JoinColumn({ name: 'hospital_id' })
+  @Expose()
+  hospital: Hospital;
+
+  @Column({ type: 'int', nullable: true, name: 'doctor_id' })
+  @Expose()
+  doctorId: number;
+
+  @ManyToOne(() => Doctor, { nullable: true })
+  @JoinColumn({ name: 'doctor_id' })
+  @Expose()
+  doctor: Doctor;
 
   @Column({ type: 'timestamp', nullable: true, name: 'reminding_at' })
   @Expose()
