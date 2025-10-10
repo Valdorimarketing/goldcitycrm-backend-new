@@ -16,35 +16,35 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
   async findByCustomer(customer: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { customer },
-      relations: ['salesProduct'],
+      relations: ['salesProduct', 'hospital', 'doctor'],
     });
   }
 
   async findByUser(user: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { user },
-      relations: ['salesProduct'],
+      relations: ['salesProduct', 'hospital', 'doctor'],
     });
   }
 
   async findByStatus(meetingStatus: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { meetingStatus },
-      relations: ['salesProduct'],
+      relations: ['salesProduct', 'hospital', 'doctor'],
     });
   }
 
   async findBySalesProduct(salesProductId: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { salesProductId },
-      relations: ['salesProduct'],
+      relations: ['salesProduct', 'hospital', 'doctor'],
     });
   }
 
   async findOneWithSalesProduct(id: number): Promise<Meeting> {
     return this.getRepository().findOne({
       where: { id },
-      relations: ['salesProduct'],
+      relations: ['salesProduct', 'hospital', 'doctor'],
     });
   }
 }
