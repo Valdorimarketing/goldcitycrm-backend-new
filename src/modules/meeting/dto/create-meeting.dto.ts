@@ -12,7 +12,13 @@ export class CreateMeetingDto {
   @IsNumber()
   @Type(() => Number)
   @Expose()
-  meetingLocation?: number;
+  hospitalId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  doctorId?: number;
 
   @IsOptional()
   @IsDateString()
@@ -63,7 +69,16 @@ export class MeetingResponseDto {
   customer: number;
 
   @Expose()
-  meetingLocation: number;
+  hospitalId: number;
+
+  @Expose()
+  hospital?: any;
+
+  @Expose()
+  doctorId: number;
+
+  @Expose()
+  doctor?: any;
 
   @Expose()
   remindingAt: Date;
