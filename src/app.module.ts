@@ -19,6 +19,7 @@ import { FraudAlertModule } from './modules/fraud-alert/fraud-alert.module';
 import { StatusModule } from './modules/status/status.module';
 import { ActionListModule } from './modules/action-list/action-list.module';
 import { MeetingModule } from './modules/meeting/meeting.module';
+import { MeetingStatusModule } from './modules/meeting-status/meeting-status.module';
 import { CustomerNoteModule } from './modules/customer-note/customer-note.module';
 import { CustomerHistoryModule } from './modules/customer-history/customer-history.module';
 import { HospitalModule } from './modules/hospital/hospital.module';
@@ -62,6 +63,7 @@ import { Customer2ProductModule } from './modules/customer2product/customer2prod
     StatusModule,
     ActionListModule,
     MeetingModule,
+    MeetingStatusModule,
     CustomerNoteModule,
     CustomerHistoryModule,
     HospitalModule,

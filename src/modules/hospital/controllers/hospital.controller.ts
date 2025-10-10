@@ -86,4 +86,15 @@ export class HospitalController {
   async remove(@Param('id') id: string): Promise<Hospital> {
     return this.hospitalService.remove(+id);
   }
+
+  @Get(':id/doctors')
+  @ApiOperation({ summary: 'Get all doctors for a specific hospital' })
+  @ApiResponse({
+    status: 200,
+    description: 'Doctors retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Hospital not found' })
+  async getDoctors(@Param('id') id: string) {
+    return this.hospitalService.getDoctorsByHospitalId(+id);
+  }
 }
