@@ -55,6 +55,7 @@ async function bootstrap() {
       'http://localhost:8092',
       'http://crmdev.valdori.com',
       'https://crmdev.valdori.com',
+      'https://crm.valdori.com',
       'http://crmdevapi.valdori.com',
       'https://crmdevapi.valdori.com',
     ],
