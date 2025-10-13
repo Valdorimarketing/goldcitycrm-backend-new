@@ -30,4 +30,13 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   @Type(() => Boolean)
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Filter by relevant user ID',
+    example: 15,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  relevantUser?: number;
 }

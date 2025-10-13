@@ -41,6 +41,13 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
+    // Relevant user filter
+    if (filters.relevantUser !== undefined && filters.relevantUser !== null) {
+      queryBuilder.andWhere('customer.relevant_user = :relevantUser', {
+        relevantUser: filters.relevantUser,
+      });
+    }
+
     return queryBuilder;
   }
 
