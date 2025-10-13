@@ -48,6 +48,14 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
+    // Filter by status.is_first property
+    if (filters.isFirst !== undefined && filters.isFirst !== null) {
+      queryBuilder.leftJoin('status', 'status', 'customer.status = status.id');
+      queryBuilder.andWhere('status.is_first = :isFirst', {
+        isFirst: filters.isFirst,
+      });
+    }
+
     return queryBuilder;
   }
 
