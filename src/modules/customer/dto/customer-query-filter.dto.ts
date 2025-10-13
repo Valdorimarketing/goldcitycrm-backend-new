@@ -39,4 +39,13 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   @Type(() => Number)
   @IsNumber()
   relevantUser?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter customers by status.is_first property',
+    example: true,
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isFirst?: boolean;
 }
