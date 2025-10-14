@@ -56,6 +56,18 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
+    // Filter by whether relevant_user is filled or empty
+    if (
+      filters.hasRelevantUser !== undefined &&
+      filters.hasRelevantUser !== null
+    ) {
+      if (filters.hasRelevantUser) {
+        queryBuilder.andWhere('customer.relevant_user IS NOT NULL');
+      } else {
+        queryBuilder.andWhere('customer.relevant_user IS NULL');
+      }
+    }
+
     return queryBuilder;
   }
 

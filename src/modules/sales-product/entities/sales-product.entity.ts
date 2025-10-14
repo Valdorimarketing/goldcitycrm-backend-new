@@ -1,6 +1,7 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
+import { Product } from '../../product/entities/product.entity';
 
 @Entity('sales_product')
 export class SalesProduct extends CustomBaseEntity {
@@ -11,6 +12,11 @@ export class SalesProduct extends CustomBaseEntity {
   @Column({ type: 'int' })
   @Expose()
   product: number;
+
+  @ManyToOne(() => Product)
+  @JoinColumn({ name: 'product' })
+  @Expose()
+  productDetails: Product;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Expose()
