@@ -48,11 +48,34 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
+    // Join status table if any status property filter is applied
+    const needsStatusJoin =
+      (filters.isFirst !== undefined && filters.isFirst !== null) ||
+      (filters.isDoctor !== undefined && filters.isDoctor !== null) ||
+      (filters.isPricing !== undefined && filters.isPricing !== null);
+
+    if (needsStatusJoin) {
+      queryBuilder.leftJoin('status', 'status', 'customer.status = status.id');
+    }
+
     // Filter by status.is_first property
     if (filters.isFirst !== undefined && filters.isFirst !== null) {
-      queryBuilder.leftJoin('status', 'status', 'customer.status = status.id');
       queryBuilder.andWhere('status.is_first = :isFirst', {
         isFirst: filters.isFirst,
+      });
+    }
+
+    // Filter by status.is_doctor property
+    if (filters.isDoctor !== undefined && filters.isDoctor !== null) {
+      queryBuilder.andWhere('status.is_doctor = :isDoctor', {
+        isDoctor: filters.isDoctor,
+      });
+    }
+
+    // Filter by status.is_pricing property
+    if (filters.isPricing !== undefined && filters.isPricing !== null) {
+      queryBuilder.andWhere('status.is_pricing = :isPricing', {
+        isPricing: filters.isPricing,
       });
     }
 
