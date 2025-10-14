@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Sales } from '../entities/sales.entity';
+import { SalesQueryFilterDto } from '../dto/sales-query-filter.dto';
 
 @Injectable()
 export class SalesRepository extends BaseRepositoryAbstract<Sales> {
@@ -46,5 +47,44 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       .andWhere('sales.customer IS NOT NULL')
       .orderBy('sales.createdAt', 'DESC')
       .getMany();
+  }
+
+  async findUserSalesWithRelations(
+    filters: SalesQueryFilterDto,
+  ): Promise<SelectQueryBuilder<Sales>> {
+    const queryBuilder = await super.findByFiltersBaseQuery(filters);
+
+    // Add relations
+    queryBuilder
+      .leftJoinAndSelect('sales.customerDetails', 'customer')
+      .leftJoinAndSelect('sales.userDetails', 'user')
+      .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
+      .leftJoinAndSelect('sales.followerUserDetails', 'followerUser')
+      .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
+      .leftJoinAndSelect('salesProducts.productDetails', 'product');
+
+    // User filter
+    if (filters.user !== undefined && filters.user !== null) {
+      queryBuilder.andWhere('sales.user = :userId', { userId: filters.user });
+    }
+
+    // Customer filter
+    if (filters.customer !== undefined && filters.customer !== null) {
+      queryBuilder.andWhere('sales.customer = :customerId', {
+        customerId: filters.customer,
+      });
+    }
+
+    // Responsible user filter
+    if (
+      filters.responsibleUser !== undefined &&
+      filters.responsibleUser !== null
+    ) {
+      queryBuilder.andWhere('sales.responsible_user = :responsibleUserId', {
+        responsibleUserId: filters.responsibleUser,
+      });
+    }
+
+    return queryBuilder;
   }
 }

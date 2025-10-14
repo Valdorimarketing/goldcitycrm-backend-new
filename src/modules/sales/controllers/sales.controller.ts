@@ -15,7 +15,9 @@ import {
   UpdateSalesDto,
   SalesResponseDto,
 } from '../dto/create-sales.dto';
+import { SalesQueryFilterDto } from '../dto/sales-query-filter.dto';
 import { Sales } from '../entities/sales.entity';
+import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface';
 
 @Controller('sales')
 export class SalesController {
@@ -56,6 +58,13 @@ export class SalesController {
   @Get('customer/:customerId/products')
   async getCustomerSalesProducts(@Param('customerId') customerId: string) {
     return this.salesService.getCustomerSalesProducts(+customerId);
+  }
+
+  @Get('user/details')
+  async getUserSalesWithDetails(
+    @Query() query: SalesQueryFilterDto,
+  ): Promise<PaginatedResponse<Sales>> {
+    return this.salesService.getUserSalesWithDetails(query);
   }
 
   @Get(':id')

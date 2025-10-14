@@ -7,6 +7,7 @@ import {
   UpdateSalesDto,
   SalesResponseDto,
 } from '../dto/create-sales.dto';
+import { SalesQueryFilterDto } from '../dto/sales-query-filter.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Meeting } from '../../meeting/entities/meeting.entity';
@@ -15,6 +16,7 @@ import { SalesProduct } from '../../sales-product/entities/sales-product.entity'
 import { CustomerNote } from '../../customer-note/entities/customer-note.entity';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
+import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface';
 
 @Injectable()
 export class SalesService extends BaseService<Sales> {
@@ -129,6 +131,14 @@ export class SalesService extends BaseService<Sales> {
 
   async getSalesWithoutAppointment(): Promise<Sales[]> {
     return this.salesRepository.findSalesWithoutAppointment();
+  }
+
+  async getUserSalesWithDetails(
+    filters: SalesQueryFilterDto,
+  ): Promise<PaginatedResponse<Sales>> {
+    const queryBuilder =
+      await this.salesRepository.findUserSalesWithRelations(filters);
+    return this.paginate(queryBuilder, filters, Sales);
   }
 
   async deleteSales(id: number): Promise<Sales> {
