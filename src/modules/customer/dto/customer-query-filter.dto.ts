@@ -58,6 +58,32 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   isFirst?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Filter customers by status.is_doctor property',
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  isDoctor?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Filter customers by status.is_pricing property',
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  isPricing?: boolean;
+
+  @ApiPropertyOptional({
     description:
       'Filter by whether relevant_user is filled or empty. true: has relevant_user (NOT NULL), false: no relevant_user (IS NULL)',
     example: true,
