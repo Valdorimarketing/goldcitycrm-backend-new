@@ -53,9 +53,19 @@ export class SalesController {
     return this.salesService.getAllSales();
   }
 
+  @Get('customer/:customerId/products')
+  async getCustomerSalesProducts(@Param('customerId') customerId: string) {
+    return this.salesService.getCustomerSalesProducts(+customerId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Sales> {
     return this.salesService.getSalesById(+id);
+  }
+
+  @Get(':id/products')
+  async getSalesProducts(@Param('id') id: string) {
+    return this.salesService.getSalesProducts(+id);
   }
 
   @Patch(':id')
