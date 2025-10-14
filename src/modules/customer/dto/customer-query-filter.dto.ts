@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -27,7 +27,11 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
     example: true,
   })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
   @IsBoolean()
   isActive?: boolean;
 
@@ -45,7 +49,25 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
     example: true,
   })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
   @IsBoolean()
   isFirst?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by whether relevant_user is filled or empty. true: has relevant_user (NOT NULL), false: no relevant_user (IS NULL)',
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  hasRelevantUser?: boolean;
 }

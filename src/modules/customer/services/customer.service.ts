@@ -151,7 +151,7 @@ export class CustomerService extends BaseService<Customer> {
       await this.customerHistoryService.logCustomerAction(
         id,
         CustomerHistoryAction.STATUS_CHANGE,
-        `Durum '${oldStatusName}' durumundan '${newStatusName}' durumuna değiştirildi`,
+        `Durum değiştirildi: ${oldStatusName}->${newStatusName}`,
         { oldStatus: oldStatus || 0, newStatus: updateCustomerDto.status },
         null,
         updateCustomerDto.user,
