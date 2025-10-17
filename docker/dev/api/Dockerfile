@@ -19,10 +19,11 @@ RUN apk upgrade --update \
 FROM deps AS nestjs
 
 COPY . /build
-WORKDIR /build
-ENV NODE_ENV production
 COPY ./docker/dev/api/env/.env /build/.env
+WORKDIR /build
+# Install all dependencies for building
 RUN npm install
+# Now build the application
 RUN npm run build
 
 #############################################################################################
@@ -30,10 +31,14 @@ FROM deps AS prod
 
 WORKDIR /app
 ENV NODE_ENV production
-COPY --from=nestjs /build/.env .
-COPY --from=nestjs /build/node_modules ./node_modules
+# Copy package files and install production dependencies only
+COPY --from=nestjs /build/package*.json ./
+RUN npm ci --omit=dev
+# Copy built application
 COPY --from=nestjs /build/dist ./dist
-COPY --from=nestjs /build/src/core/i18n ./dist/core/i18n
+COPY --from=nestjs /build/.env .
+COPY --from=nestjs /build/.env ./dist/.env
+COPY --from=nestjs /build/node_modules ./node_modules
 COPY --from=nestjs /build/public ./public
 VOLUME /app
 EXPOSE 3000
