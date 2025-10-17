@@ -19,7 +19,7 @@ RUN apk upgrade --update \
 FROM deps AS nestjs
 
 COPY . /build
-COPY ./docker/dev/api/env/.env /build/.env
+COPY ./docker/prod/api/env/.env /build/.env
 WORKDIR /build
 # Install all dependencies for building
 RUN npm install
