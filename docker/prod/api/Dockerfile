@@ -22,7 +22,7 @@ COPY . /build
 WORKDIR /build
 ENV NODE_ENV production
 COPY ./docker/prod/api/env/.env /build/.env
-RUN npm install --omit=dev
+RUN npm install
 RUN npm run build
 
 #############################################################################################
