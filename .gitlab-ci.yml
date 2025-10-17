@@ -12,4 +12,5 @@ stages:
 
 #TODO: LOCAL build-nginx / build / test / push-local
 include:
+  - local: '.gitlab-ci-dev.yml'
   - local: '.gitlab-ci-main.yml'
