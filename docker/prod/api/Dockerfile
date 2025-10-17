@@ -40,8 +40,6 @@ COPY --from=nestjs /build/.env .
 COPY --from=nestjs /build/.env ./dist/.env
 COPY --from=nestjs /build/node_modules ./node_modules
 COPY --from=nestjs /build/node_modules ./dist/node_modules
-COPY --from=nestjs /build/uploads ./uploads
-COPY --from=nestjs /build/uploads ./dist/uploads
 VOLUME /app
 EXPOSE 3000
 ENV HOST=0.0.0.0
