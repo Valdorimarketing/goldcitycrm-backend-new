@@ -22,7 +22,8 @@ COPY . /build
 WORKDIR /build
 ENV NODE_ENV production
 COPY ./docker/prod/api/env/.env /build/.env
-RUN npm install
+RUN npm install --omit=dev
+RUN npm install @nestjs/cli --save
 RUN npm run build
 
 #############################################################################################
