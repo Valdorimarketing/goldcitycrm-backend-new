@@ -53,12 +53,10 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:8092',
-      'http://crmdev.valdori.com',
-      'https://crmdev.valdori.com',
-      'https://crm.valdori.com',
-      'http://crm.valdori.com',
-      'http://crmdevapi.valdori.com',
-      'https://crmdevapi.valdori.com',
+      'http://vcrm.mlpcare.com',
+      'https://vcrm.mlpcare.com',
+      'http://vcrmtest.mlpcare.com',
+      'https://vcrmtest.mlpcare.com'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
