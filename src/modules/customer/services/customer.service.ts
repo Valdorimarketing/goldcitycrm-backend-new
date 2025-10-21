@@ -241,4 +241,9 @@ export class CustomerService extends BaseService<Customer> {
     // Delete customer
     return this.remove(id);
   }
+
+  async checkPhoneExists(phone: string): Promise<boolean> {
+    const customers = await this.customerRepository.findByPhone(phone);
+    return customers.length > 0;
+  }
 }

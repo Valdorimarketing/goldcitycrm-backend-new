@@ -29,6 +29,10 @@ export class CustomerDynamicField {
   @Expose()
   order: number;
 
+  @Column({ type: 'boolean', default: false })
+  @Expose()
+  is_required: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   @Expose()
   created_at: Date;
