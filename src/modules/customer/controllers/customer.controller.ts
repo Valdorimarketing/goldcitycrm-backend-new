@@ -18,6 +18,7 @@ import {
   CreateCustomerDto,
   UpdateCustomerDto,
   CustomerResponseDto,
+  CheckPhoneResponseDto,
 } from '../dto/create-customer.dto';
 import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
 import { Customer } from '../entities/customer.entity';
@@ -141,6 +142,21 @@ export class CustomerController {
       createCustomerDto.image = file.path;
     }
     return this.customerService.createCustomer(createCustomerDto);
+  }
+
+  @Get('check-phone')
+  @ApiOperation({ summary: 'Check if phone number exists' })
+  @ApiResponse({
+    status: 200,
+    description: 'Phone check result',
+    type: CheckPhoneResponseDto,
+  })
+  async checkPhone(@Query('phone') phone: string): Promise<CheckPhoneResponseDto> {
+    const exists = await this.customerService.checkPhoneExists(phone);
+    return {
+      exists,
+      phone,
+    };
   }
 
   @Get()

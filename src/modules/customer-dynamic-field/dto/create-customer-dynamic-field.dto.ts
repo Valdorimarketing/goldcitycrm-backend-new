@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsNotEmpty, IsBoolean } from 'class-validator';
 
 export class CreateCustomerDynamicFieldDto {
   @IsString()
@@ -16,4 +16,8 @@ export class CreateCustomerDynamicFieldDto {
   @IsNumber()
   @IsOptional()
   order?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  is_required?: boolean;
 }
