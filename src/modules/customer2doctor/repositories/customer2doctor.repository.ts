@@ -12,6 +12,11 @@ export class Customer2DoctorRepository extends BaseRepositoryAbstract<Customer2D
   async findByCustomerId(customerId: number): Promise<Customer2Doctor[]> {
     return this.createQueryBuilder('customer2doctor')
       .leftJoinAndSelect('customer2doctor.doctor', 'doctor')
+      .leftJoinAndSelect('doctor.branch', 'branch')
+      .leftJoinAndSelect('doctor.doctor2Hospitals', 'doctor2Hospitals')
+      .leftJoinAndSelect('doctor2Hospitals.hospital', 'hospital')
+      .leftJoinAndSelect('doctor.doctor2Branches', 'doctor2Branches')
+      .leftJoinAndSelect('doctor2Branches.branch', 'doctorBranch')
       .leftJoinAndSelect('customer2doctor.customer', 'customer')
       .where('customer2doctor.customerId = :customerId', { customerId })
       .getMany();

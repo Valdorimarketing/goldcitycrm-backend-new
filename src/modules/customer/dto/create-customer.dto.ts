@@ -255,3 +255,11 @@ export class CustomerResponseDto {
   @Expose()
   dynamicFieldValues?: any[];
 }
+
+export class CheckPhoneResponseDto {
+  @Expose()
+  exists: boolean;
+
+  @Expose()
+  phone: string;
+}
