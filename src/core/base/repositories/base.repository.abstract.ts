@@ -73,7 +73,7 @@ export abstract class BaseRepositoryAbstract<T extends HasId>
 
     if (filters.startDate && filters.endDate) {
       queryBuilder.andWhere(
-        'entity.createdAt BETWEEN :startDate AND :endDate',
+        `${queryBuilder.alias}.created_at BETWEEN :startDate AND :endDate`,
         {
           startDate: new Date(filters.startDate),
           endDate: new Date(filters.endDate),
@@ -83,7 +83,7 @@ export abstract class BaseRepositoryAbstract<T extends HasId>
 
     if (filters.order) {
       queryBuilder.orderBy(
-        'entity.createdAt',
+        `${queryBuilder.alias}.created_at`,
         filters.order.toUpperCase() as 'ASC' | 'DESC',
       );
     }
