@@ -71,14 +71,25 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     return this.findAll();
   }
 
-  async getCustomerNotesByCustomer(
-    customerId: number,
-  ): Promise<CustomerNote[]> {
-    return this.customerNoteRepository.findAll({
+  async getCustomerNotesByCustomer(customerId: number): Promise<any[]> {
+    const notes = await this.customerNoteRepository.findAll({
       where: { customer: customerId },
       order: { createdAt: 'DESC' },
+      relations: ['userRelation']
+    });
+
+    return notes.map(note => {
+      return {
+        ...note,
+        userInfo: note.userRelation || {
+          id: note.customer,
+          name: 'Müşteri',
+        }
+      }
     });
   }
+
+
 
   async getCustomerNotesByUser(userId: number): Promise<CustomerNote[]> {
     return this.customerNoteRepository.findAll({
