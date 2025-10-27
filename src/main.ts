@@ -52,6 +52,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
+      'http://localhost:3001',
       'http://localhost:8092',
       'http://crmdev.valdori.com',
       'https://crmdev.valdori.com',
@@ -82,6 +83,6 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3000);
+  await app.listen(3001);
 }
 bootstrap();
