@@ -1,16 +1,12 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { User } from '../../user/entities/user.entity';
 import { CustomerDynamicFieldValue } from '../../customer-dynamic-field-value/entities/customer-dynamic-field-value.entity';
 import { Customer2Doctor } from '../../customer2doctor/entities/customer2doctor.entity';
 
 @Entity('customer')
 export class Customer extends CustomBaseEntity {
-  @Column({ type: 'int', nullable: true })
-  @Expose()
-  user: number;
-
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Expose()
   name: string;
@@ -99,6 +95,15 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   relevantUser: number;
 
+  // 🔹 İlişki tanımı (Many customers → One user)
+  @ManyToOne(() => User, (user) => user.customers, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'relevant_user' })
+  @Transform(({ value }) => value ? { 
+    name: value.name, 
+  } : null)
+  @Expose()
+  relevantUserData: User;
+
   @Column({ type: 'text', nullable: true })
   @Expose()
   description: string;
@@ -122,10 +127,7 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   dynamicFieldValues: CustomerDynamicFieldValue[];
 
-  @OneToMany(
-    () => Customer2Doctor,
-    (customer2doctor) => customer2doctor.customer,
-  )
+  @OneToMany(() => Customer2Doctor, (customer2doctor) => customer2doctor.customer)
   customer2doctors: Customer2Doctor[];
 
   constructor(partial?: Partial<Customer>) {

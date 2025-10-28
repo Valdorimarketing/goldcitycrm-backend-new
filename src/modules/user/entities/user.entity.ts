@@ -1,16 +1,18 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
-import { Expose } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import { UserGroup } from '../../user-group/entities/user-group.entity';
+import { Customer } from '../../customer/entities/customer.entity'; // 🔹 ekle
 
 @Entity('user')
 export class User extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   @Expose()
   email: string;
-
-  @Column({ type: 'varchar', length: 255 })
-  password: string; // Not exposed for security
+ 
+  @Column({ type: 'varchar', length: 255 }) 
+  @Exclude()
+  password: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Expose()
@@ -32,6 +34,11 @@ export class User extends CustomBaseEntity {
   @JoinColumn({ name: 'userGroupId' })
   @Expose()
   userGroup: UserGroup;
+
+  // 🔹 İlişkinin Customer tarafındaki karşılığı
+  @OneToMany(() => Customer, (customer) => customer.relevantUserData)
+  @Expose()
+  customers: Customer[];
 
   constructor(partial?: Partial<User>) {
     super(partial);

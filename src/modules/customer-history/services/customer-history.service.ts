@@ -8,6 +8,7 @@ import {
   CustomerHistoryResponseDto,
 } from '../dto/create-customer-history.dto';
 import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
 
 export interface CustomerHistoryFilterOptions {
   customer?: number;
@@ -49,14 +50,20 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
     return this.findAll();
   }
 
-  async getCustomerHistoryByCustomer(
-    customerId: number,
-  ): Promise<CustomerHistory[]> {
-    return this.customerHistoryRepository.findAll({
+  async getCustomerHistoryByCustomer(customerId: number): Promise<any[]> {
+    const data = await this.customerHistoryRepository.findAll({
       where: { customer: customerId },
       order: { createdAt: 'DESC' },
+      relations: ['userInfo'],
     });
+ 
+
+    return instanceToPlain(data, {
+      excludeExtraneousValues: true,
+      enableCircularCheck: true,
+    }) as any[];
   }
+
 
   async getCustomerHistoryByDateRange(
     filters: CustomerHistoryFilterOptions,
