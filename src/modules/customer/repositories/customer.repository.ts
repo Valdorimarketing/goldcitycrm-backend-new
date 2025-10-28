@@ -4,6 +4,7 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Customer } from '../entities/customer.entity';
 import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
@@ -118,13 +119,16 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     });
   }
 
-  async findOneWithDynamicFields(id: number): Promise<Customer> {
-    return this.getRepository().findOne({
+  async findOneWithDynamicFields(id: number): Promise<any> {
+    const data = await this.getRepository().findOne({
       where: { id },
       relations: [
+        'relevantUserData',
         'dynamicFieldValues',
         'dynamicFieldValues.customerDynamicFieldRelation',
       ],
     });
+
+    return instanceToPlain(data, { excludeExtraneousValues: true });
   }
-}
+} 

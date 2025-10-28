@@ -33,6 +33,11 @@ export class CreateStatusDto {
   isPricing?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  @Expose()
+  isFirst?: boolean;
+
+  @IsOptional()
   @IsString()
   @Expose()
   color?: string;
