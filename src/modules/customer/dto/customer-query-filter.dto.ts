@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsBoolean, IsDateString } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { BaseQueryFilterDto } from '../../../core/base/dtos/base.query.filter.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -96,4 +96,30 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   })
   @IsBoolean()
   hasRelevantUser?: boolean;
+
+    @ApiPropertyOptional({
+    description: 'Date filter keyword (today, week, month, overdue, custom, all)',
+    example: 'today',
+  })
+  @IsOptional()
+  @IsString()
+  dateFilter?: string;
+
+  @ApiPropertyOptional({
+    description: 'Start date for custom range (YYYY-MM-DD)',
+    example: '2025-10-01',
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'End date for custom range (YYYY-MM-DD)',
+    example: '2025-10-31',
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+
 }

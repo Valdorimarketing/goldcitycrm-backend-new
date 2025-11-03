@@ -1,15 +1,23 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { SalesProduct } from '../../sales-product/entities/sales-product.entity';
 import { Hospital } from '../../hospital/entities/hospital.entity';
 import { Doctor } from '../../doctor/entities/doctor.entity';
+import { Customer } from 'src/modules/customer/entities/customer.entity';
 
 @Entity('meeting')
 export class Meeting extends CustomBaseEntity {
   @Column({ type: 'int' })
   @Expose()
   customer: number;
+
+  @ManyToOne(() => Customer, { nullable: true })
+  @JoinColumn({ name: 'customer' })
+  @Transform(({ value }) => value ? value.name : null)
+  @Expose()
+  customerData: Customer;
+
 
   @Column({ type: 'int', nullable: true, name: 'hospital_id' })
   @Expose()

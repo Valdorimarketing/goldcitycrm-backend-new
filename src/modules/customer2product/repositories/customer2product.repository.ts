@@ -33,8 +33,9 @@ export class Customer2ProductRepository extends BaseRepositoryAbstract<Customer2
 
   async findByCustomer(customerId: number): Promise<Customer2Product[]> {
     return this.createQueryBuilder('cp')
-      .leftJoinAndSelect('cp.product', 'product')
+      .leftJoinAndSelect('cp.product', 'product') 
       .leftJoinAndSelect('cp.customer', 'customer')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('cp.customer = :customerId', { customerId })
       .getMany();
   }
@@ -43,6 +44,7 @@ export class Customer2ProductRepository extends BaseRepositoryAbstract<Customer2
     return this.createQueryBuilder('cp')
       .leftJoinAndSelect('cp.product', 'product')
       .leftJoinAndSelect('cp.customer', 'customer')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('cp.customer = :customerId', { customerId })
       .andWhere('cp.is_sold = :isSold', { isSold: false })
       .getMany();
@@ -55,6 +57,7 @@ export class Customer2ProductRepository extends BaseRepositoryAbstract<Customer2
     return this.createQueryBuilder('cp')
       .leftJoinAndSelect('cp.product', 'product')
       .leftJoinAndSelect('cp.customer', 'customer')
+      .leftJoinAndSelect('product.currency', 'currency')
       .whereInIds(ids)
       .andWhere('cp.customer = :customerId', { customerId })
       .andWhere('cp.is_sold = :isSold', { isSold: false })
@@ -65,6 +68,7 @@ export class Customer2ProductRepository extends BaseRepositoryAbstract<Customer2
     return this.createQueryBuilder('cp')
       .leftJoinAndSelect('cp.product', 'product')
       .leftJoinAndSelect('cp.customer', 'customer')
+      .leftJoinAndSelect('product.currency', 'currency')
       .where('cp.product = :productId', { productId })
       .getMany();
   }

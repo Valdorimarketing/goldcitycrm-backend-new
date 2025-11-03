@@ -34,6 +34,16 @@ export class CreateProductDto {
   @Expose()
   price?: number;
 
+  /**
+   * Ürünün bağlı olduğu para birimi ID'si.
+   * Örn: 1 = TL, 2 = USD, 3 = EUR
+   */
+  @IsNotEmpty()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  currencyId: number;
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -55,6 +65,14 @@ export class UpdateProductDto {
   price?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  currencyId?: number;
+
+  
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ActionListItemDto)
@@ -71,6 +89,9 @@ export class ProductResponseDto {
 
   @Expose()
   price: number;
+
+  @Expose()
+  currencyId: number;
 
   @Expose()
   createdAt: Date;

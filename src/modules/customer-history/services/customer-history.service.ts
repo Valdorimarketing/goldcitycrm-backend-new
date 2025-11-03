@@ -113,7 +113,8 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
       description,
       requestData: requestData ? JSON.stringify(requestData) : null,
       responseData: responseData ? JSON.stringify(responseData) : null,
-    };
+    }; 
+    
 
     return this.create(
       historyData as CreateCustomerHistoryDto,

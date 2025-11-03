@@ -126,7 +126,7 @@ export class MeetingService extends BaseService<Meeting> {
   }
 
   async getAllMeetings(): Promise<Meeting[]> {
-    return this.findAll();
+    return this.meetingRepository.getByCustomer() as any;
   }
 
   async getMeetingsByCustomer(customer: number): Promise<Meeting[]> {

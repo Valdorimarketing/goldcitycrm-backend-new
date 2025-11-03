@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsNumber, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { User } from 'src/modules/user/entities/user.entity';
 
 export class CreateCustomer2ProductDto {
   @IsNotEmpty()
@@ -30,4 +31,10 @@ export class CreateCustomer2ProductDto {
   @IsNumber()
   @Type(() => Number)
   offer?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
+  user?: User;
 }

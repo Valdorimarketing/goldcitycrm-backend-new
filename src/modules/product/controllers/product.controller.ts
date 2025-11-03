@@ -30,7 +30,7 @@ import {
 @Controller('products')
 @UseGuards(JwtAuthGuard)
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productService: ProductService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new product' })
@@ -50,9 +50,13 @@ export class ProductController {
   @ApiOperation({ summary: 'Get all products with pagination and search' })
   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })
   async findAll(@Query() query: ProductQueryFilterDto) {
-    const queryBuilder =
-      await this.productService.findByFiltersBaseQuery(query);
+
+
+    const queryBuilder = await this.productService.findByFiltersBaseQuery(query);
+    queryBuilder.orderBy('product.id', 'DESC'); // veya 'DESC'
     return this.productService.paginate(queryBuilder, query, Product);
+
+ 
   }
 
   @Get(':id')

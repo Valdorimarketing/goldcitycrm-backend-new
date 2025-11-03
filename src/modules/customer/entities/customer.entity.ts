@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, OneToOne } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose, Transform } from 'class-transformer';
 import { User } from '../../user/entities/user.entity';
@@ -50,6 +50,13 @@ export class Customer extends CustomBaseEntity {
   @Column({ type: 'int', nullable: true, name: 'referance_customer' })
   @Expose()
   referanceCustomer: number;
+ 
+  @OneToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'referance_customer' })
+  @Transform(({ value }) => value ? value.name : null)
+  @Expose()
+  referanceCustomerData: Customer;
+
 
   @Column({ type: 'int', nullable: true })
   @Expose()
@@ -94,13 +101,10 @@ export class Customer extends CustomBaseEntity {
   @Column({ type: 'int', nullable: true, name: 'relevant_user' })
   @Expose()
   relevantUser: number;
-
-  // 🔹 İlişki tanımı (Many customers → One user)
+ 
   @ManyToOne(() => User, (user) => user.customers, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'relevant_user' })
-  @Transform(({ value }) => value ? { 
-    name: value.name, 
-  } : null)
+  @Transform(({ value }) => value ? value.name : null)
   @Expose()
   relevantUserData: User;
 

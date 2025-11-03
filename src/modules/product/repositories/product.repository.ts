@@ -14,33 +14,56 @@ export class ProductRepository extends BaseRepositoryAbstract<Product> {
     super(productRepository);
   }
 
+
+  async findOneWithCurrency(id: number): Promise<Product> {
+    return this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.currency', 'currency')
+      .where('product.id = :id', { id })
+      .getOne();
+  }
+
+
   async findByFiltersBaseQuery(
     filters: ProductQueryFilterDto,
   ): Promise<SelectQueryBuilder<Product>> {
-    const queryBuilder = await super.findByFiltersBaseQuery(filters);
+    const queryBuilder = this.createQueryBuilder('product')
+      .leftJoinAndSelect('product.currency', 'currency'); // currency ilişkisini çek
 
-    // Search functionality
+    // Currency filtreleri
+    if (filters.currencyId) {
+      queryBuilder.andWhere('currency.id = :currencyId', { currencyId: filters.currencyId });
+    }
+    if (filters.currencyCode) {
+      queryBuilder.andWhere('currency.code = :currencyCode', { currencyCode: filters.currencyCode });
+    }
+
+    // Ürün ismi arama
     if (filters.search) {
-      queryBuilder.andWhere('product.name LIKE :search', {
-        search: `%${filters.search}%`,
-      });
+      queryBuilder.andWhere('product.name LIKE :search', { search: `%${filters.search}%` });
     }
 
-    // Price range filter
-    if (filters.minPrice !== undefined && filters.minPrice !== null) {
-      queryBuilder.andWhere('product.price >= :minPrice', {
-        minPrice: filters.minPrice,
-      });
+    // Fiyat aralığı
+    if (filters.minPrice != null) {
+      queryBuilder.andWhere('product.price >= :minPrice', { minPrice: filters.minPrice });
+    }
+    if (filters.maxPrice != null) {
+      queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice: filters.maxPrice });
     }
 
-    if (filters.maxPrice !== undefined && filters.maxPrice !== null) {
-      queryBuilder.andWhere('product.price <= :maxPrice', {
-        maxPrice: filters.maxPrice,
-      });
+    // Pagination
+    const limit = filters.limit || 10;
+    const page = filters.page || 1;
+    queryBuilder.take(limit).skip((page - 1) * limit);
+
+    // Order
+    if (filters.order) {
+      queryBuilder.orderBy('product.created_at', filters.order.toUpperCase() as 'ASC' | 'DESC');
     }
 
     return queryBuilder;
   }
+
 
   async findByName(name: string): Promise<Product[]> {
     return this.getRepository()

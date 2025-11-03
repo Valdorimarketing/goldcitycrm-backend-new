@@ -46,7 +46,7 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     await this.customerHistoryService.logCustomerAction(
       createCustomerNoteDto.customer,
       CustomerHistoryAction.NOTE_ADDED,
-      `Not eklendi: ${createCustomerNoteDto.note}`,
+      `${createCustomerNoteDto.note}`,
       createCustomerNoteDto,
       null,
       userId,

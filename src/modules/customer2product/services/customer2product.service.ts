@@ -120,6 +120,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
         price: item.price,
         discount: item.discount,
         offer: item.offer,
+        user: item.user
       });
     }
 
@@ -130,16 +131,21 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
 
     const results = await this.customer2ProductRepository.bulkCreate(entities);
 
+
     // Log to customer history for each customer
     for (const [customerId, productNames] of customerProductMap.entries()) {
-      await this.customerHistoryService.logCustomerAction(
+ 
+
+      const wwww = await this.customerHistoryService.logCustomerAction(
         customerId,
         CustomerHistoryAction.CUSTOMER_UPDATED,
         `${productNames.length} adet ürün ile toplu eşleştirme yapıldı: ${productNames.join(', ')}`,
         bulkCreateDto,
         null,
-        (bulkCreateDto as any).user || null,
+        (bulkCreateDto as any).items[0].user || null,
       );
+ 
+
     }
 
     return results;
@@ -308,8 +314,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
     for (const cp of customer2Products) {
       const salesProduct = await this.salesProductRepository.save({
         sales: sales.id,
-        product: cp.product.id,
-        currency: 'TRY', // Default currency
+        product: cp.product.id, 
         price: cp.price || 0,
         discount: cp.discount || 0,
         vat: 0, // Can be calculated or set to 0

@@ -47,6 +47,14 @@ export class UserService extends BaseService<User> {
     return this.update(userData, id, UserResponseDto);
   }
 
+async updateLastActiveTime(userId: number): Promise<User> {
+  const user = await this.getUserById(userId);  
+  
+  user.lastActiveTime = new Date();
+  return this.userRepository.save(user);
+}
+
+
   async getUserById(id: number): Promise<User> {
     return this.findOneById(id);
   }
