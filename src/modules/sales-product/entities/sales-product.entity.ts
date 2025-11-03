@@ -1,8 +1,10 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { Product } from '../../product/entities/product.entity';
-import { Sales } from '../../sales/entities/sales.entity';
+import { Sales } from '../../sales/entities/sales.entity'; 
+import { Currency } from '../../currencies/entities/currency.entity';
+import { IsNumber } from 'class-validator';
 
 @Entity('sales_product')
 export class SalesProduct extends CustomBaseEntity {
@@ -24,11 +26,14 @@ export class SalesProduct extends CustomBaseEntity {
   @ManyToOne(() => Product, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'product' })
   @Expose()
-  productDetails: Product;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  productDetails: Product; 
+  
+  @Type(() => Number)
+  @IsNumber()
+  @ManyToOne(() => Currency, { eager: true })
+  @JoinColumn({ name: 'currency' })
   @Expose()
-  currency: string;
+  currency?: number;
 
   @Column({ type: 'float', nullable: true })
   @Expose()

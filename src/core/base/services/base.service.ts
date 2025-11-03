@@ -70,7 +70,7 @@ export abstract class BaseService<T extends HasId> implements IBaseService<T> {
       throw CustomHttpException.notFound(this.entityClass.name);
     }
     Object.assign(entity, updateDto);
-    const savedEntity = await this.repository.save(entity);
+    const savedEntity = await this.repository.save(entity); 
     return plainToInstance(responseDtoClass, savedEntity, {
       excludeExtraneousValues: true,
     });

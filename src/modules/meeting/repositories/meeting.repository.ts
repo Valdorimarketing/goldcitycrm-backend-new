@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Meeting } from '../entities/meeting.entity';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
@@ -12,6 +13,17 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
   ) {
     super(meetingRepository);
   }
+
+
+  async getByCustomer(): Promise<Record<string, any>[]> {
+    const data: Meeting[] = await this.getRepository().find({
+      relations: ['customerData'],
+    });
+
+    const plain = instanceToPlain(data, { excludeExtraneousValues: true });
+    return Array.isArray(plain) ? plain : [plain];
+  }
+
 
   async findByCustomer(customer: number): Promise<Meeting[]> {
     return this.getRepository().find({

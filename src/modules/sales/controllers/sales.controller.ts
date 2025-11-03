@@ -90,8 +90,5 @@ export class SalesController {
     return this.salesService.deleteSales(+id);
   }
 
-  @Post('test-action-list')
-  async testActionList(): Promise<any> {
-    return this.salesService.testActionListFeature();
-  }
+ 
 }

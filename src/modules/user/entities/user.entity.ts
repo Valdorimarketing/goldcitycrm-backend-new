@@ -22,6 +22,10 @@ export class User extends CustomBaseEntity {
   @Expose()
   name: string;
 
+  @Column({ type: 'timestamp', nullable: true, name: 'last_active_time' })
+  @Expose()
+  lastActiveTime: Date;
+
   @Column({ type: 'boolean', default: true })
   @Expose()
   isActive: boolean;
@@ -35,7 +39,6 @@ export class User extends CustomBaseEntity {
   @Expose()
   userGroup: UserGroup;
 
-  // 🔹 İlişkinin Customer tarafındaki karşılığı
   @OneToMany(() => Customer, (customer) => customer.relevantUserData)
   @Expose()
   customers: Customer[];

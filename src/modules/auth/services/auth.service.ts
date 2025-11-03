@@ -4,12 +4,14 @@ import { UserService } from '../../user/services/user.service';
 import { LoginDto, RegisterDto, AuthResponseDto } from '../dto/auth.dto';
 import * as bcrypt from 'bcryptjs';
 import { plainToInstance } from 'class-transformer';
+import { UserRepository } from '../../user/repositories/user.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -33,6 +35,9 @@ export class AuthService {
 
     const payload = { email: user.email, sub: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
+ 
+    user.lastActiveTime = new Date();
+    this.userRepository.save(user);
 
     return plainToInstance(AuthResponseDto, {
       access_token,

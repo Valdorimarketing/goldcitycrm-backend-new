@@ -5,6 +5,7 @@ import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.rep
 import { Customer } from '../entities/customer.entity';
 import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
 import { instanceToPlain } from 'class-transformer';
+import { endOfDay, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns';
 
 @Injectable()
 export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
@@ -81,16 +82,72 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     }
 
     // Filter by whether relevant_user is filled or empty
-    if (
-      filters.hasRelevantUser !== undefined &&
-      filters.hasRelevantUser !== null
-    ) {
-      if (filters.hasRelevantUser) {
-        queryBuilder.andWhere('customer.relevant_user IS NOT NULL');
-      } else {
-        queryBuilder.andWhere('customer.relevant_user IS NULL');
+    if (filters.hasRelevantUser !== undefined && filters.hasRelevantUser !== null) {
+        if (filters.hasRelevantUser) {
+          queryBuilder.andWhere('customer.relevant_user IS NOT NULL AND customer.relevant_user != 0');
+        } else {
+          queryBuilder.andWhere('(customer.relevant_user IS NULL OR customer.relevant_user = 0)');
+        }
       }
+
+
+
+     
+  if (filters.dateFilter || filters.startDate || filters.endDate) {
+    const now = new Date();
+
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    switch (filters.dateFilter) {
+      case 'today':
+        // Bugün ve öncesi
+        endDate = endOfDay(now);
+        break;
+      case 'today-only':
+        startDate = startOfDay(now);
+        endDate = endOfDay(now);
+        break;
+      case 'tomorrow':
+        startDate = startOfDay(addDays(now, 1));
+        endDate = endOfDay(addDays(now, 1));
+        break;
+      case 'week':
+        startDate = startOfWeek(now, { weekStartsOn: 1 });
+        endDate = endOfWeek(now, { weekStartsOn: 1 });
+        break;
+      case 'month':
+        startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
+        break;
+      case 'overdue':
+        endDate = startOfDay(now); // bugünden önceki her şey
+        break;
+      case 'custom':
+        if (filters.startDate) startDate = new Date(filters.startDate);
+        if (filters.endDate) endDate = new Date(filters.endDate);
+        break;
+      default:
+        // all veya boş => filtreleme yok
+        break;
     }
+
+    // Filtreleri sorguya ekle
+    if (startDate && endDate) {
+      queryBuilder.andWhere(
+        'customer.reminding_date BETWEEN :startDate AND :endDate',
+        { startDate, endDate },
+      );
+    } else if (startDate) {
+      queryBuilder.andWhere('customer.reminding_date >= :startDate', {
+        startDate,
+      });
+    } else if (endDate) {
+      queryBuilder.andWhere('customer.reminding_date <= :endDate', {
+        endDate,
+      });
+    }
+  }
 
     return queryBuilder;
   }
@@ -123,6 +180,7 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     const data = await this.getRepository().findOne({
       where: { id },
       relations: [
+        'referanceCustomerData',
         'relevantUserData',
         'dynamicFieldValues',
         'dynamicFieldValues.customerDynamicFieldRelation',

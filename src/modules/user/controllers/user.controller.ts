@@ -7,6 +7,8 @@ import {
   Param,
   Delete,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import {
@@ -15,6 +17,7 @@ import {
   UserResponseDto,
 } from '../dto/create-user.dto';
 import { User } from '../entities/user.entity';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('users')
 export class UserController {
@@ -33,10 +36,23 @@ export class UserController {
     return this.userService.getAllUsers();
   }
 
+  
+  @UseGuards(AuthGuard('jwt'))
+  @Get('update-last-active')
+  async updateLastActiveTime(@Req() req) {   
+    return this.userService.updateLastActiveTime(req.user.id);
+  }
+
+
+  
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<User> {
     return this.userService.getUserById(+id);
   }
+
+  
+  
+
 
   @Patch(':id')
   async update(

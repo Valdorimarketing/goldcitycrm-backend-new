@@ -1,14 +1,18 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { UpdateLastActiveInterceptor } from './core/interceptors/update-last-active.interceptor';
+
+// Modüller
+import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { UserGroupModule } from './modules/user-group/user-group.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { RoleModule } from './modules/role/role.module';
 import { SalesModule } from './modules/sales/sales.module';
-import { AuthModule } from './modules/auth/auth.module';
 import { ProductModule } from './modules/product/product.module';
 import { CountryModule } from './modules/country/country.module';
 import { StateModule } from './modules/state/state.module';
@@ -29,7 +33,8 @@ import { SourceModule } from './modules/source/source.module';
 import { CustomerFileModule } from './modules/customer-file/customer-file.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { Customer2DoctorModule } from './modules/customer2doctor/customer2doctor.module';
-import { Customer2ProductModule } from './modules/customer2product/customer2product.module';
+import { Customer2ProductModule } from './modules/customer2product/customer2product.module'; 
+import { CurrencyModule } from './modules/currencies/currency.module';
 
 @Module({
   imports: [
@@ -74,8 +79,15 @@ import { Customer2ProductModule } from './modules/customer2product/customer2prod
     PaymentModule,
     Customer2DoctorModule,
     Customer2ProductModule,
+    CurrencyModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService, // 👈 eksik olan satır eklendi
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UpdateLastActiveInterceptor,
+    },
+  ],
 })
 export class AppModule {}

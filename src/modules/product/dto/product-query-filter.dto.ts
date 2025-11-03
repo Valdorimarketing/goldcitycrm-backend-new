@@ -29,4 +29,21 @@ export class ProductQueryFilterDto extends BaseQueryFilterDto {
   @Type(() => Number)
   @IsNumber()
   maxPrice?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by currency ID',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  currencyId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by currency code (TRY, USD, EUR)',
+    example: 'USD',
+  })
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
 }

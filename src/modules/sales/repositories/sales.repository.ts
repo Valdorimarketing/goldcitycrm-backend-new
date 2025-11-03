@@ -61,7 +61,11 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
       .leftJoinAndSelect('sales.followerUserDetails', 'followerUser')
       .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
-      .leftJoinAndSelect('salesProducts.productDetails', 'product');
+      .leftJoinAndSelect('salesProducts.productDetails', 'product')
+      .leftJoinAndSelect('product.currency', 'productCurrency')
+      .orderBy('sales.createdAt', 'DESC');
+
+
 
     // User filter
     if (filters.user !== undefined && filters.user !== null) {
