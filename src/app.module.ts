@@ -35,6 +35,7 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { Customer2DoctorModule } from './modules/customer2doctor/customer2doctor.module';
 import { Customer2ProductModule } from './modules/customer2product/customer2product.module'; 
 import { CurrencyModule } from './modules/currencies/currency.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -79,7 +80,8 @@ import { CurrencyModule } from './modules/currencies/currency.module';
     PaymentModule,
     Customer2DoctorModule,
     Customer2ProductModule,
-    CurrencyModule
+    CurrencyModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

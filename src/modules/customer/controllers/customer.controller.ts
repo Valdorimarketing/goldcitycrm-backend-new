@@ -31,13 +31,14 @@ import {
   ApiBearerAuth,
   ApiConsumes,
 } from '@nestjs/swagger';
+import { NotificationService } from 'src/modules/notification/services/notification.service';
 
 @ApiTags('customers')
 @ApiBearerAuth('JWT-auth')
 @Controller('customers')
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService) {}
+  constructor(private readonly customerService: CustomerService, private readonly notificationService: NotificationService) { }
 
   /**
    * Transform multipart form data to CreateCustomerDto/UpdateCustomerDto
@@ -61,9 +62,10 @@ export class CustomerController {
       'website',
       'district',
       'address',
+      'url',
       'description',
       'image',
-      'relatedTransaction',
+      'relatedTransaction'
     ];
 
     stringFields.forEach((field) => {
@@ -176,29 +178,41 @@ export class CustomerController {
     return this.customerService.getCustomerById(+id);
   }
 
-  @Patch(':id')
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiConsumes('multipart/form-data')
-  async update(
-    @Param('id') id: string,
-    @Body() body: any,
-    @CurrentUserId() userId: number,
-    @UploadedFile() file?: Express.Multer.File,
-  ): Promise<CustomerResponseDto> {
-    const updateCustomerDto = this.transformCustomerDto(body);
+@Patch(':id')
+@UseInterceptors(FileInterceptor('image'))
+@ApiConsumes('multipart/form-data')
+async update(
+  @Param('id') id: string,
+  @Body() body: any,
+  @CurrentUserId() userId: number,
+  @UploadedFile() file?: Express.Multer.File,
+): Promise<CustomerResponseDto> {
+  const updateCustomerDto = this.transformCustomerDto(body);
 
-    // User ID'yi DTO'ya ekle
-    const dtoWithUser = {
-      ...updateCustomerDto,
-      user: userId,
-    };
+  // Giriş yapan kullanıcıyı da DTO'ya ekle
+  const dtoWithUser = {
+    ...updateCustomerDto,
+    user: userId,
+  };
 
-    if (file) {
-      dtoWithUser.image = file.path;
-    }
-
-    return this.customerService.updateCustomer(+id, dtoWithUser);
+  if (file) {
+    dtoWithUser.image = file.path;
   }
+
+  // Önce müşteri kaydını güncelle
+  const updated = await this.customerService.updateCustomer(+id, dtoWithUser);
+
+  // Eğer müşteri bir kullanıcıya atanmışsa, bildirim gönder
+  if (dtoWithUser.relevantUser) {
+    await this.notificationService.createForUser(
+      dtoWithUser.relevantUser,
+      `Size yeni bir müşteri atandı: ${updated.name || 'Bilinmeyen Müşteri'}`
+    );
+  }
+
+  return updated;
+}
+
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<Customer> {

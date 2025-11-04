@@ -129,6 +129,11 @@ export class CreateCustomerDto {
   address?: string;
 
   @IsOptional()
+  @IsString()
+  @Expose()
+  url?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   @Expose()
@@ -230,6 +235,9 @@ export class CustomerResponseDto {
 
   @Expose()
   address: string;
+
+  @Expose()
+  url: string;
 
   @Expose()
   relevantUser: number;

@@ -4,6 +4,7 @@ import { Expose, Transform } from 'class-transformer';
 import { User } from '../../user/entities/user.entity';
 import { CustomerDynamicFieldValue } from '../../customer-dynamic-field-value/entities/customer-dynamic-field-value.entity';
 import { Customer2Doctor } from '../../customer2doctor/entities/customer2doctor.entity';
+import { Source } from 'src/modules/source/entities/source.entity';
 
 @Entity('customer')
 export class Customer extends CustomBaseEntity {
@@ -39,6 +40,13 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   sourceId: number;
 
+  @ManyToOne(() => Source, { nullable: true })
+  @JoinColumn({ name: 'source_id' })
+  @Expose()
+  @Transform(({ value }) => value ? value.name : null)
+  source?: Source; 
+
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Expose()
   job: string;
@@ -50,7 +58,7 @@ export class Customer extends CustomBaseEntity {
   @Column({ type: 'int', nullable: true, name: 'referance_customer' })
   @Expose()
   referanceCustomer: number;
- 
+
   @OneToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'referance_customer' })
   @Transform(({ value }) => value ? value.name : null)
@@ -98,10 +106,14 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   address: string;
 
+  @Column({ type: 'text', nullable: true })
+  @Expose()
+  url: string;
+
   @Column({ type: 'int', nullable: true, name: 'relevant_user' })
   @Expose()
   relevantUser: number;
- 
+
   @ManyToOne(() => User, (user) => user.customers, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'relevant_user' })
   @Transform(({ value }) => value ? value.name : null)

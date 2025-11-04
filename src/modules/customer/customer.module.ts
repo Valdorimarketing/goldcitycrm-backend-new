@@ -16,6 +16,7 @@ import { Status } from '../status/entities/status.entity';
 import { StatusRepository } from '../status/repositories/status.repository';
 import { Customer2Product } from '../customer2product/entities/customer2product.entity';
 import { Customer2ProductRepository } from '../customer2product/repositories/customer2product.repository';
+import { NotificationModule } from '../notification/notification.module'; 
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { Customer2ProductRepository } from '../customer2product/repositories/cus
       Customer,
       CustomerStatusChange,
       Status,
-      Customer2Product,
+      Customer2Product
     ]),
     MulterModule.register({
       storage: diskStorage({
@@ -40,6 +41,7 @@ import { Customer2ProductRepository } from '../customer2product/repositories/cus
     CustomerDynamicFieldValueModule,
     FraudAlertModule,
     CustomerHistoryModule,
+    NotificationModule
   ],
   controllers: [CustomerController],
   providers: [
@@ -47,7 +49,7 @@ import { Customer2ProductRepository } from '../customer2product/repositories/cus
     CustomerRepository,
     CustomerStatusChangeRepository,
     StatusRepository,
-    Customer2ProductRepository,
+    Customer2ProductRepository
   ],
   exports: [CustomerService, CustomerRepository],
 })
