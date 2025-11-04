@@ -21,136 +21,150 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
   ): Promise<SelectQueryBuilder<Customer>> {
     const queryBuilder = await super.findByFiltersBaseQuery(filters);
 
-    // Search functionality
+
+
+    // 🧩 SOURCE RELATION & FILTER 
+
+    queryBuilder.leftJoinAndSelect('customer.source', 'source'); 
+    queryBuilder.leftJoinAndSelect('customer.relevantUserData', 'relevantUserData');
+
+
+
+    // 🔍 Search filter
     if (filters.search) {
       queryBuilder.andWhere(
-        '(customer.name LIKE :search OR customer.surname LIKE :search OR customer.email LIKE :search OR customer.phone LIKE :search OR customer.identity_number LIKE :search)',
+        `(customer.name LIKE :search 
+        OR customer.surname LIKE :search 
+        OR customer.email LIKE :search 
+        OR customer.phone LIKE :search 
+        OR customer.identity_number LIKE :search)`,
         { search: `%${filters.search}%` },
       );
     }
 
-    // Status filter
+    // 🟢 Status filter
     if (filters.status !== undefined && filters.status !== null) {
       queryBuilder.andWhere('customer.status = :status', {
         status: filters.status,
       });
     }
 
-    // Active state filter
+    // 🟣 Active filter
     if (filters.isActive !== undefined && filters.isActive !== null) {
       queryBuilder.andWhere('customer.isActive = :isActive', {
         isActive: filters.isActive,
       });
     }
 
-    // Relevant user filter
+    // 👤 Relevant user filter
     if (filters.relevantUser !== undefined && filters.relevantUser !== null) {
       queryBuilder.andWhere('customer.relevant_user = :relevantUser', {
         relevantUser: filters.relevantUser,
       });
     }
 
-    // Join status table if any status property filter is applied
+    // 🔗 Status table join (only if status-related filters exist)
     const needsStatusJoin =
-      (filters.isFirst !== undefined && filters.isFirst !== null) ||
-      (filters.isDoctor !== undefined && filters.isDoctor !== null) ||
-      (filters.isPricing !== undefined && filters.isPricing !== null);
+      filters.isFirst !== undefined ||
+      filters.isDoctor !== undefined ||
+      filters.isPricing !== undefined;
 
     if (needsStatusJoin) {
       queryBuilder.leftJoin('status', 'status', 'customer.status = status.id');
     }
 
-    // Filter by status.is_first property
+    // 🔹 Status-based filters
     if (filters.isFirst !== undefined && filters.isFirst !== null) {
       queryBuilder.andWhere('status.is_first = :isFirst', {
         isFirst: filters.isFirst,
       });
     }
 
-    // Filter by status.is_doctor property
     if (filters.isDoctor !== undefined && filters.isDoctor !== null) {
       queryBuilder.andWhere('status.is_doctor = :isDoctor', {
         isDoctor: filters.isDoctor,
       });
     }
 
-    // Filter by status.is_pricing property
     if (filters.isPricing !== undefined && filters.isPricing !== null) {
       queryBuilder.andWhere('status.is_pricing = :isPricing', {
         isPricing: filters.isPricing,
       });
     }
 
-    // Filter by whether relevant_user is filled or empty
+    // 🔗 Relevant user filled/empty filter
     if (filters.hasRelevantUser !== undefined && filters.hasRelevantUser !== null) {
-        if (filters.hasRelevantUser) {
-          queryBuilder.andWhere('customer.relevant_user IS NOT NULL AND customer.relevant_user != 0');
-        } else {
-          queryBuilder.andWhere('(customer.relevant_user IS NULL OR customer.relevant_user = 0)');
-        }
+      if (filters.hasRelevantUser) {
+        queryBuilder.andWhere(
+          'customer.relevant_user IS NOT NULL AND customer.relevant_user != 0',
+        );
+      } else {
+        queryBuilder.andWhere(
+          '(customer.relevant_user IS NULL OR customer.relevant_user = 0)',
+        );
+      }
+    }
+
+    // 📆 Date filtering
+    if (filters.dateFilter || filters.startDate || filters.endDate) {
+      const now = new Date();
+
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+
+      switch (filters.dateFilter) {
+        case 'today':
+          endDate = endOfDay(now);
+          break;
+        case 'today-only':
+          startDate = startOfDay(now);
+          endDate = endOfDay(now);
+          break;
+        case 'tomorrow':
+          startDate = startOfDay(addDays(now, 1));
+          endDate = endOfDay(addDays(now, 1));
+          break;
+        case 'week':
+          startDate = startOfWeek(now, { weekStartsOn: 1 });
+          endDate = endOfWeek(now, { weekStartsOn: 1 });
+          break;
+        case 'month':
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+        case 'overdue':
+          endDate = startOfDay(now);
+          break;
+        case 'custom':
+          if (filters.startDate) startDate = new Date(filters.startDate);
+          if (filters.endDate) endDate = new Date(filters.endDate);
+          break;
       }
 
-
-
-     
-  if (filters.dateFilter || filters.startDate || filters.endDate) {
-    const now = new Date();
-
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
-
-    switch (filters.dateFilter) {
-      case 'today':
-        // Bugün ve öncesi
-        endDate = endOfDay(now);
-        break;
-      case 'today-only':
-        startDate = startOfDay(now);
-        endDate = endOfDay(now);
-        break;
-      case 'tomorrow':
-        startDate = startOfDay(addDays(now, 1));
-        endDate = endOfDay(addDays(now, 1));
-        break;
-      case 'week':
-        startDate = startOfWeek(now, { weekStartsOn: 1 });
-        endDate = endOfWeek(now, { weekStartsOn: 1 });
-        break;
-      case 'month':
-        startDate = startOfMonth(now);
-        endDate = endOfMonth(now);
-        break;
-      case 'overdue':
-        endDate = startOfDay(now); // bugünden önceki her şey
-        break;
-      case 'custom':
-        if (filters.startDate) startDate = new Date(filters.startDate);
-        if (filters.endDate) endDate = new Date(filters.endDate);
-        break;
-      default:
-        // all veya boş => filtreleme yok
-        break;
+      if (startDate && endDate) {
+        queryBuilder.andWhere(
+          'customer.reminding_date BETWEEN :startDate AND :endDate',
+          { startDate, endDate },
+        );
+      } else if (startDate) {
+        queryBuilder.andWhere('customer.reminding_date >= :startDate', {
+          startDate,
+        });
+      } else if (endDate) {
+        queryBuilder.andWhere('customer.reminding_date <= :endDate', {
+          endDate,
+        });
+      }
     }
 
-    // Filtreleri sorguya ekle
-    if (startDate && endDate) {
-      queryBuilder.andWhere(
-        'customer.reminding_date BETWEEN :startDate AND :endDate',
-        { startDate, endDate },
-      );
-    } else if (startDate) {
-      queryBuilder.andWhere('customer.reminding_date >= :startDate', {
-        startDate,
-      });
-    } else if (endDate) {
-      queryBuilder.andWhere('customer.reminding_date <= :endDate', {
-        endDate,
-      });
-    }
-  }
+
+
+    // 📋 Order
+    queryBuilder.orderBy('customer.id', 'DESC');
 
     return queryBuilder;
   }
+
 
   async findByEmail(email: string): Promise<Customer[]> {
     return this.getRepository().find({

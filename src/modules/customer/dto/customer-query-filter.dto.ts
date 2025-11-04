@@ -45,6 +45,15 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   relevantUser?: number;
 
   @ApiPropertyOptional({
+    description: 'Filter by source ID',
+    example: 4,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  sourceId?: number;
+
+  @ApiPropertyOptional({
     description: 'Filter customers by status.is_first property',
     example: true,
   })
@@ -97,7 +106,7 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   @IsBoolean()
   hasRelevantUser?: boolean;
 
-    @ApiPropertyOptional({
+  @ApiPropertyOptional({
     description: 'Date filter keyword (today, week, month, overdue, custom, all)',
     example: 'today',
   })
