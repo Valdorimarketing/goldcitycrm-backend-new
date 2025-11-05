@@ -36,6 +36,7 @@ import { Customer2DoctorModule } from './modules/customer2doctor/customer2doctor
 import { Customer2ProductModule } from './modules/customer2product/customer2product.module'; 
 import { CurrencyModule } from './modules/currencies/currency.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { DataleadModule } from './modules/datalead/datalead.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { NotificationModule } from './modules/notification/notification.module';
     Customer2ProductModule,
     CurrencyModule,
     NotificationModule,
+    DataleadModule
   ],
   controllers: [AppController],
   providers: [
