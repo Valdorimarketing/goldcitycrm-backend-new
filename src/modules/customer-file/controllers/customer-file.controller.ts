@@ -30,7 +30,7 @@ import { CurrentUserId } from '../../../core/decorators/current-user.decorator';
 @Controller('customer-files')
 @UseGuards(JwtAuthGuard)
 export class CustomerFileController {
-  constructor(private readonly customerFileService: CustomerFileService) {}
+  constructor(private readonly customerFileService: CustomerFileService) { }
 
   @Post()
   @UseInterceptors(
@@ -58,18 +58,29 @@ export class CustomerFileController {
           'image/png',
           'image/jpg',
           'image/jpeg',
+          'application/zip',
+          'application/x-rar-compressed',
+          'application/octet-stream', // bazı .rar dosyaları bu MIME ile gelir
         ];
-        if (allowedMimeTypes.includes(file.mimetype)) {
+
+        const ext = extname(file.originalname).toLowerCase();
+        const allowedExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.zip', '.rar'];
+
+        if (
+          allowedMimeTypes.includes(file.mimetype) ||
+          allowedExtensions.includes(ext)
+        ) {
           callback(null, true);
         } else {
           callback(
             new BadRequestException(
-              'Sadece PDF, PNG ve JPG dosyaları yüklenebilir',
+              'Sadece PDF, PNG, JPG, ZIP ve RAR dosyaları yüklenebilir.',
             ),
             false,
           );
         }
       },
+
       limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
       },

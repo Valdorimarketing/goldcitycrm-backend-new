@@ -57,6 +57,7 @@ export class CustomerController {
       'email',
       'gender',
       'birthDate',
+      'patient',
       'phone',
       'job',
       'website',
