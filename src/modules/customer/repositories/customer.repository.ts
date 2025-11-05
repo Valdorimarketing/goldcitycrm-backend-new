@@ -25,7 +25,7 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
 
     // 🧩 SOURCE RELATION & FILTER 
 
-    queryBuilder.leftJoinAndSelect('customer.source', 'source'); 
+    queryBuilder.leftJoinAndSelect('customer.source', 'source');
     queryBuilder.leftJoinAndSelect('customer.relevantUserData', 'relevantUserData');
 
 
@@ -106,7 +106,13 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     }
 
     // 📆 Date filtering
-    if (filters.dateFilter || filters.startDate || filters.endDate) {
+
+    if (
+      filters.dateFilter &&
+      filters.dateFilter !== 'all' || // 👈 all ise tarih filtresi uygulanmaz
+      filters.startDate ||
+      filters.endDate
+    ) {
       const now = new Date();
 
       let startDate: Date | undefined;
@@ -141,21 +147,25 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
           break;
       }
 
-      if (startDate && endDate) {
-        queryBuilder.andWhere(
-          'customer.reminding_date BETWEEN :startDate AND :endDate',
-          { startDate, endDate },
-        );
-      } else if (startDate) {
-        queryBuilder.andWhere('customer.reminding_date >= :startDate', {
-          startDate,
-        });
-      } else if (endDate) {
-        queryBuilder.andWhere('customer.reminding_date <= :endDate', {
-          endDate,
-        });
+      // 👇 'all' değilse ve tarih aralıkları varsa where koşullarını uygula
+      if (filters.dateFilter !== 'all') {
+        if (startDate && endDate) {
+          queryBuilder.andWhere(
+            'customer.reminding_date BETWEEN :startDate AND :endDate',
+            { startDate, endDate },
+          );
+        } else if (startDate) {
+          queryBuilder.andWhere('customer.reminding_date >= :startDate', {
+            startDate,
+          });
+        } else if (endDate) {
+          queryBuilder.andWhere('customer.reminding_date <= :endDate', {
+            endDate,
+          });
+        }
       }
     }
+
 
 
 
