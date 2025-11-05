@@ -32,6 +32,10 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   birthDate: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Expose()
+  patient: string;
+
   @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
   @Expose()
   phone: string;

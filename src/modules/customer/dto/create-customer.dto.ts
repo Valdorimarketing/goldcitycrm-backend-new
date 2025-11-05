@@ -192,6 +192,9 @@ export class CustomerResponseDto {
   birthDate: string;
 
   @Expose()
+  patient: string;
+
+  @Expose()
   phone: string;
 
   @Expose()
