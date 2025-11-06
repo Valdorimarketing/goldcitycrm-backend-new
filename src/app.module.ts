@@ -37,12 +37,19 @@ import { Customer2ProductModule } from './modules/customer2product/customer2prod
 import { CurrencyModule } from './modules/currencies/currency.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { DataleadModule } from './modules/datalead/datalead.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-    }),
+    }), 
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60, // saniye cinsinden süre (60 saniye = 1 dakika)
+        limit: 2000, // dakika başına 100 istek
+      },
+    ]),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST || 'localhost',
