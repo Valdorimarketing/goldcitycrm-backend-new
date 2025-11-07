@@ -7,6 +7,7 @@ import { User } from 'src/modules/user/entities/user.entity';
 export enum CustomerHistoryAction {
   STATUS_CHANGE = 'Durum Değiştirildi',
   NOTE_ADDED = 'Not Eklendi',
+  NOTE_DELETED = 'Not Silindi',
   SALE_CREATED = 'Satış Oluşturuldu',
   MEETING_CREATED = 'Görüşme Oluşturuldu',
   FILE_ADDED = 'Dosya Eklendi',
