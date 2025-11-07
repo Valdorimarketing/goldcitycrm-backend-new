@@ -22,7 +22,7 @@ import { CurrentUserId } from '../../../core/decorators/current-user.decorator';
 @Controller('customer-notes')
 @UseGuards(JwtAuthGuard)
 export class CustomerNoteController {
-  constructor(private readonly customerNoteService: CustomerNoteService) {}
+  constructor(private readonly customerNoteService: CustomerNoteService) { }
 
   @Post()
   async create(
@@ -133,7 +133,13 @@ export class CustomerNoteController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<CustomerNote> {
-    return this.customerNoteService.deleteCustomerNote(+id);
+  async remove(
+    @Param('id') id: string,
+    @CurrentUserId() userId?: number,
+  ): Promise<CustomerNote> {
+    return this.customerNoteService.deleteCustomerNote(+id, userId);
   }
+
+
+
 }

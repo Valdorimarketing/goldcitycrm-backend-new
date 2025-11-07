@@ -98,7 +98,24 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     });
   }
 
-  async deleteCustomerNote(id: number): Promise<CustomerNote> {
+  async deleteCustomerNote(id: number, userId?: number): Promise<CustomerNote> {
+
+
+    // Get file info before deletion
+    const note = await this.getCustomerNoteById(id);
+
+
+    // Log to customer history
+    await this.customerHistoryService.logCustomerAction(
+      note.customer,
+      CustomerHistoryAction.NOTE_DELETED,
+      `Not silindi: ${note.note}`,
+      null,
+      null,
+      userId,
+      id,
+    );
+
     return this.remove(id);
   }
 

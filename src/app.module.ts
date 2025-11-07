@@ -38,6 +38,7 @@ import { CurrencyModule } from './modules/currencies/currency.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { DataleadModule } from './modules/datalead/datalead.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { OperationsModule } from './modules/operations/operations.module';
 
 @Module({
   imports: [
@@ -90,7 +91,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
     Customer2ProductModule,
     CurrencyModule,
     NotificationModule,
-    DataleadModule
+    DataleadModule,
+    OperationsModule,
   ],
   controllers: [AppController],
   providers: [
