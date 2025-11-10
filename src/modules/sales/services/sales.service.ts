@@ -16,7 +16,7 @@ import { SalesProduct } from '../../sales-product/entities/sales-product.entity'
 import { CustomerNote } from '../../customer-note/entities/customer-note.entity';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
-import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface';
+import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface'; 
 
 @Injectable()
 export class SalesService extends BaseService<Sales> {
@@ -30,7 +30,7 @@ export class SalesService extends BaseService<Sales> {
     private readonly salesProductRepository: Repository<SalesProduct>,
     @InjectRepository(CustomerNote)
     private readonly customerNoteRepository: Repository<CustomerNote>,
-    private readonly customerHistoryService: CustomerHistoryService,
+    private readonly customerHistoryService: CustomerHistoryService
   ) {
     super(salesRepository, Sales);
   }
@@ -52,7 +52,8 @@ export class SalesService extends BaseService<Sales> {
         userId || createSalesDto.user,
         sales.id,
       );
-    }
+    } 
+    
 
     // Action lists are now processed when meeting is created
     // await this.processActionLists(sales.id, userId);
@@ -172,5 +173,5 @@ export class SalesService extends BaseService<Sales> {
       .getMany();
   }
 
-  
+
 }
