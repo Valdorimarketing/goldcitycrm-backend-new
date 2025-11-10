@@ -33,7 +33,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id, avatar: user.avatar, role: user.role };
     const access_token = this.jwtService.sign(payload);
  
     user.lastActiveTime = new Date();
@@ -46,6 +46,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        avatar: user.avatar,
         isActive: user.isActive,
       },
     });
@@ -74,6 +75,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        avatar: null,
         isActive: user.isActive,
       },
     });

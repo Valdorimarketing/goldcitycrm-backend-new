@@ -9,8 +9,8 @@ export class User extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   @Expose()
   email: string;
- 
-  @Column({ type: 'varchar', length: 255 }) 
+
+  @Column({ type: 'varchar', length: 255 })
   @Exclude()
   password: string;
 
@@ -33,6 +33,10 @@ export class User extends CustomBaseEntity {
   @Column({ type: 'int', nullable: true })
   @Expose()
   userGroupId: number;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Expose()
+  avatar: string;
 
   @ManyToOne(() => UserGroup, (userGroup) => userGroup.users)
   @JoinColumn({ name: 'userGroupId' })

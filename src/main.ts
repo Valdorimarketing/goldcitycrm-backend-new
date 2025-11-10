@@ -84,8 +84,12 @@ async function bootstrap() {
     }),
   );
 
- 
-    // main.ts
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+
+  // main.ts
   const userService = app.get(UserService);
   app.useGlobalInterceptors(new UpdateLastActiveInterceptor(userService));
 
