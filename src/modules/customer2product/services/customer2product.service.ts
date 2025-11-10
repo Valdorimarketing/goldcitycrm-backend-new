@@ -17,6 +17,7 @@ import { CustomerHistoryService } from '../../customer-history/services/customer
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 import { Sales } from '../../sales/entities/sales.entity';
 import { SalesProduct } from '../../sales-product/entities/sales-product.entity';
+import { SalesGateway } from 'src/modules/sales/sales.gateway';
 
 @Injectable()
 export class Customer2ProductService extends BaseService<Customer2Product> {
@@ -26,6 +27,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
     private readonly customerRepository: CustomerRepository,
     private readonly productService: ProductService,
     private readonly customerHistoryService: CustomerHistoryService,
+    private readonly gateway: SalesGateway,
     @InjectRepository(Sales)
     private readonly salesRepository: Repository<Sales>,
     @InjectRepository(SalesProduct)
@@ -339,6 +341,8 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
       convertDto.userId,
       sales.id,
     );
+
+    this.gateway.notifyNewSale(sales); 
 
     return sales;
   }

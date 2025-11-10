@@ -56,7 +56,7 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
 
     // Add relations
     queryBuilder
-      .leftJoinAndSelect('sales.customerDetails', 'customer')
+      .innerJoinAndSelect('sales.customerDetails', 'customer')
       .leftJoinAndSelect('sales.userDetails', 'user')
       .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
       .leftJoinAndSelect('sales.followerUserDetails', 'followerUser')

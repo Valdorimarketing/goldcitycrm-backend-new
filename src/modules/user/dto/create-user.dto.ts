@@ -32,6 +32,11 @@ export class CreateUserDto {
   role?: string;
 
   @IsOptional()
+  @IsString()
+  @Expose()
+  avatar?: string;
+
+  @IsOptional()
   @IsBoolean()
   @Expose()
   isActive?: boolean;
@@ -65,6 +70,11 @@ export class UpdateUserDto {
   role?: string;
 
   @IsOptional()
+  @IsString()
+  @Expose()
+  avatar?: string;
+
+  @IsOptional()
   @IsBoolean()
   @Expose()
   isActive?: boolean;
@@ -87,6 +97,9 @@ export class UserResponseDto {
 
   @Expose()
   role: string;
+
+  @Expose()
+  avatar: string;
 
   @Expose()
   isActive: boolean;

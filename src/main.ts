@@ -54,6 +54,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
+      'http://127.0.0.1:5500',
       'http://localhost:3001',
       'http://localhost:8092',
       'http://vcrm.mlpcare.com',
@@ -83,8 +84,12 @@ async function bootstrap() {
     }),
   );
 
- 
-    // main.ts
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+
+  // main.ts
   const userService = app.get(UserService);
   app.useGlobalInterceptors(new UpdateLastActiveInterceptor(userService));
 
