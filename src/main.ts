@@ -56,6 +56,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://127.0.0.1:5500',
       'http://localhost:3001',
+      'https://team.valdori.com',
       'http://localhost:8092',
       'http://vcrm.mlpcare.com',
       'https://vcrm.mlpcare.com',
