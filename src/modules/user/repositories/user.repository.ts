@@ -13,6 +13,19 @@ export class UserRepository extends BaseRepositoryAbstract<User> {
     super(userRepository);
   }
 
+  // user.repository.ts
+  async findById(id: number): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+      relations: ['userGroup'],
+    });
+  }
+
+  async saveUser(user: User): Promise<User> {
+    return this.userRepository.save(user);
+  }
+
+
   async findByRole(role: string): Promise<User[]> {
     return this.getRepository().find({
       where: { role },

@@ -39,6 +39,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { DataleadModule } from './modules/datalead/datalead.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { OperationsModule } from './modules/operations/operations.module';
+import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -93,10 +94,11 @@ import { OperationsModule } from './modules/operations/operations.module';
     NotificationModule,
     DataleadModule,
     OperationsModule,
+    ProfileModule
   ],
   controllers: [AppController],
   providers: [
-    AppService, // 👈 eksik olan satır eklendi
+    AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: UpdateLastActiveInterceptor,
