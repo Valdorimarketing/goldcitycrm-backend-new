@@ -40,6 +40,7 @@ import { DataleadModule } from './modules/datalead/datalead.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { OperationsModule } from './modules/operations/operations.module';
 import { ProfileModule } from './modules/profile/profile.module';
+import { TeamModule } from './modules/team/team.module';
 
 @Module({
   imports: [
@@ -94,7 +95,8 @@ import { ProfileModule } from './modules/profile/profile.module';
     NotificationModule,
     DataleadModule,
     OperationsModule,
-    ProfileModule
+    ProfileModule,
+    TeamModule
   ],
   controllers: [AppController],
   providers: [

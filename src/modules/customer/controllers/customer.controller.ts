@@ -64,6 +64,7 @@ export class CustomerController {
       'district',
       'address',
       'url',
+      'checkup_package',
       'description',
       'image',
       'relatedTransaction'

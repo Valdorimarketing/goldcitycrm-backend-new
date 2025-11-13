@@ -45,6 +45,11 @@ export class CreateUserDto {
   @IsNumber()
   @Expose()
   userGroupId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  userTeamId?: number;
 }
 
 export class UpdateUserDto {
@@ -83,6 +88,11 @@ export class UpdateUserDto {
   @IsNumber()
   @Expose()
   userGroupId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  userTeamId?: number;
 }
 
 export class UserResponseDto {
@@ -106,6 +116,9 @@ export class UserResponseDto {
 
   @Expose()
   userGroupId: number;
+
+  @Expose()
+  userTeamId: number;
 
   @Expose()
   createdAt: Date;

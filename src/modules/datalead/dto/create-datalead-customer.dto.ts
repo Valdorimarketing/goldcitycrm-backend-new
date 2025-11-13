@@ -24,4 +24,8 @@ export class CreateDataleadCustomerDto {
   @IsOptional()
   @IsString()
   url?: string;
+
+  @IsOptional()
+  @IsString()
+  checkup_package?: string;
 }

@@ -11,7 +11,7 @@ export class UserGroup extends CustomBaseEntity {
 
   @OneToMany(() => User, (user) => user.userGroup)
   @Expose()
-  users: User[];
+  users: User[]; 
 
   constructor(partial?: Partial<UserGroup>) {
     super(partial);

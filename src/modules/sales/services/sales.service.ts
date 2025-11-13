@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Sales } from '../entities/sales.entity';
 import { SalesRepository } from '../repositories/sales.repository';
@@ -16,7 +16,7 @@ import { SalesProduct } from '../../sales-product/entities/sales-product.entity'
 import { CustomerNote } from '../../customer-note/entities/customer-note.entity';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
-import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface'; 
+import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface';
 
 @Injectable()
 export class SalesService extends BaseService<Sales> {
@@ -33,6 +33,53 @@ export class SalesService extends BaseService<Sales> {
     private readonly customerHistoryService: CustomerHistoryService
   ) {
     super(salesRepository, Sales);
+  }
+
+  /**
+   * Tüm takımları ve üyelerini ciro bilgileriyle birlikte döndürür
+   */
+  async getAllTeamsSummary() {
+    const rawData = await this.salesRepository.findAllTeamsSalesSummary();
+
+    // Verileri takımlara göre grupla
+    const teamsMap = new Map();
+    let grandTotal = 0;
+
+    rawData.forEach((row) => {
+      const teamId = row.teamId;
+      const revenue = parseFloat(row.totalRevenue) || 0;
+      grandTotal += revenue;
+
+      if (!teamsMap.has(teamId)) {
+        teamsMap.set(teamId, {
+          id: teamId,
+          name: row.teamName,
+          totalRevenue: 0,
+          members: [],
+        });
+      }
+
+      const team = teamsMap.get(teamId);
+      team.totalRevenue += revenue;
+      team.members.push({
+        userId: row.userId,
+        userName: row.userName,
+        avatar: row.avatar,
+        totalRevenue: revenue,
+        salesCount: parseInt(row.salesCount) || 0,
+      });
+    });
+
+    // Map'i array'e çevir
+    const teams = Array.from(teamsMap.values());
+
+    return {
+      success: true,
+      data: {
+        teams,
+        grandTotal,
+      },
+    };
   }
 
   async createSales(
@@ -52,11 +99,7 @@ export class SalesService extends BaseService<Sales> {
         userId || createSalesDto.user,
         sales.id,
       );
-    } 
-    
-
-    // Action lists are now processed when meeting is created
-    // await this.processActionLists(sales.id, userId);
+    }
 
     return sales;
   }
@@ -155,23 +198,18 @@ export class SalesService extends BaseService<Sales> {
   }
 
   async getCustomerSalesProducts(customerId: number): Promise<SalesProduct[]> {
-    // Get all sales for the customer
     const sales = await this.salesRepository.findByCustomer(customerId);
 
     if (sales.length === 0) {
       return [];
     }
 
-    // Get all sales IDs
     const salesIds = sales.map((sale) => sale.id);
 
-    // Get all sales products for these sales with product details
     return this.salesProductRepository
       .createQueryBuilder('sp')
       .leftJoinAndSelect('sp.productDetails', 'product')
       .where('sp.sales IN (:...salesIds)', { salesIds })
       .getMany();
   }
-
-
 }

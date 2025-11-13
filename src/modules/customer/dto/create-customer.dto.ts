@@ -134,6 +134,11 @@ export class CreateCustomerDto {
   url?: string;
 
   @IsOptional()
+  @IsString()
+  @Expose()
+  checkup_package?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   @Expose()
@@ -241,6 +246,9 @@ export class CustomerResponseDto {
 
   @Expose()
   url: string;
+ 
+  @Expose()
+  checkup_package?: string;
 
   @Expose()
   relevantUser: number;

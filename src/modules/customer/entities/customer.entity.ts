@@ -114,6 +114,10 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   url: string;
 
+  @Column({ type: 'text', nullable: true })
+  @Expose()
+  checkup_package: string;
+
   @Column({ type: 'int', nullable: true, name: 'relevant_user' })
   @Expose()
   relevantUser: number;

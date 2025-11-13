@@ -44,6 +44,9 @@ export class UserService extends BaseService<User> {
       userData.password = hashedPassword;
     }
 
+    console.log(userData);
+    
+
     return this.update(userData, id, UserResponseDto);
   }
 
@@ -60,9 +63,8 @@ async updateLastActiveTime(userId: number): Promise<User> {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return this.findAll();
+    return this.userRepository.findAll()
   }
-
   async getUsersByRole(role: string): Promise<User[]> {
     return this.userRepository.findByRole(role);
   }
@@ -74,4 +76,6 @@ async updateLastActiveTime(userId: number): Promise<User> {
   async deleteUser(id: number): Promise<User> {
     return this.remove(id);
   }
+ 
+
 }
