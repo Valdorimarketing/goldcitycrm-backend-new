@@ -10,6 +10,7 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
   constructor(
     @InjectRepository(Sales)
     private readonly salesRepository: Repository<Sales>,
+    // UserRepository'yi kaldırdık
   ) {
     super(salesRepository);
   }
@@ -58,14 +59,13 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
     queryBuilder
       .innerJoinAndSelect('sales.customerDetails', 'customer')
       .leftJoinAndSelect('sales.userDetails', 'user')
+      .leftJoinAndSelect('user.userTeam', 'team')
       .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
       .leftJoinAndSelect('sales.followerUserDetails', 'followerUser')
       .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
       .leftJoinAndSelect('salesProducts.productDetails', 'product')
       .leftJoinAndSelect('product.currency', 'productCurrency')
       .orderBy('sales.createdAt', 'DESC');
-
-
 
     // User filter
     if (filters.user !== undefined && filters.user !== null) {
@@ -90,5 +90,31 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
     }
 
     return queryBuilder;
+  }
+
+  async findAllTeamsSalesSummary(): Promise<any[]> {
+    // Önce tüm takım üyelerini al
+    const userRepository = this.getRepository().manager.getRepository('User');
+    
+    const qb = userRepository
+      .createQueryBuilder('user')
+      .innerJoin('user.userTeam', 'userTeam')
+      .leftJoin('sales', 'sales', 'sales.user = user.id')
+      .leftJoin('sales.salesProducts', 'salesProducts', 'salesProducts.sales = sales.id')
+      .where('user.userTeamId IS NOT NULL')
+      .select([
+        'userTeam.id AS teamId',
+        'userTeam.name AS teamName',
+        'user.id AS userId',
+        'user.name AS userName',
+        'user.avatar AS avatar',
+        'COUNT(DISTINCT sales.id) AS salesCount',
+        'COALESCE(SUM(salesProducts.totalPrice), 0) AS totalRevenue',
+      ])
+      .groupBy('userTeam.id, userTeam.name, user.id, user.name, user.avatar')
+      .orderBy('userTeam.id', 'ASC')
+      .addOrderBy('totalRevenue', 'DESC');
+
+    return qb.getRawMany();
   }
 }

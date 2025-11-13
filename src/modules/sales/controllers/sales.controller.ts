@@ -37,22 +37,9 @@ export class SalesController {
     return this.salesService.getSalesWithoutAppointment();
   }
 
-  @Get()
-  async findAll(
-    @Query('customer') customer?: string,
-    @Query('user') user?: string,
-    @Query('responsibleUser') responsibleUser?: string,
-  ): Promise<Sales[]> {
-    if (customer) {
-      return this.salesService.getSalesByCustomer(+customer);
-    }
-    if (user) {
-      return this.salesService.getSalesByUser(+user);
-    }
-    if (responsibleUser) {
-      return this.salesService.getSalesByResponsibleUser(+responsibleUser);
-    }
-    return this.salesService.getAllSales();
+  @Get('teams-summary')
+  async getAllTeamsSummary() {
+    return this.salesService.getAllTeamsSummary();
   }
 
   @Get('customer/:customerId/products')
@@ -77,6 +64,24 @@ export class SalesController {
     return this.salesService.getSalesProducts(+id);
   }
 
+  @Get()
+  async findAll(
+    @Query('customer') customer?: string,
+    @Query('user') user?: string,
+    @Query('responsibleUser') responsibleUser?: string,
+  ): Promise<Sales[]> {
+    if (customer) {
+      return this.salesService.getSalesByCustomer(+customer);
+    }
+    if (user) {
+      return this.salesService.getSalesByUser(+user);
+    }
+    if (responsibleUser) {
+      return this.salesService.getSalesByResponsibleUser(+responsibleUser);
+    }
+    return this.salesService.getAllSales();
+  }
+
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -89,6 +94,4 @@ export class SalesController {
   async remove(@Param('id') id: string): Promise<Sales> {
     return this.salesService.deleteSales(+id);
   }
-
- 
 }

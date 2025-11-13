@@ -56,9 +56,9 @@ export class UserController {
       return this.userService.getUsersByRole(role);
     }
     return this.userService.getAllUsers();
-  }
+  } 
 
-
+  
   @UseGuards(AuthGuard('jwt'))
   @Get('update-last-active')
   async updateLastActiveTime(@Req() req) {
@@ -80,7 +80,8 @@ export class UserController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<UserResponseDto> {
+  ): Promise<UserResponseDto> { 
+    
     return this.userService.updateUser(+id, updateUserDto);
   }
 

@@ -13,11 +13,10 @@ export class UserRepository extends BaseRepositoryAbstract<User> {
     super(userRepository);
   }
 
-  // user.repository.ts
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id },
-      relations: ['userGroup'],
+      relations: ['userGroup', 'userTeam'], // 👈 team ilişkisini ekledik
     });
   }
 
@@ -25,16 +24,23 @@ export class UserRepository extends BaseRepositoryAbstract<User> {
     return this.userRepository.save(user);
   }
 
-
   async findByRole(role: string): Promise<User[]> {
-    return this.getRepository().find({
+    return this.userRepository.find({
       where: { role },
+      relations: ['userTeam', 'userGroup'], // 👈 ilişkiler dahil
     });
   }
 
-  async findByEmail(email: string): Promise<User> {
-    return this.getRepository().findOne({
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
       where: { email },
+      relations: ['userTeam', 'userGroup'], // 👈 ilişkiler dahil
+    });
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.userRepository.find({
+      relations: ['userTeam', 'userGroup'],
     });
   }
 }

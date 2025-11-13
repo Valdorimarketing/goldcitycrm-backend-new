@@ -31,6 +31,7 @@ export class DataleadService {
       email: dto.email,
       phone: dto.phone,
       url: dto.url,
+      checkup_package: dto.checkup_package,
       isActive: true,
       status: 1,
       sourceId: dto.sourceId,

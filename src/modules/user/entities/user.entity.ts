@@ -2,7 +2,8 @@ import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Exclude, Expose } from 'class-transformer';
 import { UserGroup } from '../../user-group/entities/user-group.entity';
-import { Customer } from '../../customer/entities/customer.entity'; // 🔹 ekle
+import { Team } from '../../team/entities/team.entity';
+import { Customer } from '../../customer/entities/customer.entity'; // 🔹 ekle 
 
 @Entity('user')
 export class User extends CustomBaseEntity {
@@ -34,6 +35,10 @@ export class User extends CustomBaseEntity {
   @Expose()
   userGroupId: number;
 
+  @Column({ type: 'int', nullable: true })
+  @Expose()
+  userTeamId: number;
+
   @Column({ type: 'varchar', length: 500, nullable: true })
   @Expose()
   avatar: string;
@@ -42,6 +47,11 @@ export class User extends CustomBaseEntity {
   @JoinColumn({ name: 'userGroupId' })
   @Expose()
   userGroup: UserGroup;
+
+  @ManyToOne(() => Team, (userTeam) => userTeam.users)
+  @JoinColumn({ name: 'userTeamId' })
+  @Expose()
+  userTeam: Team;
 
   @OneToMany(() => Customer, (customer) => customer.relevantUserData)
   @Expose()
