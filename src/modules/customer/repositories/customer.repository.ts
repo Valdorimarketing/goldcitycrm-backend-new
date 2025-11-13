@@ -36,6 +36,8 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
         `(customer.name LIKE :search 
         OR customer.surname LIKE :search 
         OR customer.email LIKE :search 
+        OR customer.url LIKE :search 
+        OR customer.checkup_package LIKE :search 
         OR customer.phone LIKE :search 
         OR customer.identity_number LIKE :search)`,
         { search: `%${filters.search}%` },
