@@ -18,10 +18,43 @@ export class DataleadService {
       throw new BadRequestException('At least one of phone or email is required.');
     }
 
-    function extractCheckupPackage(html: string): string {
-      const match = html.match(/<span class="frm_text_label_for_image_inner">(.*?)<\/span>/)
-      return match ? match[1] : html
+    function extractCheckupPackage(html: unknown): string {
+      // 1) Değer yoksa veya string değilse güvenli çık
+      if (typeof html !== 'string' || html.trim() === '') {
+        return '-';
+      }
+
+      try {
+        // 2) Güvenlik için max length kontrolü (XSS payloadlarını ve büyük HTML bloklarını engeller)
+        if (html.length > 5000) {
+          return '-';
+        }
+
+        // 3) HTML içinde beklenen span'ı yakala
+        const match = html.match(/<span[^>]*class="frm_text_label_for_image_inner"[^>]*>(.*?)<\/span>/i);
+
+        if (match && match[1]) {
+          const clean = match[1].trim();
+
+          // 4) İçeriği sanitize et (kötü niyetli script tag’larını temizler)
+          return clean
+            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+            .replace(/<[^>]+>/g, '') // kalan tüm HTML taglarını kaldır
+            .trim() || '-';
+        }
+
+        // 5) Eğer eşleşme yoksa ham metni temizle
+        return html
+          .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+          .replace(/<[^>]+>/g, '')
+          .trim() || '-';
+
+      } catch {
+        // 6) Her durumda fallback
+        return '-';
+      }
     }
+
 
     const existing = await this.customerRepository.findOne({
       where: [{ phone: dto.phone }, { email: dto.email }],
