@@ -84,7 +84,17 @@ export class DataleadService {
       sourceId: dto.sourceId,
     });
 
+    console.log('###### DTO LEAD newCustomer #######');
+    console.log(newCustomer);
+    console.log('###### DTO LEAD newCustomer #######');
+    
+
     const response = this.customerRepository.save(newCustomer);
+
+    console.log('###### DTO LEAD response #######');
+    console.log(response);
+    console.log('###### DTO LEAD response #######');
+
     if (response) {
       return "ok";
     }
