@@ -65,6 +65,7 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
       .leftJoinAndSelect('salesProducts.productDetails', 'product')
       .leftJoinAndSelect('product.currency', 'productCurrency')
+      .leftJoinAndSelect('salesProducts.currency', 'currency') // <-- burası önemli
       .orderBy('sales.createdAt', 'DESC');
 
     // User filter
@@ -92,29 +93,89 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
     return queryBuilder;
   }
 
-  async findAllTeamsSalesSummary(): Promise<any[]> {
-    // Önce tüm takım üyelerini al
+
+  async findAllTeamsSalesSummary(): Promise<any> {
     const userRepository = this.getRepository().manager.getRepository('User');
-    
+
     const qb = userRepository
       .createQueryBuilder('user')
-      .innerJoin('user.userTeam', 'userTeam')
+      .innerJoin('user.userTeam', 'team')
       .leftJoin('sales', 'sales', 'sales.user = user.id')
-      .leftJoin('sales.salesProducts', 'salesProducts', 'salesProducts.sales = sales.id')
-      .where('user.userTeamId IS NOT NULL')
+      .leftJoin('sales.salesProducts', 'sp', 'sp.sales = sales.id')
+      .leftJoin('sp.productDetails', 'product')
+      .leftJoin('product.currency', 'productCurrency') // 🔥 currency burada!
       .select([
-        'userTeam.id AS teamId',
-        'userTeam.name AS teamName',
+        'team.id AS teamId',
+        'team.name AS teamName',
         'user.id AS userId',
         'user.name AS userName',
         'user.avatar AS avatar',
         'COUNT(DISTINCT sales.id) AS salesCount',
-        'COALESCE(SUM(salesProducts.totalPrice), 0) AS totalRevenue',
+        'COALESCE(productCurrency.code, \'TRY\') AS currencyCode', // 🔥 ana para birimi
+        'COALESCE(SUM(sp.totalPrice), 0) AS totalRevenue',
       ])
-      .groupBy('userTeam.id, userTeam.name, user.id, user.name, user.avatar')
-      .orderBy('userTeam.id', 'ASC')
+      .where('user.userTeamId IS NOT NULL')
+      .groupBy('team.id, team.name, user.id, user.name, user.avatar, productCurrency.code')
+      .orderBy('team.id', 'ASC')
       .addOrderBy('totalRevenue', 'DESC');
 
-    return qb.getRawMany();
+    const raw = await qb.getRawMany();
+
+    // Aşağıda senin currency bazlı grouping kodun var
+    const teamsMap = new Map();
+    const grandTotalsByCurrency: any = {};
+
+    for (const row of raw) {
+      const teamId = row.teamId;
+      const currency = row.currencyCode;
+      const revenue = parseFloat(row.totalRevenue) || 0;
+
+      if (!teamsMap.has(teamId)) {
+        teamsMap.set(teamId, {
+          id: teamId,
+          name: row.teamName,
+          totalsByCurrency: {},
+          members: []
+        });
+      }
+
+      const team = teamsMap.get(teamId);
+
+      // Team currency total
+      team.totalsByCurrency[currency] =
+        (team.totalsByCurrency[currency] || 0) + revenue;
+
+      // Member grouping
+      let member = team.members.find(m => m.userId == row.userId);
+      if (!member) {
+        member = {
+          userId: row.userId,
+          userName: row.userName,
+          avatar: row.avatar,
+          salesCount: parseInt(row.salesCount),
+          totalsByCurrency: {}
+        };
+        team.members.push(member);
+      }
+
+      member.totalsByCurrency[currency] =
+        (member.totalsByCurrency[currency] || 0) + revenue;
+
+      // Grand total
+      grandTotalsByCurrency[currency] =
+        (grandTotalsByCurrency[currency] || 0) + revenue;
+    }
+
+    return {
+      success: true,
+      data: {
+        teams: [...teamsMap.values()],
+        grandTotalsByCurrency
+      }
+    };
   }
+
+
+
+
 }

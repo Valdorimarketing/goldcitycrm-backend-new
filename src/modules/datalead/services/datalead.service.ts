@@ -13,6 +13,12 @@ export class DataleadService {
 
 
   async createCustomerFromDatalead(dto: CreateDataleadCustomerDto) {
+
+    console.log('###### DTO LEAD #######');
+    console.log(dto);
+    console.log('###### DTO LEAD #######');
+    
+
     // Telefon veya e-posta boşsa kayıt engelle
     if (!dto.phone && !dto.email) {
       throw new BadRequestException('At least one of phone or email is required.');

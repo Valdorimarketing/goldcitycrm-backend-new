@@ -38,49 +38,28 @@ export class SalesService extends BaseService<Sales> {
   /**
    * Tüm takımları ve üyelerini ciro bilgileriyle birlikte döndürür
    */
+
+
+  // src/modules/sales/services/sales.service.ts
   async getAllTeamsSummary() {
-    const rawData = await this.salesRepository.findAllTeamsSalesSummary();
+    const { success, data } = await this.salesRepository.findAllTeamsSalesSummary();
 
-    // Verileri takımlara göre grupla
-    const teamsMap = new Map();
-    let grandTotal = 0;
+    if (!success) {
+      throw new Error('Team summary fetch failed');
+    }
 
-    rawData.forEach((row) => {
-      const teamId = row.teamId;
-      const revenue = parseFloat(row.totalRevenue) || 0;
-      grandTotal += revenue;
-
-      if (!teamsMap.has(teamId)) {
-        teamsMap.set(teamId, {
-          id: teamId,
-          name: row.teamName,
-          totalRevenue: 0,
-          members: [],
-        });
-      }
-
-      const team = teamsMap.get(teamId);
-      team.totalRevenue += revenue;
-      team.members.push({
-        userId: row.userId,
-        userName: row.userName,
-        avatar: row.avatar,
-        totalRevenue: revenue,
-        salesCount: parseInt(row.salesCount) || 0,
-      });
-    });
-
-    // Map'i array'e çevir
-    const teams = Array.from(teamsMap.values());
+    // data şu formda gelir:
+    // {
+    //   teams: [...],
+    //   grandTotalsByCurrency: { TRY: 100000, USD: 200 }
+    // }
 
     return {
       success: true,
-      data: {
-        teams,
-        grandTotal,
-      },
+      data
     };
   }
+
 
   async createSales(
     createSalesDto: CreateSalesDto,
