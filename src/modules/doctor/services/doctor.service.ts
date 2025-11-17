@@ -71,18 +71,15 @@ export class DoctorService extends BaseService<Doctor> {
         await this.doctor2HospitalRepository.findDoctorIdsByHospitalId(
           hospitalId,
         );
-      console.log('Hospital doctor IDs:', hospitalDoctorIds);
 
       // Branch'teki doktor ID'lerini al
       const branchDoctorIds =
         await this.doctor2BranchRepository.findDoctorIdsByBranchId(branchId);
-      console.log('Branch doctor IDs:', branchDoctorIds);
 
       // İki kümenin kesişimini bul
       const commonDoctorIds = hospitalDoctorIds.filter((id) =>
         branchDoctorIds.includes(id),
       );
-      console.log('Common doctor IDs:', commonDoctorIds);
 
       if (commonDoctorIds.length === 0) {
         return [];
