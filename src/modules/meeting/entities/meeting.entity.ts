@@ -5,6 +5,7 @@ import { SalesProduct } from '../../sales-product/entities/sales-product.entity'
 import { Hospital } from '../../hospital/entities/hospital.entity';
 import { Doctor } from '../../doctor/entities/doctor.entity';
 import { Customer } from 'src/modules/customer/entities/customer.entity';
+import { Branch } from 'src/modules/branch/entities/branch.entity';
 
 @Entity('meeting')
 export class Meeting extends CustomBaseEntity {
@@ -14,7 +15,7 @@ export class Meeting extends CustomBaseEntity {
 
   @ManyToOne(() => Customer, { nullable: true })
   @JoinColumn({ name: 'customer' })
-  @Transform(({ value }) => value ? value.name : null)
+  @Transform(({ value }) => value ? {name: value.name, surname: value.surname, id: value.id} : null)
   @Expose()
   customerData: Customer;
 
@@ -27,6 +28,15 @@ export class Meeting extends CustomBaseEntity {
   @JoinColumn({ name: 'hospital_id' })
   @Expose()
   hospital: Hospital;
+
+  @Column({ type: 'int', nullable: true, name: 'branch_id' })
+  @Expose()
+  branchId: number;
+
+  @ManyToOne(() => Branch, { nullable: true })
+  @JoinColumn({ name: 'branch_id' })
+  @Expose()
+  branch: Branch;
 
   @Column({ type: 'int', nullable: true, name: 'doctor_id' })
   @Expose()

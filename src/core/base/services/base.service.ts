@@ -1,4 +1,4 @@
-import { DeepPartial, FindManyOptions, SelectQueryBuilder } from 'typeorm';
+import { DeepPartial, FindManyOptions, QueryFailedError, SelectQueryBuilder } from 'typeorm';
 import { IBaseService } from '../interfaces/base.service.interface';
 import { BaseRepositoryAbstract } from '../repositories/base.repository.abstract';
 import { plainToInstance } from 'class-transformer';
@@ -7,6 +7,7 @@ import { BaseQueryFilterDto } from '../dtos/base.query.filter.dto';
 import { CustomHttpException } from '../../utils/custom-http.exception';
 import { PaginatedResponse } from '../interfaces/paginated-response.interface';
 import { PaginationDto } from '../dtos/pagination.dto';
+import { BadRequestException } from '@nestjs/common';
 
 interface HasId {
   id: number;
@@ -45,10 +46,15 @@ export abstract class BaseService<T extends HasId> implements IBaseService<T> {
     createDto: D,
     responseDtoClass: new () => E,
   ): Promise<E> {
-    const savedEntity = await this.repository.save(createDto);
-    return plainToInstance(responseDtoClass, savedEntity, {
-      excludeExtraneousValues: true,
-    });
+    try {
+      const savedEntity = await this.repository.save(createDto);
+      return plainToInstance(responseDtoClass, savedEntity, { excludeExtraneousValues: true });
+    } catch (e) {
+      if (e instanceof QueryFailedError && e.driverError.code === 'ER_DUP_ENTRY') {
+        throw new BadRequestException('Customer already exists.');
+      }
+      throw e;
+    }
   }
 
   public async createMany(data: DeepPartial<T>[]): Promise<T[]> {
@@ -70,7 +76,7 @@ export abstract class BaseService<T extends HasId> implements IBaseService<T> {
       throw CustomHttpException.notFound(this.entityClass.name);
     }
     Object.assign(entity, updateDto);
-    const savedEntity = await this.repository.save(entity); 
+    const savedEntity = await this.repository.save(entity);
     return plainToInstance(responseDtoClass, savedEntity, {
       excludeExtraneousValues: true,
     });

@@ -27,6 +27,8 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
 
     queryBuilder.leftJoinAndSelect('customer.source', 'source');
     queryBuilder.leftJoinAndSelect('customer.relevantUserData', 'relevantUserData');
+    queryBuilder.leftJoinAndSelect('customer.statusData', 'statusData');
+    
 
 
 
