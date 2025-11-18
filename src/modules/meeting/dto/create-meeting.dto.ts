@@ -18,6 +18,12 @@ export class CreateMeetingDto {
   @IsNumber()
   @Type(() => Number)
   @Expose()
+  branchId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Expose()
   doctorId?: number;
 
   @IsOptional()
@@ -76,6 +82,12 @@ export class MeetingResponseDto {
 
   @Expose()
   doctorId: number;
+
+  @Expose()
+  branchId: number;
+
+  @Expose()
+  branch?: number;
 
   @Expose()
   doctor?: any;

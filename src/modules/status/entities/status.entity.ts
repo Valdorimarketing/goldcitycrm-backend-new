@@ -1,6 +1,7 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
+import { Customer } from 'src/modules/customer/entities/customer.entity';
 
 @Entity('status')
 export class Status extends CustomBaseEntity {

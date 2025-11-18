@@ -5,6 +5,7 @@ import { User } from '../../user/entities/user.entity';
 import { CustomerDynamicFieldValue } from '../../customer-dynamic-field-value/entities/customer-dynamic-field-value.entity';
 import { Customer2Doctor } from '../../customer2doctor/entities/customer2doctor.entity';
 import { Source } from 'src/modules/source/entities/source.entity';
+import { Status } from 'src/modules/status/entities/status.entity';
 
 @Entity('customer')
 export class Customer extends CustomBaseEntity {
@@ -48,7 +49,7 @@ export class Customer extends CustomBaseEntity {
   @JoinColumn({ name: 'source_id' })
   @Expose()
   @Transform(({ value }) => value ? value.name : null)
-  source?: Source; 
+  source?: Source;
 
 
   @Column({ type: 'varchar', length: 255, nullable: true })
@@ -81,6 +82,12 @@ export class Customer extends CustomBaseEntity {
   @Column({ type: 'int', nullable: true })
   @Expose()
   status: number;
+
+  @ManyToOne(() => Status, { nullable: true })
+  @JoinColumn({ name: 'status' })
+  @Transform(({ value }) => value ? { name: value.name, color: value.color } : null)
+  @Expose()
+  statusData: Status;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Expose()
@@ -127,6 +134,7 @@ export class Customer extends CustomBaseEntity {
   @Transform(({ value }) => value ? value.name : null)
   @Expose()
   relevantUserData: User;
+
 
   @Column({ type: 'text', nullable: true })
   @Expose()

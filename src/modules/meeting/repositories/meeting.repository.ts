@@ -28,7 +28,7 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
   async findByCustomer(customer: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { customer },
-      relations: ['salesProduct', 'hospital', 'doctor'],
+      relations: ['salesProduct', 'hospital', 'doctor', 'branch'],
     });
   }
 
@@ -54,9 +54,11 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
   }
 
   async findOneWithSalesProduct(id: number): Promise<Meeting> {
-    return this.getRepository().findOne({
+    const data = this.getRepository().findOne({
       where: { id },
-      relations: ['salesProduct', 'hospital', 'doctor'],
+      relations: ['salesProduct', 'hospital', 'doctor', 'customerData', 'branch'],
     });
+     const plain = instanceToPlain(data, { excludeExtraneousValues: true }) as any;
+     return plain;
   }
 }
