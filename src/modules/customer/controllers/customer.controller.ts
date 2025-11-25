@@ -211,6 +211,14 @@ export class CustomerController {
     res.status(HttpStatus.OK).send(buffer);
   }
 
+
+    // customer.controller.ts
+  @Get('assignments/my-today')
+  @ApiOperation({ summary: 'Get my assignments for today' })
+  async getMyTodayAssignments(@CurrentUserId() userId: number) {
+    return this.customerService.getMyTodayAssignments(userId);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all customers with pagination and search' })
   @ApiResponse({

@@ -7,9 +7,10 @@ import {
   UpdateCustomerDto,
   CustomerResponseDto,
   TodayAssignmentDto,
+  MyTodayAssignmentDto,
 } from '../dto/create-customer.dto';
 import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
-import { DataSource, SelectQueryBuilder } from 'typeorm';
+import { Between, DataSource, SelectQueryBuilder } from 'typeorm';
 import { CustomerDynamicFieldValueService } from '../../customer-dynamic-field-value/services/customer-dynamic-field-value.service';
 import { CreateCustomerDynamicFieldValueDto } from '../../customer-dynamic-field-value/dto/create-customer-dynamic-field-value.dto';
 import { CustomerStatusChangeRepository } from '../../customer-status-change/repositories/customer-status-change.repository';
@@ -88,6 +89,51 @@ export class CustomerService extends BaseService<Customer> {
     return customer;
   }
 
+  async getMyTodayAssignments(userId: number): Promise<MyTodayAssignmentDto> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Kullanıcıya bugün atanan engagementları çek
+    const result = await this.dataSource
+      .getRepository('customer_engagement')
+      .createQueryBuilder('engagement')
+      // Toplam atama sayısı
+      .select('COUNT(DISTINCT engagement.customer)', 'totalCount')
+      // Yeni Data: URL null olmayan
+      .addSelect(
+        'SUM(CASE WHEN customer.url IS NOT NULL THEN 1 ELSE 0 END)',
+        'newDataCount'
+      )
+      // Dinamik Arama: Status "Tekrar Aranacak" olan
+      .addSelect(
+        `SUM(CASE WHEN status.name = 'TEKRAR ARANACAK' THEN 1 ELSE 0 END)`,
+        'dynamicSearchCount'
+      )
+      // Eski Data: URL null olan
+      .addSelect(
+        'SUM(CASE WHEN customer.url IS NULL THEN 1 ELSE 0 END)',
+        'oldDataCount'
+      )
+      .leftJoin('customer', 'customer', 'customer.id = engagement.customer')
+      .leftJoin('status', 'status', 'status.id = customer.status')
+      .where('engagement.assignedAt BETWEEN :startOfDay AND :endOfDay', {
+        startOfDay,
+        endOfDay,
+      })
+      .andWhere('engagement.user = :userId', { userId })
+      .andWhere('engagement.role = :role', { role: 'SALES' })
+      .getRawOne();
+
+    return {
+      totalCount: parseInt(result?.totalCount || '0', 10),
+      newDataCount: parseInt(result?.newDataCount || '0', 10),
+      dynamicSearchCount: parseInt(result?.dynamicSearchCount || '0', 10),
+      oldDataCount: parseInt(result?.oldDataCount || '0', 10),
+    };
+  }
 
   async getTodayAssignments(): Promise<TodayAssignmentDto[]> {
     const startOfDay = new Date();
