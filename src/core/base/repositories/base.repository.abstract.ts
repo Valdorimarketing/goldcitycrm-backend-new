@@ -94,6 +94,12 @@ export abstract class BaseRepositoryAbstract<T extends HasId>
   public async findByCondition(filterCondition: FindOneOptions<T>): Promise<T> {
     return await this.entity.findOne(filterCondition);
   }
+  
+  public async findAndCount(
+    options?: FindManyOptions<T>,
+  ): Promise<[T[], number]> {
+    return await this.entity.findAndCount(options);
+  }
 
   public async findAll(options?: FindManyOptions<T>): Promise<T[]> {
     return await this.entity.find(options);

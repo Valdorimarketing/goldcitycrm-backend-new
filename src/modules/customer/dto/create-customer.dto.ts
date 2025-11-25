@@ -294,11 +294,20 @@ export class CheckPhoneResponseDto {
 
 export class TodayAssignmentDto {
   @Expose()
-  salesRepId: string;
+  salesRepId: number;
   
   @Expose()
   salesRepName: string;
 
   @Expose()
-  count: number;
+  totalCount: number;
+
+  @Expose()
+  newDataCount: number;
+
+  @Expose()
+  dynamicSearchCount: number;
+  
+  @Expose()
+  oldDataCount: number;
 }
