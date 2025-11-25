@@ -10,7 +10,11 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Request,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express'; // Bu import'u ekleyin
 import { FileInterceptor } from '@nestjs/platform-express';
 import 'multer';
 import { CustomerService } from '../services/customer.service';
@@ -19,6 +23,7 @@ import {
   UpdateCustomerDto,
   CustomerResponseDto,
   CheckPhoneResponseDto,
+  TodayAssignmentDto,
 } from '../dto/create-customer.dto';
 import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
 import { Customer } from '../entities/customer.entity';
@@ -32,13 +37,18 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { NotificationService } from 'src/modules/notification/services/notification.service';
+import { CustomerEngagementService } from 'src/modules/customer-engagement/services/customer-engagement.service';
 
 @ApiTags('customers')
 @ApiBearerAuth('JWT-auth')
 @Controller('customers')
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService, private readonly notificationService: NotificationService) { }
+  constructor(
+    private readonly customerService: CustomerService, 
+    private readonly notificationService: NotificationService,
+    private readonly customerEngagementService: CustomerEngagementService,
+  ) { }
 
   /**
    * Transform multipart form data to CreateCustomerDto/UpdateCustomerDto
@@ -126,6 +136,14 @@ export class CustomerController {
     return dto;
   }
 
+
+  
+  @Get('assignments/today')
+  async getTodayAssignments(): Promise<TodayAssignmentDto[]> {
+    return this.customerService.getTodayAssignments();
+  }
+
+  
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -148,6 +166,7 @@ export class CustomerController {
     return this.customerService.createCustomer(createCustomerDto);
   }
 
+
   @Get('check-phone')
   @ApiOperation({ summary: 'Check if phone number exists' })
   @ApiResponse({
@@ -163,6 +182,35 @@ export class CustomerController {
     };
   }
 
+  @Get('export')
+  @ApiOperation({ summary: 'Export customers as Excel or CSV' })
+  @ApiResponse({
+    status: 200,
+    description: 'File exported successfully',
+  })
+  async exportCustomers(
+    @Query('format') format: 'excel' | 'csv',
+    @Query('columns') columns: string, // Yeni parametre
+    @Query() filters: CustomerQueryFilterDto,
+    @CurrentUserId() userId: number,
+    @Res() res: Response
+  ): Promise<void> {
+    const selectedColumns = columns ? columns.split(',') : undefined;
+    const buffer = await this.customerService.exportCustomers(format, userId, filters, selectedColumns);
+    
+    const filename = `customers_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'csv'}`;
+    
+    res.set({
+      'Content-Type': format === 'excel' 
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': buffer.length.toString(),
+    });
+    
+    res.status(HttpStatus.OK).send(buffer);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all customers with pagination and search' })
   @ApiResponse({
@@ -176,45 +224,51 @@ export class CustomerController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Customer> {
-    return this.customerService.getCustomerById(+id);
+  async getCustomer(@Param('id') id: number, @CurrentUserId() userId: number) {
+    return this.customerService.getCustomerById(id, userId);
   }
 
-@Patch(':id')
-@UseInterceptors(FileInterceptor('image'))
-@ApiConsumes('multipart/form-data')
-async update(
-  @Param('id') id: string,
-  @Body() body: any,
-  @CurrentUserId() userId: number,
-  @UploadedFile() file?: Express.Multer.File,
-): Promise<CustomerResponseDto> {
-  const updateCustomerDto = this.transformCustomerDto(body);
-
-  // Giriş yapan kullanıcıyı da DTO'ya ekle
-  const dtoWithUser = {
-    ...updateCustomerDto,
-    user: userId,
-  };
-
-  if (file) {
-    dtoWithUser.image = file.path;
+  @Post(':id/view-phone')
+  async viewPhone(@Param('id') id: number, @Request() req) {
+    const userId = req.user?.id;
+    await this.customerEngagementService.registerPhoneView(id, userId);
+    return { success: true };
   }
 
-  // Önce müşteri kaydını güncelle
-  const updated = await this.customerService.updateCustomer(+id, dtoWithUser);
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  async update(
+    @Param('id') id: string,
+    @Body() body: any,
+    @CurrentUserId() userId: number,
+    @UploadedFile() file?: Express.Multer.File,
+  ): Promise<CustomerResponseDto> {
+    const updateCustomerDto = this.transformCustomerDto(body);
 
-  // Eğer müşteri bir kullanıcıya atanmışsa, bildirim gönder
-  if (dtoWithUser.relevantUser) {
-    await this.notificationService.createForUser(
-      dtoWithUser.relevantUser,
-      `Size yeni bir müşteri atandı: ${updated.name || 'Bilinmeyen Müşteri'}`
-    );
+    // Giriş yapan kullanıcıyı da DTO'ya ekle
+    const dtoWithUser = {
+      ...updateCustomerDto,
+      user: userId,
+    };
+
+    if (file) {
+      dtoWithUser.image = file.path;
+    }
+
+    // Önce müşteri kaydını güncelle
+    const updated = await this.customerService.updateCustomer(+id, dtoWithUser);
+
+    // Eğer müşteri bir kullanıcıya atanmışsa, bildirim gönder
+    if (dtoWithUser.relevantUser) {
+      await this.notificationService.createForUser(
+        dtoWithUser.relevantUser,
+        `Size yeni bir müşteri atandı: ${updated.name || 'Bilinmeyen Müşteri'}`
+      );
+    }
+
+    return updated;
   }
-
-  return updated;
-}
-
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<Customer> {

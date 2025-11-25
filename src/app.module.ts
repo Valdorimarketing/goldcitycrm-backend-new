@@ -40,7 +40,8 @@ import { DataleadModule } from './modules/datalead/datalead.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { OperationsModule } from './modules/operations/operations.module';
 import { ProfileModule } from './modules/profile/profile.module';
-import { TeamModule } from './modules/team/team.module';
+import { TeamModule } from './modules/team/team.module'; 
+import { CustomerEngagementModule } from './modules/customer-engagement/customer-engagement.module';
 
 @Module({
   imports: [
@@ -96,7 +97,8 @@ import { TeamModule } from './modules/team/team.module';
     DataleadModule,
     OperationsModule,
     ProfileModule,
-    TeamModule
+    TeamModule,
+    CustomerEngagementModule
   ],
   controllers: [AppController],
   providers: [

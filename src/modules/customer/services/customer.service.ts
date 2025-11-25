@@ -6,9 +6,10 @@ import {
   CreateCustomerDto,
   UpdateCustomerDto,
   CustomerResponseDto,
+  TodayAssignmentDto,
 } from '../dto/create-customer.dto';
 import { CustomerQueryFilterDto } from '../dto/customer-query-filter.dto';
-import { SelectQueryBuilder } from 'typeorm';
+import { DataSource, SelectQueryBuilder } from 'typeorm';
 import { CustomerDynamicFieldValueService } from '../../customer-dynamic-field-value/services/customer-dynamic-field-value.service';
 import { CreateCustomerDynamicFieldValueDto } from '../../customer-dynamic-field-value/dto/create-customer-dynamic-field-value.dto';
 import { CustomerStatusChangeRepository } from '../../customer-status-change/repositories/customer-status-change.repository';
@@ -17,17 +18,27 @@ import { CustomerHistoryService } from '../../customer-history/services/customer
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 import { StatusRepository } from '../../status/repositories/status.repository';
 import { Customer2ProductRepository } from '../../customer2product/repositories/customer2product.repository';
+import { CustomerEngagementService } from 'src/modules/customer-engagement/services/customer-engagement.service';
+import { CustomerEngagementRole } from 'src/modules/customer-engagement/entities/customer-engagement.entity';
+import { StatusService } from 'src/modules/status/services/status.service';
+import { Customer2DoctorService } from 'src/modules/customer2doctor/services/customer2doctor.service';
+import { UserService } from 'src/modules/user/services/user.service';
 
 @Injectable()
 export class CustomerService extends BaseService<Customer> {
   constructor(
     private readonly customerRepository: CustomerRepository,
-    private readonly customerDynamicFieldValueService: CustomerDynamicFieldValueService,
+    private readonly customerHistoryService: CustomerHistoryService,
+    private readonly customer2ProductRepository: Customer2ProductRepository,
     private readonly customerStatusChangeRepository: CustomerStatusChangeRepository,
     private readonly fraudAlertService: FraudAlertService,
-    private readonly customerHistoryService: CustomerHistoryService,
+    private readonly customerDynamicFieldValueService: CustomerDynamicFieldValueService,
+    private readonly userService: UserService,
+    private readonly statusService: StatusService,
     private readonly statusRepository: StatusRepository,
-    private readonly customer2ProductRepository: Customer2ProductRepository,
+    private readonly customer2DoctorService: Customer2DoctorService,
+    private readonly customerEngagementService: CustomerEngagementService,
+    private readonly dataSource: DataSource
   ) {
     super(customerRepository, Customer);
   }
@@ -36,6 +47,16 @@ export class CustomerService extends BaseService<Customer> {
     filters: CustomerQueryFilterDto,
   ): Promise<SelectQueryBuilder<Customer>> {
     return this.customerRepository.findByFiltersBaseQuery(filters);
+  }
+
+  private async findAvailableDoctorUser() {
+    // Role enum'ınıza göre değiştirin
+    const doctors = await this.userService.getUsersByRole('doctor');
+
+    // Aktif olan ilk doktoru döndür
+    const activeDoctor = doctors.find(d => d.isActive === true);
+
+    return activeDoctor || null;
   }
 
   async createCustomer(
@@ -67,52 +88,248 @@ export class CustomerService extends BaseService<Customer> {
     return customer;
   }
 
+
+
+  async getTodayAssignments(): Promise<TodayAssignmentDto[]> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // CustomerEngagement tablosundan bugünkü atamaları çek
+    const results = await this.dataSource
+      .getRepository('customer_engagement')
+      .createQueryBuilder('engagement')
+      .select('user.id', 'salesRepId')
+      .addSelect('user.name', 'salesRepName')
+      .addSelect('COUNT(DISTINCT engagement.customer)', 'count')
+      .leftJoin('user', 'user', 'user.id = engagement.user')
+      .where('engagement.assignedAt BETWEEN :startOfDay AND :endOfDay', {
+        startOfDay,
+        endOfDay,
+      })
+      .andWhere('engagement.role = :role', { role: 'SALES' })
+      .groupBy('user.id')
+      .addGroupBy('user.name')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    return results.map((result) => ({
+      salesRepId: result.salesRepId,
+      salesRepName: `${result.salesRepName || ''} ${result.salesRepSurname || ''}`.trim(),
+      count: parseInt(result.count, 10),
+    }));
+  }
+
+  async exportCustomers(
+    format: 'excel' | 'csv',
+    userId: number,
+    filters: CustomerQueryFilterDto,
+    selectedColumns?: string[]
+  ): Promise<Buffer> {
+    return this.customerRepository.exportCustomers(format, userId, filters, selectedColumns);
+  }
+
+
   async updateCustomer(
     id: number,
     updateCustomerDto: UpdateCustomerDto,
   ): Promise<CustomerResponseDto> {
-    // Get current customer to check status change
+
+    //-- 1) Mevcut müşteri verisini alıyoruz
     const currentCustomer = await this.findOneById(id);
     const oldStatus = currentCustomer?.status;
+    const previousRelevantUser = currentCustomer?.relevantUser;
 
-    // Handle reminding_date based on status
+    //-- 2) Status değişimi varsa reminding_date yönetimi
     if (updateCustomerDto.status) {
-      const status = await this.statusRepository.findOneById(
-        updateCustomerDto.status,
-      );
+      const status = await this.statusRepository.findOneById(updateCustomerDto.status);
 
-      // Check if status is a sale status
       if (status?.isSale) {
-        // Check if customer has any products assigned
-        const customer2Products =
+        const customerProducts =
           await this.customer2ProductRepository.findByCustomer(id);
 
-        if (!customer2Products || customer2Products.length === 0) {
+        if (!customerProducts || customerProducts.length === 0) {
           throw new BadRequestException(
             'Durumu satışa çekemezsiniz. Müşteriye hizmet girilmemiş',
           );
         }
+
+
+        // ✅ SATIŞA ÇEKİLDİYSE AKTİF ENGAGEMENT'I KAPAT
+        await this.customerEngagementService.releaseCustomer(id, 'SATILDI');
       }
 
       if (status?.isRemindable && status.remindingDay) {
-        // Calculate reminding date by adding reminding_day to today
         const today = new Date();
         const remindingDate = new Date(today);
         remindingDate.setDate(today.getDate() + status.remindingDay);
         updateCustomerDto.remindingDate = remindingDate;
       } else {
-        // If status is not remindable, set reminding_date to null
         updateCustomerDto.remindingDate = null;
       }
     }
 
+    // ✅ let yerine const kullanmayın, scope sorunu olabilir
+    let engagementHandled = false;
+
+    console.log('🎯 BAŞLANGIÇ - engagementHandled:', engagementHandled);
+
+    //------------------------------------------------------------
+    //-- 3) ENGAGEMENT YÖNETİMİ
+    //------------------------------------------------------------
+    if (updateCustomerDto.status && oldStatus !== updateCustomerDto.status) {
+      console.log('🔄 Status değişikliği tespit edildi');
+
+      const newStatus = await this.statusService.findOneById(updateCustomerDto.status);
+      const oldStatusEntity = oldStatus ? await this.statusRepository.findOneById(oldStatus) : null;
+
+      console.log('📊 Status kontrol:', {
+        isDoctor: newStatus?.isDoctor,
+        wasDoctor: oldStatusEntity?.isDoctor,
+      });
+
+      console.log('📊 Status detayları:', {
+        oldStatus: {
+          id: oldStatusEntity?.id,
+          name: oldStatusEntity?.name,
+          isDoctor: oldStatusEntity?.isDoctor,
+        },
+        newStatus: {
+          id: newStatus?.id,
+          name: newStatus?.name,
+          isDoctor: newStatus?.isDoctor,
+        },
+      });
+
+      //--- ÖZEL DURUM 1: SALES → DOCTOR GEÇİŞİ
+      if (newStatus?.isDoctor && !oldStatusEntity?.isDoctor) {
+        console.log('🏥 DOCTOR GEÇİŞİ TETİKLENDİ');
+
+        const doctorUser = await this.findAvailableDoctorUser();
+
+        if (doctorUser) {
+          const previousEngagement = await this.customerEngagementService.getActiveEngagement(id);
+          const firstCallAt = (previousEngagement as any)?.firstCallAt || null;
+          const previousSalesUserId = (previousEngagement as any)?.user?.id || previousRelevantUser;
+
+          await this.customerEngagementService.closeSalesEngagements(id);
+
+          const whoCanSee = [doctorUser.id];
+          if (previousSalesUserId && previousSalesUserId !== doctorUser.id) {
+            whoCanSee.push(previousSalesUserId);
+          }
+
+          await this.customerEngagementService.startEngagement(
+            {
+              customer: id,
+              user: doctorUser.id,
+              role: CustomerEngagementRole.DOCTOR,
+              assignedAt: new Date(),
+              meta: {
+                inheritedFirstCallAt: firstCallAt,
+                previousSalesUser: previousSalesUserId,
+              },
+            } as any,
+            whoCanSee,
+          );
+
+          engagementHandled = true;
+          console.log('✅ DOCTOR engagement açıldı, engagementHandled:', engagementHandled);
+        }
+      }
+      //--- ÖZEL DURUM 2: DOCTOR → SALES GERİ DÖNÜŞÜ
+      else if (oldStatusEntity?.isDoctor && !newStatus?.isDoctor) {
+        console.log('👤 SALES GERİ DÖNÜŞÜ TETİKLENDİ');
+
+        await this.customerEngagementService.closeDoctorEngagements(id);
+
+        if (previousRelevantUser) {
+          await this.customerEngagementService.startEngagement(
+            {
+              customer: id,
+              user: previousRelevantUser,
+              role: CustomerEngagementRole.SALES,
+              assignedAt: new Date(),
+              meta: {
+                returnedFromDoctor: true,
+              },
+            } as any,
+            [previousRelevantUser],
+          );
+
+          engagementHandled = true;
+          console.log('✅ SALES engagement açıldı, engagementHandled:', engagementHandled);
+        }
+      }
+      //--- DİĞER TÜM DURUM DEĞİŞİKLİKLERİ
+      else {
+        console.log('📝 Normal durum değişikliği');
+
+        await this.customerEngagementService.closeAllEngagements(id);
+
+        if (updateCustomerDto.user) {
+          await this.customerEngagementService.registerStatusChange(id, updateCustomerDto.user);
+        }
+
+        engagementHandled = true;
+        console.log('✅ Engagement kapatıldı, engagementHandled:', engagementHandled);
+      }
+    }
+
+    console.log('🔍 BÖLÜM 4 ÖNCESİ - engagementHandled:', engagementHandled);
+
+    //------------------------------------------------------------
+    //-- 4) SATIŞÇI ATAMASI
+    //------------------------------------------------------------
+    // ✅ Extra kontrol: Eğer doktor sürecine girildiyse atla
+    const isDoctorProcess = updateCustomerDto.status &&
+      (await this.statusService.findOneById(updateCustomerDto.status))?.isDoctor;
+
+    if (
+      !engagementHandled &&
+      !isDoctorProcess && // ✅ YENİ KONTROL - Doktor sürecinde atla
+      updateCustomerDto.relevantUser &&
+      updateCustomerDto.relevantUser !== previousRelevantUser
+    ) {
+      console.log('👤 BÖLÜM 4 ÇALIŞIYOR - Yeni kullanıcı ataması');
+
+      await this.customerEngagementService.closeSalesEngagements(id);
+
+      await this.customerEngagementService.startEngagement(
+        {
+          customer: id,
+          user: updateCustomerDto.relevantUser,
+          role: CustomerEngagementRole.SALES,
+          assignedAt: new Date(),
+        } as any,
+        [updateCustomerDto.relevantUser],
+      );
+
+      console.log('👤 Yeni kullanıcıya SALES engagement açıldı');
+    } else {
+      console.log('⏭️ BÖLÜM 4 ATLANDI', {
+        engagementHandled,
+        isDoctorProcess, // ✅ Log'a ekle
+        hasRelevantUser: !!updateCustomerDto.relevantUser,
+        userChanged: updateCustomerDto.relevantUser !== previousRelevantUser,
+      });
+    }
+
+
+    //------------------------------------------------------------
+    //-- 5) Asıl müşteri güncellemesini yapıyoruz
+    //------------------------------------------------------------
     const customer = await this.update(
       updateCustomerDto,
       id,
       CustomerResponseDto,
     );
 
-    // Log customer update to history
+    //------------------------------------------------------------
+    //-- 6) Customer History Loglama
+    //------------------------------------------------------------
     await this.customerHistoryService.logCustomerAction(
       id,
       CustomerHistoryAction.CUSTOMER_UPDATED,
@@ -122,13 +339,14 @@ export class CustomerService extends BaseService<Customer> {
       updateCustomerDto.user,
     );
 
-    // Check for status change and fraud detection
+    //------------------------------------------------------------
+    //-- 7) Status Change Loglama + Fraud Check
+    //------------------------------------------------------------
     if (
       updateCustomerDto.status &&
       oldStatus !== updateCustomerDto.status &&
       updateCustomerDto.user
     ) {
-      // Log status change
       await this.customerStatusChangeRepository.create({
         user_id: updateCustomerDto.user,
         customer_id: id,
@@ -136,83 +354,129 @@ export class CustomerService extends BaseService<Customer> {
         new_status: updateCustomerDto.status,
       });
 
-      // Get status names for history log
-      const oldStatusEntity = oldStatus
-        ? await this.statusRepository.findOneById(oldStatus)
-        : null;
-      const newStatusEntity = await this.statusRepository.findOneById(
-        updateCustomerDto.status,
-      );
+      const oldStatusName = oldStatus
+        ? (await this.statusRepository.findOneById(oldStatus))?.name
+        : 'Belirtilmemiş';
 
-      const oldStatusName = oldStatusEntity?.name || 'Belirtilmemiş';
-      const newStatusName = newStatusEntity?.name || 'Belirtilmemiş';
+      const newStatusName = (
+        await this.statusRepository.findOneById(updateCustomerDto.status)
+      )?.name || 'Belirtilmemiş';
 
-      // Log to customer history
       await this.customerHistoryService.logCustomerAction(
         id,
         CustomerHistoryAction.STATUS_CHANGE,
-        `Durum değiştirildi: ${oldStatusName}->${newStatusName}`,
+        `Durum değiştirildi: ${oldStatusName} -> ${newStatusName}`,
         { oldStatus: oldStatus || 0, newStatus: updateCustomerDto.status },
         null,
         updateCustomerDto.user,
       );
 
-      // Check for fraud: 3 different customers with same status change in last 5 minutes
       const uniqueCustomerChanges =
         await this.customerStatusChangeRepository.getUniqueCustomerChangesCount(
           updateCustomerDto.user,
           updateCustomerDto.status,
-          5, // 5 dakika içinde
+          5,
         );
 
-      console.log('Fraud Detection Check:', {
-        userId: updateCustomerDto.user,
-        status: updateCustomerDto.status,
-        uniqueCustomerChanges,
-        threshold: 3,
-      });
-
       if (uniqueCustomerChanges >= 3) {
-        // Create fraud alert
         await this.fraudAlertService.createFraudAlert({
           userId: updateCustomerDto.user,
-          message: `Kullanıcı ${updateCustomerDto.user} son 5 dakika içinde ${uniqueCustomerChanges} farklı müşterinin durumunu ${updateCustomerDto.status} olarak değiştirdi. Olası anormal aktivite tespit edildi.`,
+          message: `Kullanıcı ${updateCustomerDto.user} son 5 dakika içinde ${uniqueCustomerChanges} farklı müşterinin durumunu ${updateCustomerDto.status} olarak değiştirdi.`,
           isRead: false,
           isChecked: false,
         });
       }
     }
 
-    // Handle dynamic fields if provided
+    //------------------------------------------------------------
+    //-- 8) Dynamic Fields Yönetimi
+    //------------------------------------------------------------
     if (updateCustomerDto.dynamicFields) {
-      // Delete existing dynamic field values
       await this.customerDynamicFieldValueService.deleteByCustomerId(id);
 
-      // Create new dynamic field values if provided
       if (updateCustomerDto.dynamicFields.length > 0) {
-        const dynamicFieldValues: CreateCustomerDynamicFieldValueDto[] =
-          updateCustomerDto.dynamicFields.map((field) => ({
-            customer: id,
-            customer_dynamic_field: field.customer_dynamic_field,
-            file: field.file,
-            name: field.name,
-            type: field.type,
-            options_data: field.options_data,
-            order: field.order || 0,
-          }));
+        const dynamicFieldValues = updateCustomerDto.dynamicFields.map((field) => ({
+          customer: id,
+          customer_dynamic_field: field.customer_dynamic_field,
+          file: field.file,
+          name: field.name,
+          type: field.type,
+          options_data: field.options_data,
+          order: field.order || 0,
+        }));
 
-        await this.customerDynamicFieldValueService.createMany(
-          dynamicFieldValues,
-        );
+        await this.customerDynamicFieldValueService.createMany(dynamicFieldValues);
       }
     }
 
     return customer;
   }
 
-  async getCustomerById(id: number): Promise<Customer> {
-    return this.customerRepository.findOneWithDynamicFields(id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getCustomerById(id: number, userId?: number): Promise<Customer> {
+    console.log('🔍 getCustomerById çağrıldı:', { id, userId });
+
+    const customer = await this.customerRepository.findOneWithDynamicFields(id);
+
+    // Get active engagement for this customer
+    const activeEngagement = await this.customerEngagementService.getActiveEngagement(id) as any;
+
+
+    if (activeEngagement && userId) {
+      // ✅ whoCanSee kontrolü
+      const whoCanSee = activeEngagement.whoCanSee || [];
+      const canViewEngagement = whoCanSee.includes(userId);
+
+
+      if (canViewEngagement) {
+
+        console.log('👀 Profile view kaydediliyor...');
+
+        // Profile view = First Touch
+        await this.customerEngagementService.registerProfileView(id, userId);
+
+        (customer as any).activeEngagement = {
+          id: activeEngagement.id,
+          userId: activeEngagement.user?.id,
+          userName: activeEngagement.user?.name,
+          role: activeEngagement.role,
+          assignedAt: activeEngagement.assignedAt,
+          startedAt: activeEngagement.startedAt,
+          firstTouchAt: activeEngagement.firstTouchAt,
+          firstCallAt: activeEngagement.firstCallAt,
+          lastTouchAt: activeEngagement.lastTouchAt,
+        };
+      }
+    }
+
+    return customer;
   }
+
+
 
   async getAllCustomers(): Promise<Customer[]> {
     return this.findAll();

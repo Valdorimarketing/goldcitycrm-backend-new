@@ -14,9 +14,14 @@ export class DataleadService {
 
   async createCustomerFromDatalead(dto: CreateDataleadCustomerDto) {
 
-    console.log('###### DTO LEAD #######');
+
+    console.log('##############################################################################');
+    console.log('###### DTO LEAD START #######');
+    console.log('##############################################################################');
     console.log(dto);
-    console.log('###### DTO LEAD #######');
+    console.log('##############################################################################');
+    console.log('###### DTO LEAD END #######');
+    console.log('##############################################################################');
     
 
     // Telefon veya e-posta boşsa kayıt engelle
@@ -82,18 +87,21 @@ export class DataleadService {
       isActive: true,
       status: 1,
       sourceId: dto.sourceId,
+      message: dto.message,
     });
 
-    console.log('###### DTO LEAD newCustomer #######');
-    console.log(newCustomer);
-    console.log('###### DTO LEAD newCustomer #######');
+ 
     
 
     const response = this.customerRepository.save(newCustomer);
 
-    console.log('###### DTO LEAD response #######');
+    console.log('##############################################################################');
+    console.log('###### DTO LEAD RESPONSE START #######');
+    console.log('##############################################################################');
     console.log(response);
-    console.log('###### DTO LEAD response #######');
+    console.log('##############################################################################');
+    console.log('###### DTO LEAD RESPONSE END #######');
+    console.log('##############################################################################');
 
     if (response) {
       return "ok";

@@ -38,6 +38,11 @@ export class CreateStatusDto {
   isFirst?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  @Expose()
+  isClosed?: boolean;
+
+  @IsOptional()
   @IsString()
   @Expose()
   color?: string;

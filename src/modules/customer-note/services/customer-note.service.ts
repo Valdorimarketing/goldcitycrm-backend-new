@@ -24,7 +24,7 @@ export interface CustomerNoteFilterOptions {
 export class CustomerNoteService extends BaseService<CustomerNote> {
   constructor(
     private readonly customerNoteRepository: CustomerNoteRepository,
-    private readonly customerHistoryService: CustomerHistoryService,
+    private readonly customerHistoryService: CustomerHistoryService
   ) {
     super(customerNoteRepository, CustomerNote);
   }
@@ -36,6 +36,9 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     if (!userId) {
       throw new Error('User ID is required for creating customer notes');
     }
+
+    
+
     const noteData = {
       ...createCustomerNoteDto,
       user: userId,

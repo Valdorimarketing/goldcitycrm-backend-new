@@ -10,10 +10,16 @@ import { CustomerHistoryModule } from '../customer-history/customer-history.modu
 @Module({
   imports: [
     TypeOrmModule.forFeature([CustomerNote, User]),
-    CustomerHistoryModule,
+    CustomerHistoryModule
   ],
   controllers: [CustomerNoteController],
-  providers: [CustomerNoteService, CustomerNoteRepository],
-  exports: [CustomerNoteService, CustomerNoteRepository],
+  providers: [
+    CustomerNoteService,
+    CustomerNoteRepository
+  ],
+  exports: [
+    CustomerNoteService,
+    CustomerNoteRepository
+  ],
 })
 export class CustomerNoteModule {}

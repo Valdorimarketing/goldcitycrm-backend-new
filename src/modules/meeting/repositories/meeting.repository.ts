@@ -17,7 +17,7 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
 
   async getByCustomer(): Promise<Record<string, any>[]> {
     const data: Meeting[] = await this.getRepository().find({
-      relations: ['customerData'],
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch'],
     });
 
     const plain = instanceToPlain(data, { excludeExtraneousValues: true });
