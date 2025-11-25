@@ -123,6 +123,10 @@ export class Customer extends CustomBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   @Expose()
+  message: string;
+
+  @Column({ type: 'text', nullable: true })
+  @Expose()
   checkup_package: string;
 
   @Column({ type: 'int', nullable: true, name: 'relevant_user' })
@@ -131,7 +135,11 @@ export class Customer extends CustomBaseEntity {
 
   @ManyToOne(() => User, (user) => user.customers, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'relevant_user' })
-  @Transform(({ value }) => value ? value.name : null)
+  @Transform(({ value }) => value ? {
+    name: value.name,
+    avatar: value.avatar,
+    lastActiveTime: value.lastActiveTime
+  } : null)
   @Expose()
   relevantUserData: User;
 

@@ -1,23 +1,35 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Customer2Doctor } from '../entities/customer2doctor.entity';
 import { Customer2DoctorRepository } from '../repositories/customer2doctor.repository';
 import { CreateCustomer2DoctorDto } from '../dto/create-customer2doctor.dto';
 import { LogMethod } from '../../../core/decorators/log.decorator';
-import { CustomerService } from '../../customer/services/customer.service';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 import { DoctorService } from '../../doctor/services/doctor.service';
+import { CustomerService } from '../../customer/services/customer.service';
+
 
 @Injectable()
 export class Customer2DoctorService extends BaseService<Customer2Doctor> {
+  private customerService: CustomerService;
+
   constructor(
     private readonly customer2DoctorRepository: Customer2DoctorRepository,
-    private readonly customerService: CustomerService,
     private readonly customerHistoryService: CustomerHistoryService,
     private readonly doctorService: DoctorService,
+    private readonly moduleRef: ModuleRef, // ← YENİ EKLEME
   ) {
     super(customer2DoctorRepository, Customer2Doctor);
+  }
+
+  // Lazy initialization
+  private async getCustomerService(): Promise<CustomerService> {
+    if (!this.customerService) {
+      this.customerService = this.moduleRef.get(CustomerService, { strict: false });
+    }
+    return this.customerService;
   }
 
   @LogMethod()
@@ -88,9 +100,10 @@ export class Customer2DoctorService extends BaseService<Customer2Doctor> {
     }
 
     // Update customer status to 5 when a new customer2doctor record is created
-    await this.customerService.updateCustomer(createDto.customerId, {
+    const customerService = await this.getCustomerService(); // ← DEĞİŞTİ
+    await customerService.updateCustomer(createDto.customerId, {
       status: 5,
-      user: createDto.user || null, // Use the user from DTO if available
+      user: createDto.user || null,
     });
 
     return result;
@@ -100,6 +113,17 @@ export class Customer2DoctorService extends BaseService<Customer2Doctor> {
   async findByCustomerId(customerId: number): Promise<Customer2Doctor[]> {
     return this.customer2DoctorRepository.findByCustomerId(customerId);
   }
+
+  @LogMethod()
+  async findDoctorForCustomer(customerId: number): Promise<number | null> {
+    const record = await this.customer2DoctorRepository.findByIdBaseQuery({
+      where: { customer: { id: customerId } },
+      relations: ['doctor'],
+    }) as any;
+
+    return record?.doctor?.id ?? null;
+  }
+
 
   @LogMethod()
   async findByDoctorId(doctorId: number): Promise<Customer2Doctor[]> {

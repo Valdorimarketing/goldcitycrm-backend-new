@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -16,7 +16,11 @@ import { Status } from '../status/entities/status.entity';
 import { StatusRepository } from '../status/repositories/status.repository';
 import { Customer2Product } from '../customer2product/entities/customer2product.entity';
 import { Customer2ProductRepository } from '../customer2product/repositories/customer2product.repository';
-import { NotificationModule } from '../notification/notification.module'; 
+import { NotificationModule } from '../notification/notification.module';  
+import { StatusService } from '../status/services/status.service';
+import { CustomerEngagementModule } from '../customer-engagement/customer-engagement.module';
+import { Customer2DoctorModule } from '../customer2doctor/customer2doctor.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -41,7 +45,10 @@ import { NotificationModule } from '../notification/notification.module';
     CustomerDynamicFieldValueModule,
     FraudAlertModule,
     CustomerHistoryModule,
-    NotificationModule
+    NotificationModule,
+    UserModule,
+    forwardRef(() => CustomerEngagementModule), // ← DEĞİŞTİ
+    forwardRef(() => Customer2DoctorModule)
   ],
   controllers: [CustomerController],
   providers: [
@@ -49,8 +56,9 @@ import { NotificationModule } from '../notification/notification.module';
     CustomerRepository,
     CustomerStatusChangeRepository,
     StatusRepository,
-    Customer2ProductRepository
+    Customer2ProductRepository,
+    StatusService
   ],
-  exports: [CustomerService, CustomerRepository],
+  exports: [CustomerService, CustomerRepository], // ← ZATEN VAR, DOĞRU
 })
 export class CustomerModule {}

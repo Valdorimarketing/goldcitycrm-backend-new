@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Customer2Doctor } from '../entities/customer2doctor.entity';
 
 @Injectable()
 export class Customer2DoctorRepository extends BaseRepositoryAbstract<Customer2Doctor> {
-  constructor(private dataSource: DataSource) {
-    super(dataSource.getRepository(Customer2Doctor));
+  constructor(
+    @InjectRepository(Customer2Doctor)
+    private readonly repo: Repository<Customer2Doctor>,
+  ) {
+    super(repo);
   }
+
 
   async findByCustomerId(customerId: number): Promise<Customer2Doctor[]> {
     return this.createQueryBuilder('customer2doctor')

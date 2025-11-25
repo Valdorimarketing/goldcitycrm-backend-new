@@ -8,7 +8,6 @@ import { SelectQueryBuilder } from 'typeorm';
 import { Branch2HospitalRepository } from '../repositories/branch2hospital.repository';
 import { CreateBranchDto } from '../dto/create-branch.dto';
 import { UpdateBranchDto } from '../dto/update-branch.dto';
-import { Branch2Hospital } from '../entities/branch2hospital.entity';
 
 @Injectable()
 export class BranchService extends BaseService<Branch> {

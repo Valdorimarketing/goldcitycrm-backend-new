@@ -28,4 +28,8 @@ export class CreateDataleadCustomerDto {
   @IsOptional()
   @IsString()
   checkup_package?: string;
+
+  @IsOptional()
+  @IsString()
+  message?: string;
 }

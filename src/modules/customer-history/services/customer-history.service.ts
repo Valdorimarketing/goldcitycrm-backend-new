@@ -41,6 +41,21 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
       CustomerHistoryResponseDto,
     );
   }
+  
+  async findFirstByCustomerAndAction(
+    customerId: number,
+    action: string,
+  ): Promise<CustomerHistory | null> {
+    const rows = await this.customerHistoryRepository.findAll({
+      where: { customer: customerId, action },
+      order: { createdAt: 'ASC' },
+      take: 1,
+    });
+
+    return rows.length > 0 ? rows[0] : null;
+  }
+
+
 
   async getCustomerHistoryById(id: number): Promise<CustomerHistory> {
     return this.findOneById(id);

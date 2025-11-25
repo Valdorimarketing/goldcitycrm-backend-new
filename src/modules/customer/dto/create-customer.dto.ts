@@ -136,6 +136,11 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsString()
   @Expose()
+  message?: string;
+
+  @IsOptional()
+  @IsString()
+  @Expose()
   checkup_package?: string;
 
   @IsOptional()
@@ -246,6 +251,9 @@ export class CustomerResponseDto {
 
   @Expose()
   url: string;
+
+  @Expose()
+  message: string;
  
   @Expose()
   checkup_package?: string;
@@ -281,4 +289,16 @@ export class CheckPhoneResponseDto {
 
   @Expose()
   phone: string;
+}
+
+
+export class TodayAssignmentDto {
+  @Expose()
+  salesRepId: string;
+  
+  @Expose()
+  salesRepName: string;
+
+  @Expose()
+  count: number;
 }
