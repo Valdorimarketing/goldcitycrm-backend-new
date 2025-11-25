@@ -25,12 +25,19 @@ export class CustomerHistory extends CustomBaseEntity {
 
   @ManyToOne(() => Customer)
   @JoinColumn({ name: 'customer' })
+  @Expose()
   customerRelation: Customer;
 
+  @ManyToOne(() => Customer, { nullable: true })
+  @Expose()
+  @JoinColumn({ name: 'customer' })
+  customerData: Customer;
 
-  @Column({ type: 'int', nullable: true })
+
+  @Column({ name: 'user', nullable: true })
   @Expose()
   user: number;
+
 
   @ManyToOne(() => User, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'user' })

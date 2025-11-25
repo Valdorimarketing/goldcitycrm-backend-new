@@ -17,6 +17,16 @@ export interface CustomerHistoryFilterOptions {
   endDate?: Date;
 }
 
+interface HistoryQueryOptions {
+  customer?: number;
+  userId?: number;
+  action?: string;
+  startDate?: Date;
+  endDate?: Date;
+  skip?: number;
+  take?: number;
+}
+
 @Injectable()
 export class CustomerHistoryService extends BaseService<CustomerHistory> {
   constructor(
@@ -55,7 +65,74 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
     return rows.length > 0 ? rows[0] : null;
   }
 
+  async getCustomerHistoryWithPagination(options: HistoryQueryOptions) {
+    const {
+      customer,
+      userId,
+      action,
+      startDate,
+      endDate,
+      skip = 0,
+      take = 20,
+    } = options;
 
+    // Where koşullarını hazırla
+    const where: any = {};
+    
+    if (customer) {
+      where.customer = customer;
+    }
+
+    if (userId) {
+      where.user = userId;
+    }
+
+    if (action) {
+      where.action = action;
+    }
+
+    if (startDate && endDate) {
+      where.createdAt = Between(startDate, endDate);
+    } else if (startDate) {
+      where.createdAt = MoreThanOrEqual(startDate);
+    } else if (endDate) {
+      where.createdAt = LessThanOrEqual(endDate);
+    }
+
+    // Repository'den paginated sonuçları al
+    const [data, total] = await this.customerHistoryRepository.findAndCount({
+      where,
+      relations: ['customerData', 'userInfo'], // customerData relation'ını yükle
+      order: { createdAt: 'DESC' },
+      skip,
+      take,
+    });
+
+    // Response formatını oluştur
+    const formattedData = data.map((history) => ({
+      id: history.id,
+      action: history.action,
+      description: history.description,
+      requestData: history.requestData,
+      responseData: history.responseData,
+      createdAt: history.createdAt,
+      user: history.user,
+      relatedId: history.relatedId,
+      customer: history.customer, // customer ID
+      customerData: history.customerData // customerData relation (Customer entity)
+        ? {
+            id: history.customerData.id,
+            name: history.customerData.name,
+            surname: history.customerData.surname,
+          }
+        : null,
+    }));
+
+    return {
+      data: formattedData,
+      total,
+    };
+  }
 
   async getCustomerHistoryById(id: number): Promise<CustomerHistory> {
     return this.findOneById(id);
@@ -69,16 +146,14 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
     const data = await this.customerHistoryRepository.findAll({
       where: { customer: customerId },
       order: { createdAt: 'DESC' },
-      relations: ['userInfo'],
+      relations: ['userInfo', 'customerData'],
     });
  
-
     return instanceToPlain(data, {
       excludeExtraneousValues: true,
       enableCircularCheck: true,
     }) as any[];
   }
-
 
   async getCustomerHistoryByDateRange(
     filters: CustomerHistoryFilterOptions,
@@ -130,7 +205,6 @@ export class CustomerHistoryService extends BaseService<CustomerHistory> {
       responseData: responseData ? JSON.stringify(responseData) : null,
     }; 
     
-
     return this.create(
       historyData as CreateCustomerHistoryDto,
       CustomerHistory,

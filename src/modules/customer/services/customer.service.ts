@@ -89,7 +89,6 @@ export class CustomerService extends BaseService<Customer> {
   }
 
 
-
   async getTodayAssignments(): Promise<TodayAssignmentDto[]> {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -97,14 +96,33 @@ export class CustomerService extends BaseService<Customer> {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // CustomerEngagement tablosundan bugünkü atamaları çek
+    // CustomerEngagement tablosundan bugünkü atamaları çek ve customer bilgilerini JOIN et
     const results = await this.dataSource
       .getRepository('customer_engagement')
       .createQueryBuilder('engagement')
       .select('user.id', 'salesRepId')
       .addSelect('user.name', 'salesRepName')
-      .addSelect('COUNT(DISTINCT engagement.customer)', 'count')
+      // Toplam atama sayısı
+      .addSelect('COUNT(DISTINCT engagement.customer)', 'totalCount')
+      // Yeni Data: URL null olmayan
+      .addSelect(
+        'SUM(CASE WHEN customer.url IS NOT NULL THEN 1 ELSE 0 END)',
+        'newDataCount'
+      )
+      // Dinamik Arama: Status "Tekrar Aranacak" olan (status ID'sini bulmanız gerekecek)
+      // Örnek: status.name = 'TEKRAR ARANACAK' veya status.id = X
+      .addSelect(
+        `SUM(CASE WHEN status.name = 'TEKRAR ARANACAK' THEN 1 ELSE 0 END)`,
+        'dynamicSearchCount'
+      )
+      // Eski Data: URL null olan
+      .addSelect(
+        'SUM(CASE WHEN customer.url IS NULL THEN 1 ELSE 0 END)',
+        'oldDataCount'
+      )
       .leftJoin('user', 'user', 'user.id = engagement.user')
+      .leftJoin('customer', 'customer', 'customer.id = engagement.customer')
+      .leftJoin('status', 'status', 'status.id = customer.status')
       .where('engagement.assignedAt BETWEEN :startOfDay AND :endOfDay', {
         startOfDay,
         endOfDay,
@@ -112,13 +130,16 @@ export class CustomerService extends BaseService<Customer> {
       .andWhere('engagement.role = :role', { role: 'SALES' })
       .groupBy('user.id')
       .addGroupBy('user.name')
-      .orderBy('count', 'DESC')
+      .orderBy('totalCount', 'DESC')
       .getRawMany();
 
     return results.map((result) => ({
       salesRepId: result.salesRepId,
       salesRepName: `${result.salesRepName || ''} ${result.salesRepSurname || ''}`.trim(),
-      count: parseInt(result.count, 10),
+      totalCount: parseInt(result.totalCount, 10),
+      newDataCount: parseInt(result.newDataCount, 10) || 0,
+      dynamicSearchCount: parseInt(result.dynamicSearchCount, 10) || 0,
+      oldDataCount: parseInt(result.oldDataCount, 10) || 0,
     }));
   }
 
