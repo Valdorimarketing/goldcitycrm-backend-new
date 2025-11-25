@@ -136,6 +136,7 @@ export class Customer extends CustomBaseEntity {
   @ManyToOne(() => User, (user) => user.customers, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'relevant_user' })
   @Transform(({ value }) => value ? {
+    id: value.id,
     name: value.name,
     avatar: value.avatar,
     lastActiveTime: value.lastActiveTime
