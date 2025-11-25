@@ -311,3 +311,17 @@ export class TodayAssignmentDto {
   @Expose()
   oldDataCount: number;
 }
+
+export class MyTodayAssignmentDto {
+  @Expose()
+  totalCount: number;
+  
+  @Expose()
+  newDataCount: number;
+
+  @Expose()
+  dynamicSearchCount: number;
+
+  @Expose()
+  oldDataCount: number;
+}

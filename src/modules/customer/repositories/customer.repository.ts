@@ -49,6 +49,54 @@ async exportCustomers(
 }
 
 
+async getMyTodayAssignments(userId: number) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Bugün atanan tüm müşteriler
+  const todayAssignments = await this.customerRepository
+    .createQueryBuilder('customer')
+    .where('customer.relevantUser = :userId', { userId })
+    .andWhere('customer.createdAt >= :today', { today })
+    .andWhere('customer.createdAt < :tomorrow', { tomorrow })
+    .getMany();
+
+  // 7 günden eski kayıtları "eski data" olarak say
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  let newDataCount = 0;
+  let dynamicSearchCount = 0;
+  let oldDataCount = 0;
+
+  todayAssignments.forEach(customer => {
+    const createdDate = new Date(customer.createdAt);
+    
+    // Eğer müşteri 7 günden önce oluşturulmuşsa -> Eski Data
+    if (createdDate < sevenDaysAgo) {
+      oldDataCount++;
+    }
+    // Müşteri source'una göre dinamik arama mı değil mi?
+    // Bu kısmı kendi source yapınıza göre ayarlayın
+    else if (customer.sourceId === 2) {
+      dynamicSearchCount++;
+    }
+    // Diğerleri yeni data
+    else {
+      newDataCount++;
+    }
+  });
+
+  return {
+    totalCount: todayAssignments.length,
+    newDataCount,
+    dynamicSearchCount,
+    oldDataCount
+  };
+}
+
 private generateExcel(customers: Customer[], selectedColumns?: string[]): Promise<Buffer> {
   const ExcelJS = require('exceljs');
   const workbook = new ExcelJS.Workbook();
