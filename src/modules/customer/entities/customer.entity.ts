@@ -81,7 +81,7 @@ export class Customer extends CustomBaseEntity {
 
   @Column({ type: 'int', nullable: true })
   @Expose()
-  status: number;
+  status?: number | string; // ✅ Hem number hem string kabul et
 
   @ManyToOne(() => Status, { nullable: true })
   @JoinColumn({ name: 'status' })

@@ -396,11 +396,20 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       );
     }
 
-    // 🟢 Status filter
+      // 🟢 Status filter - Çoklu ID desteği
     if (filters.status !== undefined && filters.status !== null) {
-      queryBuilder.andWhere('customer.status = :status', {
-        status: filters.status,
-      });
+      const statusValue = String(filters.status); // ✅ String'e çevir
+      
+      // Virgül içeriyorsa çoklu status
+      if (statusValue.includes(',')) {
+        const statusIds = statusValue.split(',').map(id => parseInt(id.trim(), 10));
+        queryBuilder.andWhere('customer.status IN (:...statusIds)', { statusIds });
+      } 
+      // Tek status
+      else {
+        const statusId = parseInt(statusValue, 10);
+        queryBuilder.andWhere('customer.status = :status', { status: statusId });
+      }
     }
 
     // 🟣 Active filter

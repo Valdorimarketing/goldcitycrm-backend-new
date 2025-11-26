@@ -13,15 +13,14 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({
-    description: 'Filter by status ID',
-    example: 1,
+  @ApiPropertyOptional({ 
+    description: 'Status ID (single number or comma-separated string)',
+    examples: [2, '2,11,12,13']
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  status?: number;
+  status?: number | string;
 
+  
   @ApiPropertyOptional({
     description: 'Filter by active state',
     example: true,
