@@ -467,7 +467,11 @@ export class CustomerEngagementService extends BaseService<CustomerEngagement> {
                 if (activeEngagement.customer.status) {
                     const status = await this.engagementRepository.manager
                         .getRepository(Status)
-                        .findOne({ where: { id: activeEngagement.customer.status } });
+                        .findOne({
+                            where: {
+                                id: Number(activeEngagement.customer.status) // ✅ Number() ile çevir
+                            }
+                        });
                     statusName = status?.name || 'N/A';
                 }
 
