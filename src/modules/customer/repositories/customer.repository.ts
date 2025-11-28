@@ -18,26 +18,36 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     super(customerRepository);
   }
 
-
+  /**
+   * Müşterileri Excel veya CSV formatında dışa aktarır
+   * 
+   * @param format - 'excel' veya 'csv'
+   * @param userId - İşlemi yapan kullanıcı ID'si
+   * @param filters - Filtreleme parametreleri
+   * @param selectedColumns - Dışa aktarılacak sütunlar
+   * @param exportAll - true ise pagination olmadan tüm kayıtları al
+   */
   async exportCustomers(
     format: 'excel' | 'csv',
     userId: number,
     filters: CustomerQueryFilterDto,
-    selectedColumns?: string[]
+    selectedColumns?: string[],
+    exportAll?: boolean
   ): Promise<Buffer> {
-
-    const queryBuilder = this.customerRepository.createQueryBuilder('customer')
-      .leftJoinAndSelect('customer.source', 'source')
-      .leftJoinAndSelect('customer.statusData', 'statusData')
-      .leftJoinAndSelect('customer.relevantUserData', 'relevantUserData')
-      .leftJoinAndSelect('customer.referanceCustomerData', 'referanceCustomerData')
-      .orderBy('customer.createdAt', 'DESC');
-
-    // Kullanıcı admin değilse sadece kendi müşterilerini görsün
+    // Kullanıcı bilgisini al
     const user = await this.dataSource.getRepository(User).findOne({
       where: { id: userId },
       select: ['id', 'role']
     });
+
+    // Query builder'ı oluştur (filtreleri uygula)
+    const queryBuilder = await this.buildExportQuery(filters, user);
+
+    // exportAll false ise ve page/limit varsa pagination uygula
+    if (!exportAll && filters.page && filters.limit) {
+      queryBuilder.skip((filters.page - 1) * filters.limit);
+      queryBuilder.take(filters.limit);
+    }
 
     const customers = await queryBuilder.getMany();
 
@@ -46,6 +56,169 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     } else {
       return this.generateCSV(customers, selectedColumns);
     }
+  }
+
+  /**
+   * Export için query builder oluşturur ve filtreleri uygular
+   */
+  private async buildExportQuery(
+    filters: CustomerQueryFilterDto,
+    user: User | null
+  ): Promise<SelectQueryBuilder<Customer>> {
+    const queryBuilder = this.customerRepository.createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.source', 'source')
+      .leftJoinAndSelect('customer.statusData', 'statusData')
+      .leftJoinAndSelect('customer.relevantUserData', 'relevantUserData')
+      .leftJoinAndSelect('customer.referanceCustomerData', 'referanceCustomerData')
+      .orderBy('customer.createdAt', 'DESC');
+
+    // Kullanıcı admin değilse sadece kendi müşterilerini görsün
+    if (user && user.role !== 'admin') {
+      queryBuilder.andWhere('customer.relevant_user = :userId', { userId: user.id });
+    }
+
+    // 🔍 Search filter
+    if (filters.search) {
+      queryBuilder.andWhere(
+        `(customer.name LIKE :search 
+        OR customer.id LIKE :search 
+        OR customer.surname LIKE :search 
+        OR customer.email LIKE :search 
+        OR customer.url LIKE :search 
+        OR customer.checkup_package LIKE :search 
+        OR customer.phone LIKE :search 
+        OR customer.identity_number LIKE :search)`,
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    // 🟢 Status filter - Çoklu ID desteği
+    if (filters.status !== undefined && filters.status !== null) {
+      const statusValue = String(filters.status);
+      
+      if (statusValue.includes(',')) {
+        const statusIds = statusValue.split(',').map(id => parseInt(id.trim(), 10));
+        queryBuilder.andWhere('customer.status IN (:...statusIds)', { statusIds });
+      } else {
+        const statusId = parseInt(statusValue, 10);
+        queryBuilder.andWhere('customer.status = :status', { status: statusId });
+      }
+    }
+
+    // 🟣 Active filter
+    if (filters.isActive !== undefined && filters.isActive !== null) {
+      queryBuilder.andWhere('customer.isActive = :isActive', {
+        isActive: filters.isActive,
+      });
+    }
+
+    // 👤 Relevant user filter (admin için ek filtre)
+    if (filters.relevantUser !== undefined && filters.relevantUser !== null) {
+      queryBuilder.andWhere('customer.relevant_user = :relevantUser', {
+        relevantUser: filters.relevantUser,
+      });
+    }
+
+    // 🔗 Status table join (only if status-related filters exist)
+    const needsStatusJoin =
+      filters.isFirst !== undefined ||
+      filters.isDoctor !== undefined ||
+      filters.isPricing !== undefined;
+
+    if (needsStatusJoin) {
+      queryBuilder.leftJoin('status', 'status', 'customer.status = status.id');
+    }
+
+    // 🔹 Status-based filters
+    if (filters.isFirst !== undefined && filters.isFirst !== null) {
+      queryBuilder.andWhere('status.is_first = :isFirst', {
+        isFirst: filters.isFirst,
+      });
+    }
+
+    if (filters.isDoctor !== undefined && filters.isDoctor !== null) {
+      queryBuilder.andWhere('status.is_doctor = :isDoctor', {
+        isDoctor: filters.isDoctor,
+      });
+    }
+
+    if (filters.isPricing !== undefined && filters.isPricing !== null) {
+      queryBuilder.andWhere('status.is_pricing = :isPricing', {
+        isPricing: filters.isPricing,
+      });
+    }
+
+    // 🔗 Relevant user filled/empty filter
+    if (filters.hasRelevantUser !== undefined && filters.hasRelevantUser !== null) {
+      if (filters.hasRelevantUser) {
+        queryBuilder.andWhere(
+          'customer.relevant_user IS NOT NULL AND customer.relevant_user != 0',
+        );
+      } else {
+        queryBuilder.andWhere(
+          '(customer.relevant_user IS NULL OR customer.relevant_user = 0)',
+        );
+      }
+    }
+
+    // 📆 Date filtering
+    if (
+      filters.dateFilter &&
+      filters.dateFilter !== 'all' &&
+      (filters.dateFilter !== 'custom' || filters.startDate || filters.endDate)
+    ) {
+      const now = new Date();
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+
+      switch (filters.dateFilter) {
+        case 'today':
+          endDate = endOfDay(now);
+          break;
+        case 'today-only':
+          startDate = startOfDay(now);
+          endDate = endOfDay(now);
+          break;
+        case 'tomorrow':
+          startDate = startOfDay(addDays(now, 1));
+          endDate = endOfDay(addDays(now, 1));
+          break;
+        case 'week':
+          startDate = startOfWeek(now, { weekStartsOn: 1 });
+          endDate = endOfWeek(now, { weekStartsOn: 1 });
+          break;
+        case 'month':
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+        case 'overdue':
+          endDate = startOfDay(now);
+          break;
+        case 'custom':
+          if (filters.startDate) startDate = new Date(filters.startDate);
+          if (filters.endDate) endDate = new Date(filters.endDate);
+          break;
+      }
+
+      if (startDate || endDate) {
+        if (startDate && endDate) {
+          queryBuilder.andWhere(
+            'customer.reminding_date BETWEEN :startDate AND :endDate',
+            { startDate, endDate },
+          );
+        } else if (startDate) {
+          queryBuilder.andWhere('customer.reminding_date >= :startDate', {
+            startDate,
+          });
+        } else if (endDate) {
+          queryBuilder.andWhere('customer.reminding_date <= :endDate', {
+            endDate,
+          });
+        }
+      }
+    }
+
+    return queryBuilder;
   }
 
 
@@ -74,16 +247,12 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     todayAssignments.forEach(customer => {
       const createdDate = new Date(customer.createdAt);
 
-      // Eğer müşteri 7 günden önce oluşturulmuşsa -> Eski Data
       if (createdDate < sevenDaysAgo) {
         oldDataCount++;
       }
-      // Müşteri source'una göre dinamik arama mı değil mi?
-      // Bu kısmı kendi source yapınıza göre ayarlayın
       else if (customer.sourceId === 2) {
         dynamicSearchCount++;
       }
-      // Diğerleri yeni data
       else {
         newDataCount++;
       }
@@ -386,6 +555,7 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     if (filters.search) {
       queryBuilder.andWhere(
         `(customer.name LIKE :search 
+      OR customer.id LIKE :search 
       OR customer.surname LIKE :search 
       OR customer.email LIKE :search 
       OR customer.url LIKE :search 
@@ -571,4 +741,4 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
 
     return instanceToPlain(data, { excludeExtraneousValues: true });
   }
-} 
+}

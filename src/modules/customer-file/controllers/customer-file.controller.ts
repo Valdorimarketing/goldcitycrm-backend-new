@@ -27,10 +27,13 @@ import { CustomerFile } from '../entities/customer-file.entity';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUserId } from '../../../core/decorators/current-user.decorator';
 
+// 3GB limit (bytes cinsinden)
+const MAX_FILE_SIZE = 3 * 1024 * 1024 * 1024; // 3GB
+
 @Controller('customer-files')
 @UseGuards(JwtAuthGuard)
 export class CustomerFileController {
-  constructor(private readonly customerFileService: CustomerFileService) { }
+  constructor(private readonly customerFileService: CustomerFileService) {}
 
   @Post()
   @UseInterceptors(
@@ -45,44 +48,86 @@ export class CustomerFileController {
           callback(null, uploadPath);
         },
         filename: (_req, file, callback) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          // Dosya adından özel karakterleri temizle
+          const originalName = file.originalname
+            .replace(/[^a-zA-Z0-9._-]/g, '_')
+            .replace(/_+/g, '_');
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
-          const filename = `${file.originalname.replace(ext, '')}-${uniqueSuffix}${ext}`;
+          const baseName = originalName.replace(ext, '');
+          const filename = `${baseName}-${uniqueSuffix}${ext}`;
           callback(null, filename);
         },
       }),
       fileFilter: (_req, file, callback) => {
+        // Desteklenen MIME türleri
         const allowedMimeTypes = [
-          'application/pdf',
+          // Görüntüler
           'image/png',
           'image/jpg',
           'image/jpeg',
+          'image/gif',
+          'image/webp',
+          // PDF
+          'application/pdf',
+          // Arşiv dosyaları
           'application/zip',
+          'application/x-zip-compressed',
           'application/x-rar-compressed',
-          'application/octet-stream', // bazı .rar dosyaları bu MIME ile gelir
+          'application/vnd.rar',
+          'application/x-7z-compressed',
+          'application/octet-stream',
+          // Video dosyaları
+          'video/mp4',
+          'video/quicktime',
+          'video/x-msvideo',
+          'video/x-matroska',
+          'video/webm',
+          'video/avi',
+          // Office dosyaları
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+
+        // Desteklenen uzantılar
+        const allowedExtensions = [
+          '.pdf',
+          '.png',
+          '.jpg',
+          '.jpeg',
+          '.gif',
+          '.webp',
+          '.zip',
+          '.rar',
+          '.7z',
+          '.mp4',
+          '.mov',
+          '.avi',
+          '.mkv',
+          '.webm',
+          '.doc',
+          '.docx',
+          '.xls',
+          '.xlsx',
         ];
 
         const ext = extname(file.originalname).toLowerCase();
-        const allowedExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.zip', '.rar'];
 
-        if (
-          allowedMimeTypes.includes(file.mimetype) ||
-          allowedExtensions.includes(ext)
-        ) {
+        if (allowedMimeTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
           callback(null, true);
         } else {
           callback(
             new BadRequestException(
-              'Sadece PDF, PNG, JPG, ZIP ve RAR dosyaları yüklenebilir.',
+              `Desteklenmeyen dosya türü: ${ext}. Desteklenen türler: ${allowedExtensions.join(', ')}`,
             ),
             false,
           );
         }
       },
-
       limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
+        fileSize: MAX_FILE_SIZE, // 3GB
       },
     }),
   )
@@ -93,16 +138,16 @@ export class CustomerFileController {
     @CurrentUserId() userId?: number,
   ): Promise<CustomerFileResponseDto> {
     if (!file) {
-      throw new BadRequestException('File is required');
+      throw new BadRequestException('Dosya gereklidir');
     }
 
     if (!customer) {
-      throw new BadRequestException('Customer ID is required');
+      throw new BadRequestException('Müşteri ID gereklidir');
     }
 
     const customerId = parseInt(customer);
     if (isNaN(customerId)) {
-      throw new BadRequestException('Customer ID must be a valid number');
+      throw new BadRequestException('Müşteri ID geçerli bir sayı olmalıdır');
     }
 
     const createCustomerFileDto: CreateCustomerFileDto = {
@@ -111,10 +156,7 @@ export class CustomerFileController {
       description: description,
     };
 
-    return this.customerFileService.createCustomerFile(
-      createCustomerFileDto,
-      userId,
-    );
+    return this.customerFileService.createCustomerFile(createCustomerFileDto, userId);
   }
 
   @Get()
@@ -135,10 +177,7 @@ export class CustomerFileController {
     @Param('id') id: string,
     @Body() updateCustomerFileDto: UpdateCustomerFileDto,
   ): Promise<CustomerFileResponseDto> {
-    return this.customerFileService.updateCustomerFile(
-      +id,
-      updateCustomerFileDto,
-    );
+    return this.customerFileService.updateCustomerFile(+id, updateCustomerFileDto);
   }
 
   @Delete(':id')

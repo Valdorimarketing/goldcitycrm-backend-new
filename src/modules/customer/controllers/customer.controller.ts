@@ -45,7 +45,7 @@ import { CustomerEngagementService } from 'src/modules/customer-engagement/servi
 @UseGuards(JwtAuthGuard)
 export class CustomerController {
   constructor(
-    private readonly customerService: CustomerService, 
+    private readonly customerService: CustomerService,
     private readonly notificationService: NotificationService,
     private readonly customerEngagementService: CustomerEngagementService,
   ) { }
@@ -137,13 +137,13 @@ export class CustomerController {
   }
 
 
-  
+
   @Get('assignments/today')
   async getTodayAssignments(): Promise<TodayAssignmentDto[]> {
     return this.customerService.getTodayAssignments();
   }
 
-  
+
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -190,29 +190,40 @@ export class CustomerController {
   })
   async exportCustomers(
     @Query('format') format: 'excel' | 'csv',
-    @Query('columns') columns: string, // Yeni parametre
+    @Query('columns') columns: string,
+    @Query('exportAll') exportAll: string, // Query param olarak string gelir
     @Query() filters: CustomerQueryFilterDto,
     @CurrentUserId() userId: number,
     @Res() res: Response
   ): Promise<void> {
-    const selectedColumns = columns ? columns.split(',') : undefined;
-    const buffer = await this.customerService.exportCustomers(format, userId, filters, selectedColumns);
-    
-    const filename = `customers_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'csv'}`;
-    
+    const selectedColumns = columns ? columns.split(',').map(c => c.trim()) : undefined;
+    const shouldExportAll = exportAll === 'true';
+
+    const buffer = await this.customerService.exportCustomers(
+      format,
+      userId,
+      filters,
+      selectedColumns,
+      shouldExportAll
+    );
+
+    // Dosya adını oluştur
+    const scopeText = shouldExportAll ? 'all' : `page${filters.page || 1}`;
+    const filename = `customers_${scopeText}_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'csv'}`;
+
     res.set({
-      'Content-Type': format === 'excel' 
+      'Content-Type': format === 'excel'
         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         : 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,
       'Content-Length': buffer.length.toString(),
     });
-    
+
     res.status(HttpStatus.OK).send(buffer);
   }
 
 
-    // customer.controller.ts
+  // customer.controller.ts
   @Get('assignments/my-today')
   @ApiOperation({ summary: 'Get my assignments for today' })
   async getMyTodayAssignments(@CurrentUserId() userId: number) {

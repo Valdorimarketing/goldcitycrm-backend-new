@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BaseService } from '../../../core/base/services/base.service';
 import { Sales } from '../entities/sales.entity';
 import { SalesRepository } from '../repositories/sales.repository';
@@ -17,6 +17,8 @@ import { CustomerNote } from '../../customer-note/entities/customer-note.entity'
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
 import { PaginatedResponse } from '../../../core/base/interfaces/paginated-response.interface';
+import { LogMethod } from '../../../core/decorators/log.decorator';
+import { SalesGateway } from '../sales.gateway';
 
 @Injectable()
 export class SalesService extends BaseService<Sales> {
@@ -30,37 +32,40 @@ export class SalesService extends BaseService<Sales> {
     private readonly salesProductRepository: Repository<SalesProduct>,
     @InjectRepository(CustomerNote)
     private readonly customerNoteRepository: Repository<CustomerNote>,
-    private readonly customerHistoryService: CustomerHistoryService
+    private readonly customerHistoryService: CustomerHistoryService,
+    private readonly salesGateway: SalesGateway,
   ) {
     super(salesRepository, Sales);
   }
 
+  // ============================================
+  // TAKIM İSTATİSTİKLERİ
+  // ============================================
+
   /**
    * Tüm takımları ve üyelerini ciro bilgileriyle birlikte döndürür
    */
-
-
-  // src/modules/sales/services/sales.service.ts
   async getAllTeamsSummary() {
-    const { success, data } = await this.salesRepository.findAllTeamsSalesSummary();
+    const { success, data } =
+      await this.salesRepository.findAllTeamsSalesSummary();
 
     if (!success) {
       throw new Error('Team summary fetch failed');
     }
 
-    // data şu formda gelir:
-    // {
-    //   teams: [...],
-    //   grandTotalsByCurrency: { TRY: 100000, USD: 200 }
-    // }
-
     return {
       success: true,
-      data
+      data,
     };
   }
 
+  // ============================================
+  // CRUD İŞLEMLERİ
+  // ============================================
 
+  /**
+   * Yeni satış oluşturur ve WebSocket ile bildirir
+   */
   async createSales(
     createSalesDto: CreateSalesDto,
     userId?: number,
@@ -80,9 +85,146 @@ export class SalesService extends BaseService<Sales> {
       );
     }
 
+    // WebSocket ile bildir
+    this.salesGateway.notifyNewSale(sales);
+
     return sales;
   }
 
+  /**
+   * Satış günceller
+   */
+  async updateSales(
+    id: number,
+    updateSalesDto: UpdateSalesDto,
+  ): Promise<SalesResponseDto> {
+    return this.update(updateSalesDto, id, SalesResponseDto);
+  }
+
+  /**
+   * ID'ye göre satış getirir
+   */
+  async getSalesById(id: number): Promise<Sales> {
+    return this.findOneById(id);
+  }
+
+  /**
+   * Tüm satışları getirir
+   */
+  async getAllSales(): Promise<Sales[]> {
+    return this.findAll();
+  }
+
+  /**
+   * Satış siler
+   */
+  async deleteSales(id: number): Promise<Sales> {
+    return this.remove(id);
+  }
+
+  // ============================================
+  // SATIŞ SORGULARI
+  // ============================================
+
+  /**
+   * Müşteriye göre satışları getirir
+   */
+  async getSalesByCustomer(customerId: number): Promise<Sales[]> {
+    return this.salesRepository.findByCustomer(customerId);
+  }
+
+  /**
+   * Kullanıcıya göre satışları getirir
+   */
+  async getSalesByUser(userId: number): Promise<Sales[]> {
+    return this.salesRepository.findByUser(userId);
+  }
+
+  /**
+   * Sorumlu kullanıcıya göre satışları getirir
+   */
+  async getSalesByResponsibleUser(userId: number): Promise<Sales[]> {
+    return this.salesRepository.findByResponsibleUser(userId);
+  }
+
+  /**
+   * Randevusu olmayan satışları getirir
+   */
+  async getSalesWithoutAppointment(): Promise<Sales[]> {
+    return this.salesRepository.findSalesWithoutAppointment();
+  }
+
+  /**
+   * Filtrelere göre satışları detaylarıyla getirir
+   * Vue sayfasındaki loadSalesData() bu endpoint'i çağırır
+   * 
+   * Response yapısı (Vue'un beklediği):
+   * {
+   *   data: [
+   *     {
+   *       id, customer, customerDetails: { name, surname },
+   *       salesProducts: [
+   *         { totalPrice, paidAmount, isPayCompleted, currency: { code }, productDetails: { currency: { code } } }
+   *       ],
+   *       title, description, createdAt
+   *     }
+   *   ],
+   *   meta: { total, page, limit }
+   * }
+   */
+  async getUserSalesWithDetails(
+    filters: SalesQueryFilterDto,
+  ): Promise<PaginatedResponse<Sales>> {
+    const queryBuilder =
+      await this.salesRepository.findUserSalesWithRelations(filters);
+    return this.paginate(queryBuilder, filters, Sales);
+  }
+
+  // ============================================
+  // SATIŞ ÜRÜNLERİ
+  // ============================================
+
+  /**
+   * Satışa ait ürünleri getirir
+   */
+  async getSalesProducts(salesId: number): Promise<SalesProduct[]> {
+    return this.salesProductRepository
+      .createQueryBuilder('sp')
+      .leftJoinAndSelect('sp.productDetails', 'product')
+      .leftJoinAndSelect('product.currency', 'productCurrency')
+      .leftJoinAndSelect('sp.currency', 'spCurrency')
+      .where('sp.sales = :salesId', { salesId })
+      .getMany();
+  }
+
+  /**
+   * Müşteriye ait tüm satış ürünlerini getirir
+   */
+  async getCustomerSalesProducts(customerId: number): Promise<SalesProduct[]> {
+    const sales = await this.salesRepository.findByCustomer(customerId);
+
+    if (sales.length === 0) {
+      return [];
+    }
+
+    const salesIds = sales.map((sale) => sale.id);
+
+    return this.salesProductRepository
+      .createQueryBuilder('sp')
+      .leftJoinAndSelect('sp.productDetails', 'product')
+      .leftJoinAndSelect('product.currency', 'productCurrency')
+      .leftJoinAndSelect('sp.currency', 'spCurrency')
+      .where('sp.sales IN (:...salesIds)', { salesIds })
+      .getMany();
+  }
+
+  // ============================================
+  // ACTION LIST İŞLEMLERİ
+  // ============================================
+
+  /**
+   * Satış ürünleri için action list'leri işler
+   */
   private async processActionLists(
     salesId: number,
     userId?: number,
@@ -125,70 +267,89 @@ export class SalesService extends BaseService<Sales> {
     }
   }
 
-  async updateSales(
-    id: number,
-    updateSalesDto: UpdateSalesDto,
-  ): Promise<SalesResponseDto> {
-    return this.update(updateSalesDto, id, SalesResponseDto);
+  // ============================================
+  // DASHBOARD İSTATİSTİK METODLARI
+  // Vue sayfasındaki kartlar bu metodları kullanır
+  // ============================================
+
+  /**
+   * Para birimi bazında satış istatistiklerini getirir
+   * Vue'daki getStatsByCurrency() fonksiyonu bu veriyi kullanır
+   */
+  @LogMethod()
+  async getSalesStatsByCurrency(userId?: number): Promise<any[]> {
+    return this.salesRepository.getSalesStatsByCurrency(userId);
   }
 
-  async getSalesById(id: number): Promise<Sales> {
-    return this.findOneById(id);
+  /**
+   * Aylık satış istatistiklerini getirir
+   * Vue'daki getMonthlyStats() fonksiyonu bu veriyi kullanır
+   */
+  @LogMethod()
+  async getMonthlySalesStats(
+    userId?: number,
+    year?: number,
+    month?: number,
+  ): Promise<any[]> {
+    return this.salesRepository.getMonthlySalesStatsByCurrency(
+      userId,
+      year,
+      month,
+    );
   }
 
-  async getAllSales(): Promise<Sales[]> {
-    return this.findAll();
+  /**
+   * Dashboard için tüm istatistikleri getirir
+   * Vue sayfasının ana veri kaynağı - loadDashboardStats() bu endpoint'i çağırır
+   * 
+   * Response yapısı:
+   * {
+   *   byCurrency: [{ currencyCode, salesCount, totalSales, totalPaid, totalRemaining, completedCount, partialCount, unpaidCount }],
+   *   monthly: [{ currencyCode, totalSales, totalPaid, ... }],
+   *   paymentStatus: { completed, partial, unpaid, total },
+   *   summary: { totalSalesAllCurrencies, totalPaidAllCurrencies, totalRemainingAllCurrencies }
+   * }
+   */
+  @LogMethod()
+  async getDashboardStats(userId?: number): Promise<{
+    byCurrency: any[];
+    monthly: any[];
+    paymentStatus: {
+      completed: number;
+      partial: number;
+      unpaid: number;
+      total: number;
+    };
+    summary: {
+      totalSalesAllCurrencies: { [key: string]: number };
+      totalPaidAllCurrencies: { [key: string]: number };
+      totalRemainingAllCurrencies: { [key: string]: number };
+    };
+  }> {
+    return this.salesRepository.getDashboardStats(userId);
   }
 
-  async getSalesByCustomer(customerId: number): Promise<Sales[]> {
-    return this.salesRepository.findByCustomer(customerId);
+  /**
+   * Belirli bir tarih aralığındaki satış istatistiklerini getirir
+   */
+  @LogMethod()
+  async getSalesStatsByDateRange(
+    startDate: Date,
+    endDate: Date,
+    userId?: number,
+  ): Promise<any[]> {
+    return this.salesRepository.getSalesStatsByDateRange(
+      startDate,
+      endDate,
+      userId,
+    );
   }
 
-  async getSalesByUser(userId: number): Promise<Sales[]> {
-    return this.salesRepository.findByUser(userId);
-  }
-
-  async getSalesByResponsibleUser(userId: number): Promise<Sales[]> {
-    return this.salesRepository.findByResponsibleUser(userId);
-  }
-
-  async getSalesWithoutAppointment(): Promise<Sales[]> {
-    return this.salesRepository.findSalesWithoutAppointment();
-  }
-
-  async getUserSalesWithDetails(
-    filters: SalesQueryFilterDto,
-  ): Promise<PaginatedResponse<Sales>> {
-    const queryBuilder =
-      await this.salesRepository.findUserSalesWithRelations(filters);
-    return this.paginate(queryBuilder, filters, Sales);
-  }
-
-  async deleteSales(id: number): Promise<Sales> {
-    return this.remove(id);
-  }
-
-  async getSalesProducts(salesId: number): Promise<SalesProduct[]> {
-    return this.salesProductRepository
-      .createQueryBuilder('sp')
-      .leftJoinAndSelect('sp.productDetails', 'product')
-      .where('sp.sales = :salesId', { salesId })
-      .getMany();
-  }
-
-  async getCustomerSalesProducts(customerId: number): Promise<SalesProduct[]> {
-    const sales = await this.salesRepository.findByCustomer(customerId);
-
-    if (sales.length === 0) {
-      return [];
-    }
-
-    const salesIds = sales.map((sale) => sale.id);
-
-    return this.salesProductRepository
-      .createQueryBuilder('sp')
-      .leftJoinAndSelect('sp.productDetails', 'product')
-      .where('sp.sales IN (:...salesIds)', { salesIds })
-      .getMany();
+  /**
+   * Günlük satış trendini getirir
+   */
+  @LogMethod()
+  async getDailySalesTrend(userId?: number, days: number = 30): Promise<any[]> {
+    return this.salesRepository.getDailySalesTrend(userId, days);
   }
 }
