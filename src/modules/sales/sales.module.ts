@@ -4,13 +4,14 @@ import { SalesController } from './controllers/sales.controller';
 import { SalesService } from './services/sales.service';
 import { Sales } from './entities/sales.entity';
 import { SalesRepository } from './repositories/sales.repository';
+import { SalesGateway } from './sales.gateway';
 import { Meeting } from '../meeting/entities/meeting.entity';
 import { Product } from '../product/entities/product.entity';
 import { SalesProduct } from '../sales-product/entities/sales-product.entity';
 import { CustomerNote } from '../customer-note/entities/customer-note.entity';
 import { CustomerHistoryModule } from '../customer-history/customer-history.module';
 import { UserModule } from '../user/user.module';
-import { Team } from '../team/entities/team.entity'; // Team entity ekle
+import { Team } from '../team/entities/team.entity';
 
 @Module({
   imports: [
@@ -20,13 +21,13 @@ import { Team } from '../team/entities/team.entity'; // Team entity ekle
       Product,
       SalesProduct,
       CustomerNote,
-      Team, // Team entity'yi ekle
+      Team,
     ]),
     CustomerHistoryModule,
     UserModule,
   ],
   controllers: [SalesController],
-  providers: [SalesService, SalesRepository],
-  exports: [SalesService, SalesRepository],
+  providers: [SalesService, SalesRepository, SalesGateway],
+  exports: [SalesService, SalesRepository, SalesGateway],
 })
 export class SalesModule {}

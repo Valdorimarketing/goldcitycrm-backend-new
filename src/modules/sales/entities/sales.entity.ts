@@ -3,7 +3,6 @@ import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose } from 'class-transformer';
 import { Customer } from '../../customer/entities/customer.entity';
 import { User } from '../../user/entities/user.entity';
-import { SalesProduct } from '../../sales-product/entities/sales-product.entity';
 
 @Entity('sales')
 export class Sales extends CustomBaseEntity {
@@ -67,9 +66,13 @@ export class Sales extends CustomBaseEntity {
   @Expose()
   description: string;
 
-  @OneToMany(() => SalesProduct, (salesProduct) => salesProduct.salesDetails)
+  /**
+   * Satış ürünleri ilişkisi
+   * String-based relation ile circular import önlenir
+   */
+  @OneToMany('SalesProduct', 'salesDetails')
   @Expose()
-  salesProducts: SalesProduct[];
+  salesProducts: any[];
 
   constructor(partial?: Partial<Sales>) {
     super(partial);

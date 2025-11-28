@@ -189,13 +189,29 @@ export class CustomerService extends BaseService<Customer> {
     }));
   }
 
+  /**
+     * Müşterileri Excel veya CSV formatında dışa aktarır
+     * 
+     * @param format - 'excel' veya 'csv'
+     * @param userId - İşlemi yapan kullanıcı ID'si (yetki kontrolü için)
+     * @param filters - Filtreleme parametreleri
+     * @param selectedColumns - Dışa aktarılacak sütunlar
+     * @param exportAll - true ise pagination olmadan tüm filtrelenmiş kayıtları al
+     */
   async exportCustomers(
     format: 'excel' | 'csv',
     userId: number,
     filters: CustomerQueryFilterDto,
-    selectedColumns?: string[]
+    selectedColumns?: string[],
+    exportAll?: boolean
   ): Promise<Buffer> {
-    return this.customerRepository.exportCustomers(format, userId, filters, selectedColumns);
+    return this.customerRepository.exportCustomers(
+      format,
+      userId,
+      filters,
+      selectedColumns,
+      exportAll
+    );
   }
 
 
@@ -406,26 +422,26 @@ export class CustomerService extends BaseService<Customer> {
       updateCustomerDto.user,
     );
 
-        //------------------------------------------------------------
-      //-- 7) Status Change Loglama + Fraud Check
-      //------------------------------------------------------------
-      if (
-        updateCustomerDto.status &&
-        oldStatus !== updateCustomerDto.status &&
-        updateCustomerDto.user
-      ) {
-        // ✅ oldStatus ve newStatus'u number'a çevir
-        const oldStatusId = typeof oldStatus === 'string' ? parseInt(oldStatus, 10) : (oldStatus || 0);
-        const newStatusId = typeof updateCustomerDto.status === 'string' 
-          ? parseInt(updateCustomerDto.status, 10) 
-          : updateCustomerDto.status;
+    //------------------------------------------------------------
+    //-- 7) Status Change Loglama + Fraud Check
+    //------------------------------------------------------------
+    if (
+      updateCustomerDto.status &&
+      oldStatus !== updateCustomerDto.status &&
+      updateCustomerDto.user
+    ) {
+      // ✅ oldStatus ve newStatus'u number'a çevir
+      const oldStatusId = typeof oldStatus === 'string' ? parseInt(oldStatus, 10) : (oldStatus || 0);
+      const newStatusId = typeof updateCustomerDto.status === 'string'
+        ? parseInt(updateCustomerDto.status, 10)
+        : updateCustomerDto.status;
 
-        await this.customerStatusChangeRepository.create({
-          user_id: updateCustomerDto.user,
-          customer_id: id,
-          old_status: oldStatusId,
-          new_status: newStatusId,
-        });
+      await this.customerStatusChangeRepository.create({
+        user_id: updateCustomerDto.user,
+        customer_id: id,
+        old_status: oldStatusId,
+        new_status: newStatusId,
+      });
 
       const oldStatusName = oldStatus
         ? (await this.statusRepository.findOneById(oldStatus))?.name

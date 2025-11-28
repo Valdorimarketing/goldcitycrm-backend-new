@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsOptional, IsNumber, IsString } from 'class-validator';
-import { Expose, Type } from 'class-transformer';
+import { IsNotEmpty, IsOptional, IsNumber, IsString, IsBoolean } from 'class-validator';
+import { Expose, Type, Transform } from 'class-transformer';
 import { User } from 'src/modules/user/entities/user.entity';
 
 export class CreateCustomer2ProductDto {
@@ -22,15 +22,28 @@ export class CreateCustomer2ProductDto {
   @Type(() => Number)
   price?: number;
 
+  /**
+   * Alınan Tutar - Müşteriden alınan ön ödeme veya kısmi ödeme tutarı
+   */
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  discount?: number;
+  paidAmount?: number;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   offer?: number;
+
+  /**
+   * Ödeme tamamlandı mı?
+   * true: Tüm ödeme alındı (paidAmount >= offer)
+   * false: Kısmi ödeme veya ödeme alınmadı
+   */
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isPayCompleted?: boolean;
 
   @IsOptional()
   @IsNumber()
