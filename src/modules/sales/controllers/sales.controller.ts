@@ -14,10 +14,9 @@ import { CreateSalesDto, UpdateSalesDto } from '../dto/create-sales.dto';
 import { SalesQueryFilterDto } from '../dto/sales-query-filter.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-
+ 
 @ApiTags('Sales')
 @Controller('sales')
-@UseGuards(JwtAuthGuard)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
@@ -26,12 +25,14 @@ export class SalesController {
   // ============================================
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new sale' })
   create(@Body() createDto: CreateSalesDto) {
     return this.salesService.createSales(createDto);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all sales with filters' })
   findAll(@Query() query: SalesQueryFilterDto) {
     return this.salesService.getUserSalesWithDetails(query);
@@ -42,15 +43,6 @@ export class SalesController {
    * Response: { data: Sales[], meta: { total, page, limit } }
    */
   @Get('user/details')
-  @ApiOperation({ summary: 'Get user sales with full details including salesProducts' })
-  @ApiQuery({ name: 'user', required: false, type: Number, description: 'Filter by user ID' })
-  @ApiQuery({ name: 'customer', required: false, type: Number, description: 'Filter by customer ID' })
-  @ApiQuery({ name: 'currency', required: false, type: String, description: 'Filter by currency code (TRY, EUR, USD)' })
-  @ApiQuery({ name: 'paymentStatus', required: false, enum: ['all', 'completed', 'partial', 'unpaid'], description: 'Filter by payment status' })
-  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   async getUserSalesWithDetails(@Query() query: SalesQueryFilterDto) {
     return this.salesService.getUserSalesWithDetails(query);
   }
@@ -65,6 +57,7 @@ export class SalesController {
    * Vue'daki availableCurrencies ve getStatsByCurrency() bu veriyi kullanır
    */
   @Get('stats/by-currency')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get sales statistics grouped by currency' })
   @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiResponse({
@@ -96,6 +89,7 @@ export class SalesController {
    * Vue'daki getMonthlyStats() bu veriyi kullanır
    */
   @Get('stats/monthly')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get monthly sales statistics by currency' })
   @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiQuery({ name: 'year', required: false, type: Number })
@@ -125,6 +119,7 @@ export class SalesController {
    * }
    */
   @Get('stats/dashboard')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all dashboard statistics - main endpoint for Vue page' })
   @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiResponse({
@@ -184,6 +179,7 @@ export class SalesController {
    * Tarih aralığına göre istatistikler
    */
   @Get('stats/by-date-range')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get sales statistics by date range' })
   @ApiQuery({ name: 'startDate', required: true, type: String })
   @ApiQuery({ name: 'endDate', required: true, type: String })
@@ -204,6 +200,7 @@ export class SalesController {
    * Günlük satış trendi
    */
   @Get('stats/daily-trend')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get daily sales trend for charts' })
   @ApiQuery({ name: 'userId', required: false, type: Number })
   @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days (default: 30)' })
@@ -232,24 +229,28 @@ export class SalesController {
   // ============================================
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a sale by ID' })
   findOne(@Param('id') id: string) {
     return this.salesService.getSalesById(+id);
   }
 
   @Get(':id/products')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get products of a sale' })
   async getSalesProducts(@Param('id') id: string) {
     return this.salesService.getSalesProducts(+id);
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a sale' })
   update(@Param('id') id: string, @Body() updateDto: UpdateSalesDto) {
     return this.salesService.updateSales(+id, updateDto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete a sale' })
   remove(@Param('id') id: string) {
     return this.salesService.deleteSales(+id);
