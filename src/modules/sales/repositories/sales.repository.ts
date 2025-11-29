@@ -79,7 +79,7 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
         .addSelect('c.code', 'currencyCode')
         .addSelect('COALESCE(SUM(sp.total_price), 0)', 'totalSales')
         .addSelect('COALESCE(SUM(sp.paid_amount), 0)', 'totalPaid')
-        .from('team', 't')
+        .from('teams', 't')
         .leftJoin('user', 'u', 'u.team_id = t.id')
         .leftJoin('sales', 's', 's.user = u.id')
         .leftJoin('sales_product', 'sp', 'sp.sales = s.id')
