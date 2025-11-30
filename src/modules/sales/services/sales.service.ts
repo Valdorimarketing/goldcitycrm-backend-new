@@ -20,6 +20,42 @@ import { PaginatedResponse } from '../../../core/base/interfaces/paginated-respo
 import { LogMethod } from '../../../core/decorators/log.decorator';
 import { SalesGateway } from '../sales.gateway';
 
+// Grand Total Response Type
+export interface GrandTotalBreakdown {
+  currency: string;
+  totalSales: number;
+  totalPaid: number;
+  totalRemaining: number;
+  rate: number;
+  totalSalesInUsd: number;
+  totalPaidInUsd: number;
+  totalRemainingInUsd: number;
+}
+
+export interface DashboardStatsWithGrandTotalResponse {
+  byCurrency: any[];
+  monthly: any[];
+  paymentStatus: {
+    completed: number;
+    partial: number;
+    unpaid: number;
+    total: number;
+  };
+  summary: {
+    totalSalesAllCurrencies: { [key: string]: number };
+    totalPaidAllCurrencies: { [key: string]: number };
+    totalRemainingAllCurrencies: { [key: string]: number };
+  };
+  grandTotal: {
+    totalSalesInUsd: number;
+    totalPaidInUsd: number;
+    totalRemainingInUsd: number;
+    breakdown: GrandTotalBreakdown[];
+  };
+  exchangeRates: { [key: string]: number };
+  ratesLastUpdated: Date;
+}
+
 @Injectable()
 export class SalesService extends BaseService<Sales> {
   constructor(
@@ -157,20 +193,6 @@ export class SalesService extends BaseService<Sales> {
   /**
    * Filtrelere göre satışları detaylarıyla getirir
    * Vue sayfasındaki loadSalesData() bu endpoint'i çağırır
-   * 
-   * Response yapısı (Vue'un beklediği):
-   * {
-   *   data: [
-   *     {
-   *       id, customer, customerDetails: { name, surname },
-   *       salesProducts: [
-   *         { totalPrice, paidAmount, isPayCompleted, currency: { code }, productDetails: { currency: { code } } }
-   *       ],
-   *       title, description, createdAt
-   *     }
-   *   ],
-   *   meta: { total, page, limit }
-   * }
    */
   async getUserSalesWithDetails(
     filters: SalesQueryFilterDto,
@@ -269,12 +291,10 @@ export class SalesService extends BaseService<Sales> {
 
   // ============================================
   // DASHBOARD İSTATİSTİK METODLARI
-  // Vue sayfasındaki kartlar bu metodları kullanır
   // ============================================
 
   /**
    * Para birimi bazında satış istatistiklerini getirir
-   * Vue'daki getStatsByCurrency() fonksiyonu bu veriyi kullanır
    */
   @LogMethod()
   async getSalesStatsByCurrency(userId?: number): Promise<any[]> {
@@ -283,7 +303,6 @@ export class SalesService extends BaseService<Sales> {
 
   /**
    * Aylık satış istatistiklerini getirir
-   * Vue'daki getMonthlyStats() fonksiyonu bu veriyi kullanır
    */
   @LogMethod()
   async getMonthlySalesStats(
@@ -300,15 +319,6 @@ export class SalesService extends BaseService<Sales> {
 
   /**
    * Dashboard için tüm istatistikleri getirir
-   * Vue sayfasının ana veri kaynağı - loadDashboardStats() bu endpoint'i çağırır
-   * 
-   * Response yapısı:
-   * {
-   *   byCurrency: [{ currencyCode, salesCount, totalSales, totalPaid, totalRemaining, completedCount, partialCount, unpaidCount }],
-   *   monthly: [{ currencyCode, totalSales, totalPaid, ... }],
-   *   paymentStatus: { completed, partial, unpaid, total },
-   *   summary: { totalSalesAllCurrencies, totalPaidAllCurrencies, totalRemainingAllCurrencies }
-   * }
    */
   @LogMethod()
   async getDashboardStats(userId?: number): Promise<{
@@ -326,7 +336,19 @@ export class SalesService extends BaseService<Sales> {
       totalRemainingAllCurrencies: { [key: string]: number };
     };
   }> {
-    return this.salesRepository.getDashboardStats(userId);
+    return this.salesRepository.getDashboardStatsWithGrandTotal(userId);
+  }
+
+  /**
+   * Dashboard için tüm istatistikleri + Genel Toplam (TRY bazında) getirir
+   * Döviz kurları ile birlikte çağrılır
+   */
+  @LogMethod()
+  async getDashboardStatsWithGrandTotal(
+    userId?: number,
+    exchangeRates?: { [key: string]: number }
+  ): Promise<DashboardStatsWithGrandTotalResponse> {
+    return this.salesRepository.getDashboardStatsWithGrandTotal(userId, exchangeRates);
   }
 
   /**

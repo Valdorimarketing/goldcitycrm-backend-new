@@ -351,19 +351,15 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
     }));
   }
 
+
   /**
-   * Dashboard için tüm istatistikleri getirir
-   * Vue sayfasının ana veri kaynağı
-   * 
-   * Response yapısı:
-   * {
-   *   byCurrency: [{ currencyCode, salesCount, totalSales, totalPaid, totalRemaining, completedCount, partialCount, unpaidCount }],
-   *   monthly: [{ currencyCode, totalSales, totalPaid, ... }],
-   *   paymentStatus: { completed, partial, unpaid, total },
-   *   summary: { totalSalesAllCurrencies, totalPaidAllCurrencies, totalRemainingAllCurrencies }
-   * }
+   * Dashboard için tüm istatistikleri getirir (Genel Toplam dahil)
+   * Vue sayfasının ana veri kaynağı - USD bazında hesaplama
    */
-  async getDashboardStats(userId?: number): Promise<{
+  async getDashboardStatsWithGrandTotal(
+    userId?: number,
+    exchangeRates?: { [key: string]: number }
+  ): Promise<{
     byCurrency: any[];
     monthly: any[];
     paymentStatus: {
@@ -377,6 +373,23 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       totalPaidAllCurrencies: { [key: string]: number };
       totalRemainingAllCurrencies: { [key: string]: number };
     };
+    grandTotal: {
+      totalSalesInUsd: number;
+      totalPaidInUsd: number;
+      totalRemainingInUsd: number;
+      breakdown: {
+        currency: string;
+        totalSales: number;
+        totalPaid: number;
+        totalRemaining: number;
+        rate: number;
+        totalSalesInUsd: number;
+        totalPaidInUsd: number;
+        totalRemainingInUsd: number;
+      }[];
+    };
+    exchangeRates: { [key: string]: number };
+    ratesLastUpdated: Date;
   }> {
     // Para birimi bazında istatistikler
     const byCurrency = await this.getSalesStatsByCurrency(userId);
@@ -415,11 +428,55 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       summary.totalRemainingAllCurrencies[stat.currencyCode] = stat.totalRemaining;
     });
 
+    // =====================================================
+    // GENEL TOPLAM HESAPLAMA (USD bazında)
+    // Kurlar: 1 EUR = X USD, 1 TRY = X USD formatında
+    // =====================================================
+    const defaultRates = { USD: 1, EUR: 1.09, TRY: 0.029, GBP: 1.27 };
+    const rates = exchangeRates || defaultRates;
+
+    let totalSalesInUsd = 0;
+    let totalPaidInUsd = 0;
+    let totalRemainingInUsd = 0;
+    const breakdown: any[] = [];
+
+    byCurrency.forEach((stat) => {
+      const rate = rates[stat.currencyCode] || 1;
+      const salesInUsd = stat.totalSales * rate;
+      const paidInUsd = stat.totalPaid * rate;
+      const remainingInUsd = stat.totalRemaining * rate;
+
+      totalSalesInUsd += salesInUsd;
+      totalPaidInUsd += paidInUsd;
+      totalRemainingInUsd += remainingInUsd;
+
+      breakdown.push({
+        currency: stat.currencyCode,
+        totalSales: stat.totalSales,
+        totalPaid: stat.totalPaid,
+        totalRemaining: stat.totalRemaining,
+        rate,
+        totalSalesInUsd: salesInUsd,
+        totalPaidInUsd: paidInUsd,
+        totalRemainingInUsd: remainingInUsd,
+      });
+    });
+
+    const grandTotal = {
+      totalSalesInUsd,
+      totalPaidInUsd,
+      totalRemainingInUsd,
+      breakdown,
+    };
+
     return {
       byCurrency,
       monthly,
       paymentStatus,
       summary,
+      grandTotal,
+      exchangeRates: rates,
+      ratesLastUpdated: new Date(),
     };
   }
 
@@ -498,4 +555,23 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       totalPaid: parseFloat(row.totalPaid) || 0,
     }));
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
