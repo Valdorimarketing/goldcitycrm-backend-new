@@ -14,11 +14,12 @@ import { CreateSalesDto, UpdateSalesDto } from '../dto/create-sales.dto';
 import { SalesQueryFilterDto } from '../dto/sales-query-filter.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
- 
+import { ExchangeRateService } from 'src/modules/exchange-rate/services/exchange-rate.service';
+
 @ApiTags('Sales')
 @Controller('sales')
 export class SalesController {
-  constructor(private readonly salesService: SalesService) {}
+  constructor(private readonly salesService: SalesService, private readonly exchangeRateService: ExchangeRateService) { }
 
   // ============================================
   // CRUD ENDPOINTS
@@ -255,4 +256,61 @@ export class SalesController {
   remove(@Param('id') id: string) {
     return this.salesService.deleteSales(+id);
   }
+
+
+
+  @Get('stats/dashboard-with-grand-total')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get dashboard statistics with grand total in TRY' })
+  @ApiQuery({ name: 'userId', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns comprehensive dashboard statistics with grand total',
+    schema: {
+      type: 'object',
+      properties: {
+        byCurrency: { type: 'array' },
+        monthly: { type: 'array' },
+        paymentStatus: { type: 'object' },
+        summary: { type: 'object' },
+        grandTotal: {
+          type: 'object',
+          properties: {
+            totalSalesInTry: { type: 'number', example: 1500000 },
+            totalPaidInTry: { type: 'number', example: 1200000 },
+            totalRemainingInTry: { type: 'number', example: 300000 },
+            breakdown: { type: 'array' },
+          },
+        },
+        exchangeRates: {
+          type: 'object',
+          properties: {
+            TRY: { type: 'number', example: 1 },
+            EUR: { type: 'number', example: 36.5 },
+            USD: { type: 'number', example: 34.5 },
+          },
+        },
+        ratesLastUpdated: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  
+  async getDashboardStatsWithGrandTotal(@Query('userId') userId?: number) {
+    // Önce döviz kurlarını al
+    const ratesData = await this.exchangeRateService.getExchangeRatesForFrontend();
+
+    // Dashboard istatistiklerini kurlarla birlikte hesapla
+    const stats = await this.salesService.getDashboardStatsWithGrandTotal(
+      userId ? +userId : undefined,
+      ratesData.rates
+    );
+
+    return {
+      ...stats,
+      exchangeRates: ratesData.rates,
+      ratesLastUpdated: ratesData.lastUpdated,
+    };
+  }
+
+
 }

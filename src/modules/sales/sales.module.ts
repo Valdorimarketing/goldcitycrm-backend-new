@@ -12,6 +12,7 @@ import { CustomerNote } from '../customer-note/entities/customer-note.entity';
 import { CustomerHistoryModule } from '../customer-history/customer-history.module';
 import { UserModule } from '../user/user.module';
 import { Team } from '../team/entities/team.entity';
+import { ExchangeRateModule } from '../exchange-rate/exchange-rate.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { Team } from '../team/entities/team.entity';
     ]),
     CustomerHistoryModule,
     UserModule,
+    ExchangeRateModule
   ],
   controllers: [SalesController],
   providers: [SalesService, SalesRepository, SalesGateway],
