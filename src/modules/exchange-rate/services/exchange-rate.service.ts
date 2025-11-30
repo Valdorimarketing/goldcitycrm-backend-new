@@ -61,7 +61,8 @@ export class ExchangeRateService {
    * Her gün saat 09:00 ve 15:00'te kurları güncelle
    * Türkiye saati için UTC+3 = 06:00 ve 12:00 UTC
    */
-  @Cron('0 6,12 * * *') // UTC 06:00 ve 12:00 = TR 09:00 ve 15:00
+  // UTC 06:00 ve 12:00 = TR 09:00 ve 15:00
+  @Cron('0 6,12 * * *', { name: 'exchange-rate-update' })
   async scheduledRateUpdate(): Promise<void> {
     this.logger.log('Scheduled exchange rate update started');
     await this.fetchAndCacheRates();
