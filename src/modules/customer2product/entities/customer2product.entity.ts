@@ -59,6 +59,6 @@ export class Customer2Product {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updates_at' })
+  updatesdAt: Date;
 }
