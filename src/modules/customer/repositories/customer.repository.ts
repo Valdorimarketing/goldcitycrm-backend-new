@@ -95,7 +95,7 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     // 🟢 Status filter - Çoklu ID desteği
     if (filters.status !== undefined && filters.status !== null) {
       const statusValue = String(filters.status);
-      
+
       if (statusValue.includes(',')) {
         const statusIds = statusValue.split(',').map(id => parseInt(id.trim(), 10));
         queryBuilder.andWhere('customer.status IN (:...statusIds)', { statusIds });
@@ -566,15 +566,15 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       );
     }
 
-      // 🟢 Status filter - Çoklu ID desteği
+    // 🟢 Status filter - Çoklu ID desteği
     if (filters.status !== undefined && filters.status !== null) {
       const statusValue = String(filters.status); // ✅ String'e çevir
-      
+
       // Virgül içeriyorsa çoklu status
       if (statusValue.includes(',')) {
         const statusIds = statusValue.split(',').map(id => parseInt(id.trim(), 10));
         queryBuilder.andWhere('customer.status IN (:...statusIds)', { statusIds });
-      } 
+      }
       // Tek status
       else {
         const statusId = parseInt(statusValue, 10);
@@ -696,8 +696,12 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       }
     }
 
-    // 📋 Order
-    queryBuilder.orderBy('customer.id', 'DESC');
+    // Order
+    if (filters.order && (filters.order.toUpperCase() === 'ASC' || filters.order.toUpperCase() === 'DESC')) {
+      queryBuilder.orderBy('customer.id', filters.order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      queryBuilder.orderBy('customer.updatesAt', 'DESC');   // ✅ Doğru
+    }
 
     return queryBuilder;
   }

@@ -42,6 +42,8 @@ import { OperationsModule } from './modules/operations/operations.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { TeamModule } from './modules/team/team.module'; 
 import { CustomerEngagementModule } from './modules/customer-engagement/customer-engagement.module';
+import { WhatConvertsModule } from './modules/whatconverts/whatconverts.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -98,7 +100,9 @@ import { CustomerEngagementModule } from './modules/customer-engagement/customer
     OperationsModule,
     ProfileModule,
     TeamModule,
-    CustomerEngagementModule
+    CustomerEngagementModule,
+    EventEmitterModule.forRoot(),
+    WhatConvertsModule
   ],
   controllers: [AppController],
   providers: [
