@@ -55,6 +55,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://127.0.0.1:5500',
+      'http://127.0.0.1:8000',
       'http://localhost:3001',
       'https://team.valdori.com',
       'http://localhost:8092',
@@ -96,6 +97,6 @@ async function bootstrap() {
 
 
 
-  await app.listen(3000);
+  await app.listen(3001);
 }
 bootstrap();
