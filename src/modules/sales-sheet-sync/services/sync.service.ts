@@ -13,8 +13,8 @@ export class SalesSheetSyncService {
   private readonly logger = new Logger(SalesSheetSyncService.name);
   private oauth2Client: OAuth2Client;
   private sheets: sheets_v4.Sheets | null = null;
-  private readonly spreadsheetId: string = '19WI6cLgAGZHRi7E2P4ALFYV4eCc54wbeeN9GiIdlAa8';
-  private readonly sheetName: string = 'crmsale';
+  private readonly spreadsheetId: string = '1f_JfLaps2oPiumzxC1A__kGVE09HidJc8IY9pYraMB8';
+  private readonly sheetName: string = 'CRM_Sales';
 
   constructor(
     @InjectDataSource()
@@ -30,10 +30,10 @@ export class SalesSheetSyncService {
   private initOAuth(): void {
     try {
       // HARDCODED - Kendi değerlerini buraya yaz
-      const clientId = 'BURAYA_CLIENT_ID_YAZ.apps.googleusercontent.com';
-      const clientSecret = 'GOCSPX-BURAYA_SECRET_YAZ';
-      const redirectUri = 'http://localhost:3001/auth/google/callback';
-      const refreshToken = ''; // OAuth'dan aldıktan sonra buraya yapıştır
+      const clientId = '864538142426-ulfsvk0n1bf0asbbu9hd0j93sd8cag88.apps.googleusercontent.com';
+      const clientSecret = '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';
+      const redirectUri = 'https://vcrmapi.mlpcare.com/auth/google/callback';
+      const refreshToken = '1//03DhNsh_OFZgNCgYIARAAGAMSNwF-L9Ir2tILBpCkSQwbbHXVlR6Ka3UMBcPli5Ob9zopNZecpxLtv532L2nLnHxXuv59kRFKFwE';
 
       // Debug log
       this.logger.log('=== Google OAuth Config ===');
