@@ -14,6 +14,7 @@ import { UserModule } from '../user/user.module';
 import { Team } from '../team/entities/team.entity';
 import { ExchangeRateModule } from '../exchange-rate/exchange-rate.module';
 import { PublicSalesController } from './controllers/public-sales.controller';
+import { SalesSheetSyncModule } from '../sales-sheet-sync/sync.module';
 
 @Module({
   imports: [
@@ -23,14 +24,15 @@ import { PublicSalesController } from './controllers/public-sales.controller';
       Product,
       SalesProduct,
       CustomerNote,
-      Team,
+      Team
     ]),
     CustomerHistoryModule,
     UserModule,
-    ExchangeRateModule
+    ExchangeRateModule,
+    SalesSheetSyncModule
   ],
   controllers: [SalesController, PublicSalesController],
   providers: [SalesService, SalesRepository, SalesGateway],
   exports: [SalesService, SalesRepository, SalesGateway],
 })
-export class SalesModule {}
+export class SalesModule { }
