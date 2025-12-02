@@ -44,6 +44,7 @@ import { TeamModule } from './modules/team/team.module';
 import { CustomerEngagementModule } from './modules/customer-engagement/customer-engagement.module';
 import { WhatConvertsModule } from './modules/whatconverts/whatconverts.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { SalesSheetSyncModule } from './modules/sales-sheet-sync/sync.module';
 
 @Module({
   imports: [
@@ -102,7 +103,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     TeamModule,
     CustomerEngagementModule,
     EventEmitterModule.forRoot(),
-    WhatConvertsModule
+    WhatConvertsModule,
+    SalesSheetSyncModule
   ],
   controllers: [AppController],
   providers: [
