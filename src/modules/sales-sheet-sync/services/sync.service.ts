@@ -13,8 +13,8 @@ export class SalesSheetSyncService {
   private readonly logger = new Logger(SalesSheetSyncService.name);
   private oauth2Client: OAuth2Client;
   private sheets: sheets_v4.Sheets | null = null;
-  private readonly spreadsheetId: string = '1f_JfLaps2oPiumzxC1A__kGVE09HidJc8IY9pYraMB8';
-  private readonly sheetName: string = 'CRM_Sales';
+  private readonly spreadsheetId: string = '19WI6cLgAGZHRi7E2P4ALFYV4eCc54wbeeN9GiIdlAa8';
+  private readonly sheetName: string = 'crmsale';
 
   constructor(
     @InjectDataSource()
@@ -30,10 +30,10 @@ export class SalesSheetSyncService {
   private initOAuth(): void {
     try {
       // HARDCODED - Kendi değerlerini buraya yaz
-      const clientId = '864538142426-ulfsvk0n1bf0asbbu9hd0j93sd8cag88.apps.googleusercontent.com';
-      const clientSecret = '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';
+      const clientId = 'BURAYA_CLIENT_ID_YAZ.apps.googleusercontent.com';
+      const clientSecret = 'GOCSPX-BURAYA_SECRET_YAZ';
       const redirectUri = 'http://localhost:3001/auth/google/callback';
-      const refreshToken = '1//03DhNsh_OFZgNCgYIARAAGAMSNwF-L9Ir2tILBpCkSQwbbHXVlR6Ka3UMBcPli5Ob9zopNZecpxLtv532L2nLnHxXuv59kRFKFwE'; // OAuth'dan aldıktan sonra buraya yapıştır
+      const refreshToken = ''; // OAuth'dan aldıktan sonra buraya yapıştır
 
       // Debug log
       this.logger.log('=== Google OAuth Config ===');
@@ -70,15 +70,12 @@ export class SalesSheetSyncService {
   }
 
   /**
-   * OAuth URL'i oluştur (ilk kez token almak için)
+   * OAuth URL'i oluştur
    */
   public getAuthUrl(): string {
     if (!this.oauth2Client) {
       throw new Error(
-        'OAuth2 Client not initialized. Check your .env file:\n' +
-        '- GOOGLE_CLIENT_ID\n' +
-        '- GOOGLE_CLIENT_SECRET\n' +
-        '- GOOGLE_REDIRECT_URI'
+        'OAuth2 Client not initialized. Check your credentials in sync.service.ts'
       );
     }
 
@@ -102,11 +99,11 @@ export class SalesSheetSyncService {
       const { tokens } = await this.oauth2Client.getToken(code);
       this.oauth2Client.setCredentials(tokens);
       this.sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
-      
+
       this.logger.log('Google OAuth tokens received');
       this.logger.log(`Refresh Token: ${tokens.refresh_token}`);
-      this.logger.log('Add this to your .env file as GOOGLE_REFRESH_TOKEN');
-      
+      this.logger.log('Add this to sync.service.ts as refreshToken');
+
       return tokens;
     } catch (error) {
       this.logger.error('Failed to get tokens', error);
@@ -125,7 +122,7 @@ export class SalesSheetSyncService {
     }
 
     this.logger.log('Starting sales data sync to Google Sheets...');
-    
+
     try {
       const salesData = await this.getSalesData();
       await this.writeToSheet(salesData);
@@ -163,28 +160,54 @@ export class SalesSheetSyncService {
     }
   }
 
+
   /**
-   * Satış verilerini veritabanından çek
-   */
-  private async getSalesData(): Promise<any> {
+  * Satış verilerini veritabanından çek (ay filtresi ile)
+  * @param month - Opsiyonel ay filtresi: "2024-12" formatında
+  */
+  public async getSalesData(month?: string): Promise<any> {
     const ratesData = await this.exchangeRateService.getExchangeRatesForFrontend();
     const rates = ratesData.rates;
 
-    const statsByCurrency = await this.dataSource.query(`
-      SELECT 
-        COALESCE(spc.code, pc.code) as "currencyCode",
-        COUNT(DISTINCT s.id) as "salesCount",
-        COALESCE(SUM(sp.total_price), 0) as "totalSales",
-        COALESCE(SUM(sp.paid_amount), 0) as "totalPaid",
-        COALESCE(SUM(sp.total_price - sp.paid_amount), 0) as "totalRemaining"
-      FROM sales s
-      INNER JOIN sales_product sp ON sp.sales = s.id
-      LEFT JOIN product p ON sp.product = p.id
-      LEFT JOIN currencies pc ON p.currency_id = pc.id
-      LEFT JOIN currencies spc ON sp.currency = spc.id
-      WHERE COALESCE(spc.code, pc.code) IS NOT NULL
-      GROUP BY COALESCE(spc.code, pc.code)
-    `);
+    // Ay filtresi için WHERE koşulu
+    let dateFilter = '';
+    const params: any[] = [];
+
+    if (month) {
+      // month formatı: "2024-12"
+      const [year, monthNum] = month.split('-');
+      const startDate = `${year}-${monthNum}-01`;
+      // Ayın son günü + 1 (exclusive)
+      const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+      const nextMonth = `${year}-${String(parseInt(monthNum) + 1).padStart(2, '0')}-01`;
+
+      dateFilter = `AND s.created_at >= $1 AND s.created_at < $2`;
+      params.push(startDate, parseInt(monthNum) === 12
+        ? `${parseInt(year) + 1}-01-01`
+        : nextMonth
+      );
+    }
+
+    const query = `
+    SELECT 
+      COALESCE(spc.code, pc.code) as "currencyCode",
+      COUNT(DISTINCT s.id) as "salesCount",
+      COALESCE(SUM(sp.total_price), 0) as "totalSales",
+      COALESCE(SUM(sp.paid_amount), 0) as "totalPaid",
+      COALESCE(SUM(sp.total_price - sp.paid_amount), 0) as "totalRemaining"
+    FROM sales s
+    INNER JOIN sales_product sp ON sp.sales = s.id
+    LEFT JOIN product p ON sp.product = p.id
+    LEFT JOIN currencies pc ON p.currency_id = pc.id
+    LEFT JOIN currencies spc ON sp.currency = spc.id
+    WHERE COALESCE(spc.code, pc.code) IS NOT NULL
+    ${dateFilter}
+    GROUP BY COALESCE(spc.code, pc.code)
+  `;
+
+
+
+    const statsByCurrency = await this.dataSource.query(query, params);
 
     const eurStats = statsByCurrency.find((s: any) => s.currencyCode === 'EUR');
     const usdStats = statsByCurrency.find((s: any) => s.currencyCode === 'USD');
@@ -220,7 +243,15 @@ export class SalesSheetSyncService {
         TRY: rates.TRY || 0.029,
       },
       lastUpdated: new Date().toISOString(),
+      month: month || 'all',
     };
+  }
+
+  /**
+   * Aya göre satış verilerini getir (Public API için)
+   */
+  public async getSalesDataByMonth(month?: string): Promise<any> {
+    return this.getSalesData(month);
   }
 
   /**

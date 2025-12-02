@@ -1,11 +1,13 @@
 import {
   Controller,
   Get,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ExchangeRateService } from '../../exchange-rate/services/exchange-rate.service';
+import { SalesSheetSyncService } from 'src/modules/sales-sheet-sync/services/sync.service';
 
 // Public Response Interface
 export interface PublicSalesSummaryResponse {
@@ -47,7 +49,60 @@ export class PublicSalesController {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly exchangeRateService: ExchangeRateService,
+    private readonly salesSheetSyncService: SalesSheetSyncService,
   ) {}
+
+
+
+
+  
+  /**
+   * Satış istatistiklerini getir (ay filtresi ile)
+   * 
+   * @param month - Opsiyonel ay filtresi: "2024-12" formatında
+   * @returns Satış istatistikleri
+   * 
+   * Örnek:
+   * - GET /public/sales/stats → Tüm veriler
+   * - GET /public/sales/stats?month=2024-12 → Sadece Aralık 2024
+   * - GET /public/sales/stats?month=2024-11 → Sadece Kasım 2024
+   */
+  @Get('stats')
+  @ApiOperation({ summary: 'Get sales statistics with optional month filter' })
+  async getStats(@Query('month') month?: string) {
+    try {
+      // Ay formatını doğrula
+      if (month && !/^\d{4}-\d{2}$/.test(month)) {
+        return {
+          success: false,
+          error: 'Invalid month format. Use YYYY-MM (e.g., 2024-12)',
+        };
+      }
+
+      const data = await this.salesSheetSyncService.getSalesDataByMonth(month);
+      
+      return {
+        success: true,
+        ...data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        totalSalesUsd: 0,
+        totalPaidUsd: 0,
+        totalRemainingUsd: 0,
+        eurTotalSales: 0,
+        eurTotalPaid: 0,
+        eurTotalRemaining: 0,
+        usdTotalSales: 0,
+        usdTotalPaid: 0,
+        usdTotalRemaining: 0,
+      };
+    }
+  }
+
+
 
   /**
    * Dışarıya açık endpoint - EUR ve USD toplam satış özeti

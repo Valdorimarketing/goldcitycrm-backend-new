@@ -1,15 +1,13 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { WhatConvertsLog, WebhookLogStatus } from '../entities/whatconverts-log.entity';
-import { WhatConvertsLeadDto, WebhookResponseDto, LeadMappingConfigDto } from '../dto/whatconverts-webhook.dto';
+import { WebhookResponseDto, LeadMappingConfigDto } from '../dto/whatconverts-webhook.dto';
 import { WhatConvertsLead, LeadMappingConfig } from '../interfaces/whatconverts.interface';
 import { Customer } from '../../customer/entities/customer.entity';
 import { CustomerService } from '../../customer/services/customer.service';
 import { CreateCustomerDto } from '../../customer/dto/create-customer.dto';
 import { NotificationService } from '../../notification/services/notification.service';
-import { CustomerEngagementService } from '../../customer-engagement/services/customer-engagement.service';
-import { CustomerEngagementRole } from '../../customer-engagement/entities/customer-engagement.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 
@@ -34,10 +32,8 @@ export class WhatConvertsService {
     private readonly customerRepository: Repository<Customer>,
     private readonly customerService: CustomerService,
     private readonly notificationService: NotificationService,
-    private readonly customerEngagementService: CustomerEngagementService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
-    private readonly dataSource: DataSource,
   ) {
     // Config'den mapping ayarlarını yükle
     this.loadMappingConfig();
