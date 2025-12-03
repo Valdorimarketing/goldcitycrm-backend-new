@@ -1,4 +1,7 @@
+
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Between, LessThanOrEqual, MoreThanOrEqual, DataSource } from 'typeorm';
 import { BaseService } from '../../../core/base/services/base.service';
 import { CustomerNote } from '../entities/customer-note.entity';
 import { CustomerNoteRepository } from '../repositories/customer-note.repository';
@@ -7,9 +10,9 @@ import {
   UpdateCustomerNoteDto,
   CustomerNoteResponseDto,
 } from '../dto/create-customer-note.dto';
-import { Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { CustomerHistoryService } from '../../customer-history/services/customer-history.service';
 import { CustomerHistoryAction } from '../../customer-history/entities/customer-history.entity';
+import { Customer } from 'src/modules/customer/entities/customer.entity';
 
 export interface CustomerNoteFilterOptions {
   customer?: number;
@@ -24,7 +27,10 @@ export interface CustomerNoteFilterOptions {
 export class CustomerNoteService extends BaseService<CustomerNote> {
   constructor(
     private readonly customerNoteRepository: CustomerNoteRepository,
-    private readonly customerHistoryService: CustomerHistoryService
+    private readonly customerHistoryService: CustomerHistoryService,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
+    private readonly dataSource: DataSource,
   ) {
     super(customerNoteRepository, CustomerNote);
   }
@@ -37,7 +43,29 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
       throw new Error('User ID is required for creating customer notes');
     }
 
-    
+    // Müşterinin mevcut durumunu kontrol et
+    if (createCustomerNoteDto.customer) {
+      try {
+        const customerWithStatus = await this.customerRepo.findOne({
+          where: { id: createCustomerNoteDto.customer },
+          relations: ['statusData'],
+        });
+ 
+        
+
+        if (customerWithStatus?.statusData?.name === 'TEKRAR ARANACAK') {
+          const remindingDate = new Date();
+          remindingDate.setDate(remindingDate.getDate() + customerWithStatus.statusData.remindingDay);
+
+          await this.customerRepo.update(
+            createCustomerNoteDto.customer,
+            { remindingDate }
+          );
+        }
+      } catch (error) {
+        console.error('Error checking customer status for remindingDate:', error);
+      }
+    }
 
     const noteData = {
       ...createCustomerNoteDto,
@@ -45,7 +73,6 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
     };
     const note = await this.create(noteData, CustomerNoteResponseDto);
 
-    // Log to customer history
     await this.customerHistoryService.logCustomerAction(
       createCustomerNoteDto.customer,
       CustomerHistoryAction.NOTE_ADDED,
