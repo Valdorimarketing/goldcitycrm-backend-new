@@ -69,7 +69,12 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
 /**
  * Tüm takımların satış özetini getirir (avatar dahil)
  */
- async findAllTeamsSalesSummary(): Promise<{ success: boolean; data: any }> {
+
+
+
+// sales.repository.ts
+
+async findAllTeamsSalesSummary(): Promise<{ success: boolean; data: any }> {
   try {
     const result = await this.dataSource
       .createQueryBuilder()
@@ -78,9 +83,9 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       .addSelect('u.id', 'userId')
       .addSelect('u.name', 'userName')
       .addSelect('u.avatar', 'avatar')
-      .addSelect("COALESCE(c.code, 'TRY')", 'currencyCode')  // ← NULL ise TRY kabul et
+      .addSelect("COALESCE(c.code, 'TRY')", 'currencyCode')
       .addSelect('COALESCE(SUM(sp.total_price), 0)', 'totalSales')
-      .addSelect('COALESCE(SUM(sp.paid_amount), 0)', 'totalPaid')
+      .addSelect('COALESCE(SUM(sp.paid_amount), 0)', 'totalPaid')  // ← Paid eklendi
       .from('teams', 't')
       .leftJoin('user', 'u', 'u.userTeamId = t.id')
       .leftJoin('sales', 's', 's.user = u.id')
@@ -91,14 +96,14 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
       .addGroupBy('u.id')
       .addGroupBy('u.name')
       .addGroupBy('u.avatar')
-      .addGroupBy("COALESCE(c.code, 'TRY')")  // ← Burası da değişti
+      .addGroupBy("COALESCE(c.code, 'TRY')")
       .orderBy('t.name', 'ASC')
       .addOrderBy('u.name', 'ASC')
       .getRawMany();
 
     // Takımlara göre grupla
     const teamsMap = new Map<number, any>();
-    const grandTotalsByCurrency: { [key: string]: number } = {};
+    const grandTotalsByCurrency: { [key: string]: { totalSales: number; totalPaid: number } } = {};
 
     result.forEach((row) => {
       if (!row.teamId) return;
@@ -128,25 +133,29 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
 
         const currencyCode = row.currencyCode || 'TRY';
         const sales = parseFloat(row.totalSales) || 0;
+        const paid = parseFloat(row.totalPaid) || 0;
 
-        if (sales > 0) {
-          // Member totalsByCurrency
+        if (sales > 0 || paid > 0) {
+          // Member totalsByCurrency (obje formatında)
           if (!member.totalsByCurrency[currencyCode]) {
-            member.totalsByCurrency[currencyCode] = 0;
+            member.totalsByCurrency[currencyCode] = { totalSales: 0, totalPaid: 0 };
           }
-          member.totalsByCurrency[currencyCode] += sales;
+          member.totalsByCurrency[currencyCode].totalSales += sales;
+          member.totalsByCurrency[currencyCode].totalPaid += paid;
 
           // Team totalsByCurrency
           if (!team.totalsByCurrency[currencyCode]) {
-            team.totalsByCurrency[currencyCode] = 0;
+            team.totalsByCurrency[currencyCode] = { totalSales: 0, totalPaid: 0 };
           }
-          team.totalsByCurrency[currencyCode] += sales;
+          team.totalsByCurrency[currencyCode].totalSales += sales;
+          team.totalsByCurrency[currencyCode].totalPaid += paid;
 
           // Grand totals
           if (!grandTotalsByCurrency[currencyCode]) {
-            grandTotalsByCurrency[currencyCode] = 0;
+            grandTotalsByCurrency[currencyCode] = { totalSales: 0, totalPaid: 0 };
           }
-          grandTotalsByCurrency[currencyCode] += sales;
+          grandTotalsByCurrency[currencyCode].totalSales += sales;
+          grandTotalsByCurrency[currencyCode].totalPaid += paid;
         }
       }
     });
@@ -163,6 +172,7 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
     return { success: false, data: null };
   }
 }
+
   // ============================================
   // SATIŞ LİSTESİ (Vue sayfası için)
   // ============================================
@@ -187,6 +197,8 @@ async findRecentSalesOptimized(limit: number = 10): Promise<Sales[]> {
     .addSelect(['spCurrency.id', 'spCurrency.code'])
     .leftJoin('sp.productDetails', 'product')
     .addSelect(['product.id', 'product.name'])
+    .leftJoin('product.currency', 'productCurrency')  // ← Ekle
+    .addSelect(['productCurrency.id', 'productCurrency.code'])  // ← Ekle
     .orderBy('sales.createdAt', 'DESC')
     .take(limit)
     .getMany();
