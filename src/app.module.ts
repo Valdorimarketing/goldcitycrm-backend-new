@@ -45,6 +45,7 @@ import { CustomerEngagementModule } from './modules/customer-engagement/customer
 import { WhatConvertsModule } from './modules/whatconverts/whatconverts.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SalesSheetSyncModule } from './modules/sales-sheet-sync/sync.module';
+import { HealthController } from './modules/system/health.controller';
 
 @Module({
   imports: [
@@ -106,7 +107,7 @@ import { SalesSheetSyncModule } from './modules/sales-sheet-sync/sync.module';
     WhatConvertsModule,
     SalesSheetSyncModule
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     {

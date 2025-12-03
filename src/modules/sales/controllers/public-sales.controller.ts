@@ -50,12 +50,12 @@ export class PublicSalesController {
     private readonly dataSource: DataSource,
     private readonly exchangeRateService: ExchangeRateService,
     private readonly salesSheetSyncService: SalesSheetSyncService,
-  ) {}
+  ) { }
 
 
 
 
-  
+
   /**
    * Satış istatistiklerini getir (ay filtresi ile)
    * 
@@ -79,8 +79,8 @@ export class PublicSalesController {
         };
       }
 
-      const data = await this.salesSheetSyncService.getSalesDataByMonth(month);
-      
+      const data = await this.salesSheetSyncService.getSalesData(month);
+
       return {
         success: true,
         ...data,
@@ -126,7 +126,7 @@ export class PublicSalesController {
    * }
    */
   @Get('summary')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get public sales summary in USD (EUR + USD combined)',
     description: 'Returns total sales, paid and remaining amounts for EUR and USD currencies, converted to USD using current exchange rates. No authentication required.'
   })
@@ -204,7 +204,7 @@ export class PublicSalesController {
       WHERE COALESCE(spc.code, pc.code) IS NOT NULL
       GROUP BY COALESCE(spc.code, pc.code)
     `);
-    
+
     console.log('Stats by currency (raw SQL):', statsByCurrency);
 
     // EUR ve USD verilerini bul
