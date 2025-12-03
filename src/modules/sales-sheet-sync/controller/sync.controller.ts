@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SalesSheetSyncService } from '../services/sync.service';
 import { GoogleOAuthSettingsService } from '../services/google-oauth-settings.service';
 import { IsString, IsOptional } from 'class-validator';
+import { GoogleSpreadsheetService } from '../services/google-spreadsheet.service';
 
 export class UpdateSettingsDto {
   @IsOptional()
@@ -38,6 +39,7 @@ export class SheetsSyncAdminController {
   constructor(
     private readonly syncService: SalesSheetSyncService,
     private readonly settingsService: GoogleOAuthSettingsService,
+    private readonly spreadsheetService: GoogleSpreadsheetService,
   ) { }
 
   /**
@@ -63,6 +65,8 @@ export class SheetsSyncAdminController {
       },
     };
   }
+
+   
 
   /**
    * Tüm ayarları al (hassas veriler maskelenmiş)
@@ -99,13 +103,20 @@ export class SheetsSyncAdminController {
   /**
  * Manuel reinitialize tetikle (GET)
  */
-  @Get('reinitialize')
-  @ApiOperation({ summary: 'Trigger manual reinitialize to Google Sheets (GET)' })
-  async reInitialize() {
-    const initResult = await this.syncService.reinitialize();
-    return initResult
-  }
 
+  @Get('reinitialize')
+  @ApiOperation({ summary: 'Reinitialize OAuth client' })
+  async reInitialize() {
+    const syncResult = await this.syncService.reinitialize();
+    
+    // GoogleSpreadsheetService'i de reinitialize et
+    await this.spreadsheetService.reinitialize();
+    
+    return {
+      ...syncResult,
+      spreadsheetApiReady: this.spreadsheetService.isReady(),
+    };
+  }
   /**
    * Ayarları güncelle
    */

@@ -73,29 +73,13 @@ export class CustomerEngagementService extends BaseService<CustomerEngagement> {
     }
 
     async startEngagement(dto: CreateCustomerEngagementDto, whoCanSee?: number[]) {
-        const now = dto.assignedAt ?? new Date();
-
-
-        console.log('🚀 startEngagement çağrıldı:', {
-            customer: dto.customer,
-            user: dto.user,
-            role: dto.role,
-            whoCanSee: whoCanSee || [dto.user],
-        });
-
-        // ✅ Sadece aynı role'deki engagement'ları kapat
+        const now = dto.assignedAt ?? new Date(); 
+ 
         await this.engagementRepository.closeActiveEngagements(
             dto.customer,
             dto.role, // ← BURADA role parametresi var
         );
-
-        console.log('📝 Yeni engagement oluşturuluyor:', {
-            customer: dto.customer,
-            user: dto.user,
-            role: dto.role,
-            whoCanSee: whoCanSee || [dto.user],
-            meta: dto.meta,
-        });
+ 
 
 
         const newEngagement = await this.engagementRepository.insertEngagement(
@@ -107,8 +91,7 @@ export class CustomerEngagementService extends BaseService<CustomerEngagement> {
             whoCanSee || [dto.user],
         );
 
-        console.log('✅ Yeni engagement oluşturuldu:', newEngagement);
-
+      
         return newEngagement;
     }
 
@@ -135,7 +118,7 @@ export class CustomerEngagementService extends BaseService<CustomerEngagement> {
     async registerProfileView(customerId: number, userId: number) {
         const now = new Date();
 
-        console.log('📸 registerProfileView çağrıldı:', { customerId, userId });
+ 
 
         // Aktif engagement bul (sadece bu kullanıcıya ait)
         let engagement = await this.engagementRepository.findActiveEngagement(
@@ -144,7 +127,7 @@ export class CustomerEngagementService extends BaseService<CustomerEngagement> {
             userId,
         );
 
-        console.log('📋 Bulunan engagement:', engagement);
+ 
 
         // ✅ Engagement yoksa yeni AÇMA, sadece log at
         if (!engagement) {

@@ -5,21 +5,22 @@ import { CustomerNote } from './entities/customer-note.entity';
 import { CustomerNoteRepository } from './repositories/customer-note.repository';
 import { CustomerNoteService } from './services/customer-note.service';
 import { User } from '../user/entities/user.entity';
+import { Customer } from '../customer/entities/customer.entity'; // ← Ekle
 import { CustomerHistoryModule } from '../customer-history/customer-history.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CustomerNote, User]),
-    CustomerHistoryModule
+    TypeOrmModule.forFeature([CustomerNote, User, Customer]), // ← Customer ekle
+    CustomerHistoryModule,
   ],
   controllers: [CustomerNoteController],
   providers: [
     CustomerNoteService,
-    CustomerNoteRepository
+    CustomerNoteRepository,
   ],
   exports: [
     CustomerNoteService,
-    CustomerNoteRepository
+    CustomerNoteRepository,
   ],
 })
 export class CustomerNoteModule {}

@@ -47,7 +47,7 @@ import { UserModule } from '../user/user.module';
     CustomerHistoryModule,
     NotificationModule,
     UserModule,
-    forwardRef(() => CustomerEngagementModule), // ← DEĞİŞTİ
+    forwardRef(() => CustomerEngagementModule),
     forwardRef(() => Customer2DoctorModule)
   ],
   controllers: [CustomerController],
@@ -59,6 +59,6 @@ import { UserModule } from '../user/user.module';
     Customer2ProductRepository,
     StatusService
   ],
-  exports: [CustomerService, CustomerRepository], // ← ZATEN VAR, DOĞRU
+  exports: [CustomerService, CustomerRepository],
 })
 export class CustomerModule {}
