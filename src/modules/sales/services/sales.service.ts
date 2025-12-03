@@ -202,6 +202,10 @@ export class SalesService extends BaseService<Sales> {
     return this.paginate(queryBuilder, filters, Sales);
   }
 
+  async getRecentSalesOptimized(limit: number = 10): Promise<Sales[]> {
+  return this.salesRepository.findRecentSalesOptimized(limit);
+}
+
   // ============================================
   // SATIŞ ÜRÜNLERİ
   // ============================================
