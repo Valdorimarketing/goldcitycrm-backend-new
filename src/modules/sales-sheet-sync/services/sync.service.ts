@@ -1,158 +1,89 @@
 // src/modules/sales-sheet-sync/services/sales-sheet-sync.service.ts
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { google, sheets_v4 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { ExchangeRateService } from '../../exchange-rate/services/exchange-rate.service';
+import { GoogleOAuthSettingsService } from './google-oauth-settings.service';
 
 @Injectable()
-export class SalesSheetSyncService {
+export class SalesSheetSyncService implements OnModuleInit {
   private readonly logger = new Logger(SalesSheetSyncService.name);
-  private oauth2Client: OAuth2Client;
+  private oauth2Client: OAuth2Client | null = null;
   private sheets: sheets_v4.Sheets | null = null;
-  private readonly spreadsheetId: string = '1f_JfLaps2oPiumzxC1A__kGVE09HidJc8IY9pYraMB8';
-  private readonly sheetName: string = 'CRM_Sales';
+  private spreadsheetId: string = '';
+  private isInitialized: boolean = false;
 
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly exchangeRateService: ExchangeRateService,
-  ) {
-    this.initOAuth();
+    private readonly settingsService: GoogleOAuthSettingsService,
+  ) { }
+
+  /**
+   * Module başlatıldığında OAuth'u initialize et
+   */
+  async onModuleInit(): Promise<void> {
+    await this.initOAuth();
   }
 
   /**
-   * OAuth2 Client'ı başlat
+   * OAuth2 Client'ı veritabanındaki ayarlarla başlat
    */
-  private initOAuth(): void {
+  async initOAuth(): Promise<{ success: boolean; message: string }> {
     try {
-      // HARDCODED - Kendi değerlerini buraya yaz
-      const clientId = '864538142426-ulfsvk0n1bf0asbbu9hd0j93sd8cag88.apps.googleusercontent.com';
-      const clientSecret = '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';
-      const redirectUri = 'https://vcrmapi.mlpcare.com/auth/google/callback';
-      const refreshToken = '1//03DhNsh_OFZgNCgYIARAAGAMSNwF-L9Ir2tILBpCkSQwbbHXVlR6Ka3UMBcPli5Ob9zopNZecpxLtv532L2nLnHxXuv59kRFKFwE';
+      const settings = await this.settingsService.getAllSettings();
 
-      // Debug log
-      this.logger.log('=== Google OAuth Config ===');
-      this.logger.log(`Client ID: ${clientId ? clientId.substring(0, 20) + '...' : 'NOT SET!'}`);
-      this.logger.log(`Client Secret: ${clientSecret ? '***SET***' : 'NOT SET!'}`);
-      this.logger.log(`Redirect URI: ${redirectUri}`);
-      this.logger.log(`Sheets ID: ${this.spreadsheetId}`);
-      this.logger.log('===========================');
+      this.logger.log('=== Google OAuth Config (from DB) ===');
+      this.logger.log(`Client ID: ${settings.clientId ? settings.clientId.substring(0, 20) + '...' : 'NOT SET!'}`);
+      this.logger.log(`Client Secret: ${settings.clientSecret ? '***SET***' : 'NOT SET!'}`);
+      this.logger.log(`Redirect URI: ${settings.redirectUri}`);
+      this.logger.log(`Spreadsheet ID: ${settings.spreadsheetId}`);
+      this.logger.log(`Is Configured: ${settings.isConfigured}`);
+      this.logger.log('=====================================');
 
-      if (!clientId || !clientSecret || clientId.includes('BURAYA')) {
-        this.logger.error('Google OAuth credentials not configured! Edit sync.service.ts');
-        return;
+      if (!settings.clientId || !settings.clientSecret) {
+        this.isInitialized = false;
+        return {
+          success: false,
+          message: 'Client ID or Client Secret not configured',
+        };
       }
 
+      this.spreadsheetId = settings.spreadsheetId;
+
       this.oauth2Client = new google.auth.OAuth2(
-        clientId,
-        clientSecret,
-        redirectUri
+        settings.clientId,
+        settings.clientSecret,
+        settings.redirectUri,
       );
 
-      // Refresh token varsa ayarla
-      if (refreshToken) {
+      if (settings.refreshToken) {
         this.oauth2Client.setCredentials({
-          refresh_token: refreshToken,
+          refresh_token: settings.refreshToken,
         });
         this.sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
-        this.logger.log('Google Sheets OAuth initialized with refresh token');
+        this.isInitialized = true;
+        this.logger.log('Google Sheets OAuth initialized with refresh token from DB');
+        return {
+          success: true,
+          message: 'OAuth initialized successfully',
+        };
       } else {
-        this.logger.warn('GOOGLE_REFRESH_TOKEN not set. Run /auth/google to get one.');
+        this.isInitialized = false;
+        this.logger.warn('Refresh token not set. Run OAuth flow to get one.');
+        return {
+          success: false,
+          message: 'Refresh token not configured',
+        };
       }
     } catch (error) {
       this.logger.error('Failed to initialize Google OAuth', error);
-    }
-  }
-
-  /**
-   * OAuth URL'i oluştur
-   */
-  public getAuthUrl(): string {
-    if (!this.oauth2Client) {
-      throw new Error(
-        'OAuth2 Client not initialized. Check your credentials in sync.service.ts'
-      );
-    }
-
-    const scopes = [
-      'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive.file',
-    ];
-
-    return this.oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: scopes,
-      prompt: 'consent',
-    });
-  }
-
-  /**
-   * Authorization code ile token al
-   */
-  public async getTokenFromCode(code: string): Promise<any> {
-    try {
-      const { tokens } = await this.oauth2Client.getToken(code);
-      this.oauth2Client.setCredentials(tokens);
-      this.sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
-
-      this.logger.log('Google OAuth tokens received');
-      this.logger.log(`Refresh Token: ${tokens.refresh_token}`);
-      this.logger.log('Add this to sync.service.ts as refreshToken');
-
-      return tokens;
-    } catch (error) {
-      this.logger.error('Failed to get tokens', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Her 30 dakikada bir satış verilerini Google Sheets'e yaz
-   */
-  @Cron('*/30 * * * *', { name: 'sales-sheet-sync' })
-  async syncSalesToSheet(): Promise<void> {
-    if (!this.sheets) {
-      this.logger.warn('Google Sheets not initialized. Skipping sync.');
-      return;
-    }
-
-    this.logger.log('Starting sales data sync to Google Sheets...');
-
-    try {
-      const salesData = await this.getSalesData();
-      await this.writeToSheet(salesData);
-      this.logger.log('Sales data synced to Google Sheets successfully');
-    } catch (error) {
-      this.logger.error('Failed to sync sales data to Google Sheets', error);
-    }
-  }
-
-  /**
-   * Manuel senkronizasyon
-   */
-  public async manualSync(): Promise<{ success: boolean; message: string; data?: any }> {
-    if (!this.sheets) {
-      return {
-        success: false,
-        message: 'Google Sheets not initialized. Get refresh token first via /auth/google',
-      };
-    }
-
-    try {
-      const salesData = await this.getSalesData();
-      await this.writeToSheet(salesData);
-      return {
-        success: true,
-        message: 'Sales data synced to Google Sheets successfully',
-        data: salesData,
-      };
-    } catch (error) {
-      this.logger.error('Manual sync failed', error);
+      this.isInitialized = false;
       return {
         success: false,
         message: error.message,
@@ -160,41 +91,228 @@ export class SalesSheetSyncService {
     }
   }
 
+  /**
+   * OAuth'u yeniden başlat (ayarlar değiştiğinde)
+   */
+  async reinitialize(): Promise<{ success: boolean; message: string }> {
+    this.oauth2Client = null;
+    this.sheets = null;
+    this.isInitialized = false;
+    return this.initOAuth();
+  }
 
   /**
-  * Satış verilerini veritabanından çek (ay filtresi ile)
-  * @param month - Opsiyonel ay filtresi: "2024-12" formatında
-  */
-  public async getSalesData(month?: string): Promise<any> {
+   * Servis durumunu al
+   */
+  async getStatus(): Promise<{
+    isInitialized: boolean;
+    isConfigured: boolean;
+    lastSync: string | null;
+    lastTokenRefresh: string | null;
+    spreadsheetId: string;
+  }> {
+    const settings = await this.settingsService.getAllSettings();
+    const lastSync = await this.settingsService.getLastSync();
+
+    return {
+      isInitialized: this.isInitialized,
+      isConfigured: settings.isConfigured,
+      lastSync,
+      lastTokenRefresh: settings.lastTokenRefresh,
+      spreadsheetId: settings.spreadsheetId,
+    };
+  }
+
+  /**
+   * OAuth URL'i oluştur
+   */
+  getAuthUrl(): string {
+    if (!this.oauth2Client) {
+      throw new Error('OAuth2 Client not initialized. Configure settings first.');
+    }
+
+    return this.oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive.file',
+      ],
+      prompt: 'consent',
+    });
+  }
+
+  /**
+   * Authorization code ile token al ve kaydet
+   */
+  async getTokenFromCode(code: string): Promise<any> {
+    if (!this.oauth2Client) {
+      throw new Error('OAuth2 Client not initialized');
+    }
+
+    const { tokens } = await this.oauth2Client.getToken(code);
+
+    if (tokens.refresh_token) {
+      // Refresh token'ı veritabanına kaydet
+      await this.settingsService.updateRefreshToken(tokens.refresh_token);
+
+      // OAuth'u yeniden başlat
+      await this.reinitialize();
+    }
+
+    this.logger.log('Google OAuth tokens received and saved to database');
+
+    return tokens;
+  }
+
+  /**
+   * Sayfa adını oluştur
+   */
+  private getSheetName(month?: string): string {
+    if (!month || month === 'all') {
+      return 'CRM_Sales_All';
+    }
+    return `CRM_Sales_${month.replace('-', '_')}`;
+  }
+
+  /**
+   * Sayfa var mı kontrol et, yoksa oluştur
+   */
+  private async ensureSheetExists(sheetName: string): Promise<void> {
+    if (!this.sheets) return;
+
+    try {
+      const spreadsheet = await this.sheets.spreadsheets.get({
+        spreadsheetId: this.spreadsheetId,
+      });
+
+      const existingSheets = spreadsheet.data.sheets?.map(s => s.properties?.title) || [];
+
+      if (!existingSheets.includes(sheetName)) {
+        await this.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: this.spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                addSheet: {
+                  properties: { title: sheetName },
+                },
+              },
+            ],
+          },
+        });
+        this.logger.log(`Created new sheet: ${sheetName}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to ensure sheet exists: ${sheetName}`, error);
+    }
+  }
+
+  /**
+   * Her 30 dakikada bir sync et
+   */
+  @Cron('*/30 * * * *', { name: 'sales-sheet-sync' })
+  async syncSalesToSheet(): Promise<void> {
+    if (!this.sheets || !this.isInitialized) {
+      this.logger.warn('Google Sheets not initialized. Skipping sync.');
+      return;
+    }
+
+    this.logger.log('Starting sales data sync to Google Sheets...');
+
+    try {
+      // Tüm veriler
+      await this.syncMonthData();
+
+      // Son 6 ay
+      const now = new Date();
+      for (let i = 0; i < 6; i++) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        await this.syncMonthData(month);
+      }
+
+      // Son sync zamanını güncelle
+      await this.settingsService.updateLastSync();
+
+      this.logger.log('Sales data synced to Google Sheets successfully');
+    } catch (error) {
+      this.logger.error('Failed to sync sales data to Google Sheets', error);
+    }
+  }
+
+  /**
+   * Belirli bir ay için sync
+   */
+  private async syncMonthData(month?: string): Promise<void> {
+    const sheetName = this.getSheetName(month);
+    await this.ensureSheetExists(sheetName);
+
+    const salesData = await this.getSalesData(month);
+    await this.writeToSheet(sheetName, salesData);
+
+    this.logger.log(`Synced data to sheet: ${sheetName}`);
+  }
+
+  /**
+   * Manuel senkronizasyon
+   */
+  async manualSync(): Promise<{ success: boolean; message: string; data?: any }> {
+    if (!this.sheets || !this.isInitialized) {
+      return {
+        success: false,
+        message: 'Google Sheets not initialized. Configure OAuth settings first.',
+      };
+    }
+
+    try {
+      await this.syncSalesToSheet();
+
+      // Son sync zamanını güncelle
+      await this.settingsService.updateLastSync();
+
+      return {
+        success: true,
+        message: 'All sheets synced successfully',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
+  }
+
+  /**
+   * Satış verilerini veritabanından çek
+   */
+  /**
+   * Satış verilerini veritabanından çek
+   */
+  async getSalesData(month?: string): Promise<any> {
     const ratesData = await this.exchangeRateService.getExchangeRatesForFrontend();
     const rates = ratesData.rates;
 
-    // Ay filtresi için WHERE koşulu
     let dateFilter = '';
     const params: any[] = [];
 
-    if (month) {
-      // month formatı: "2024-12"
+    if (month && month !== 'all') {
       const [year, monthNum] = month.split('-');
       const startDate = `${year}-${monthNum}-01`;
-      // Ayın son günü + 1 (exclusive)
-      const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
-      const nextMonth = `${year}-${String(parseInt(monthNum) + 1).padStart(2, '0')}-01`;
+      const nextMonthDate = new Date(parseInt(year), parseInt(monthNum), 1);
+      const endDate = nextMonthDate.toISOString().split('T')[0];
 
-      dateFilter = `AND s.created_at >= $1 AND s.created_at < $2`;
-      params.push(startDate, parseInt(monthNum) === 12
-        ? `${parseInt(year) + 1}-01-01`
-        : nextMonth
-      );
+      // MySQL için ? kullan (PostgreSQL için $1, $2)
+      dateFilter = `AND s.created_at >= ? AND s.created_at < ?`;
+      params.push(startDate, endDate);
     }
 
     const query = `
     SELECT 
-      COALESCE(spc.code, pc.code) as "currencyCode",
-      COUNT(DISTINCT s.id) as "salesCount",
-      COALESCE(SUM(sp.total_price), 0) as "totalSales",
-      COALESCE(SUM(sp.paid_amount), 0) as "totalPaid",
-      COALESCE(SUM(sp.total_price - sp.paid_amount), 0) as "totalRemaining"
+      COALESCE(spc.code, pc.code) as currencyCode,
+      COUNT(DISTINCT s.id) as salesCount,
+      COALESCE(SUM(sp.total_price), 0) as totalSales,
+      COALESCE(SUM(sp.paid_amount), 0) as totalPaid,
+      COALESCE(SUM(sp.total_price - sp.paid_amount), 0) as totalRemaining
     FROM sales s
     INNER JOIN sales_product sp ON sp.sales = s.id
     LEFT JOIN product p ON sp.product = p.id
@@ -205,9 +323,8 @@ export class SalesSheetSyncService {
     GROUP BY COALESCE(spc.code, pc.code)
   `;
 
-
-
     const statsByCurrency = await this.dataSource.query(query, params);
+
 
     const eurStats = statsByCurrency.find((s: any) => s.currencyCode === 'EUR');
     const usdStats = statsByCurrency.find((s: any) => s.currencyCode === 'USD');
@@ -250,14 +367,14 @@ export class SalesSheetSyncService {
   /**
    * Aya göre satış verilerini getir (Public API için)
    */
-  public async getSalesDataByMonth(month?: string): Promise<any> {
+  async getSalesDataByMonth(month?: string): Promise<any> {
     return this.getSalesData(month);
   }
 
   /**
    * Google Sheets'e yaz
    */
-  private async writeToSheet(data: any): Promise<void> {
+  private async writeToSheet(sheetName: string, data: any): Promise<void> {
     if (!this.sheets) {
       throw new Error('Google Sheets not initialized');
     }
@@ -265,6 +382,7 @@ export class SalesSheetSyncService {
     const values = [
       ['Alan', 'Değer'],
       ['Son Güncelleme', data.lastUpdated],
+      ['Dönem', data.month === 'all' ? 'Tümü' : data.month],
       ['', ''],
       ['=== GENEL TOPLAM (USD) ===', ''],
       ['Toplam Satış (USD)', data.totalSalesUsd],
@@ -290,7 +408,7 @@ export class SalesSheetSyncService {
 
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
-      range: `${this.sheetName}!A1:B23`,
+      range: `${sheetName}!A1:B24`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
     });
