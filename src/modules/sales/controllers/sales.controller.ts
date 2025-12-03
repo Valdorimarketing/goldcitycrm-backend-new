@@ -48,6 +48,13 @@ export class SalesController {
     return this.salesService.getUserSalesWithDetails(query);
   }
 
+  @Get('recent')
+  @ApiOperation({ summary: 'Get recent sales optimized for display' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getRecentSales(@Query('limit') limit?: number) {
+    return this.salesService.getRecentSalesOptimized(limit ? +limit : 10);
+  }
+
   // ============================================
   // DASHBOARD STATISTICS ENDPOINTS
   // Vue sayfasındaki kartlar bu endpoint'leri kullanır
