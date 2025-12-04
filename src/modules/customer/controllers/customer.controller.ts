@@ -247,6 +247,11 @@ export class CustomerController {
     return this.customerService.getCustomerById(id, userId);
   }
 
+  @Get('dynamic-search/user-stats')
+    async getDynamicSearchUserStats() {
+      return this.customerService.getDynamicSearchUserStats();
+    }
+
   @Post(':id/view-phone')
   async viewPhone(@Param('id') id: number, @Request() req) {
     const userId = req.user?.id;

@@ -189,6 +189,41 @@ export class CustomerService extends BaseService<Customer> {
     }));
   }
 
+
+
+  // customers.service.ts
+  async getDynamicSearchUserStats() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const results = await this.dataSource
+      .createQueryBuilder()
+      .select('u.id', 'id')
+      .addSelect('u.name', 'name')
+      .addSelect('COUNT(c.id)', 'total')
+      .addSelect(`SUM(CASE WHEN c.remindingDate < :now THEN 1 ELSE 0 END)`, 'overdue')
+      .addSelect(`SUM(CASE WHEN c.remindingDate >= :today AND c.remindingDate < :tomorrow THEN 1 ELSE 0 END)`, 'today')
+      .addSelect(`SUM(CASE WHEN c.remindingDate >= :tomorrow THEN 1 ELSE 0 END)`, 'upcoming')
+      .from('user', 'u')
+      .leftJoin('customer', 'c', 'c.relevantUser = u.id AND c.status IN (:...remindableStatuses)')
+      .where('u.role = :role', { role: 'user' })
+      .setParameters({ now, today, tomorrow, remindableStatuses: [2] })
+      .groupBy('u.id, u.name')
+      .getRawMany();
+
+    return results.map(r => ({
+      id: r.id,
+      name: r.name,
+      total: parseInt(r.total) || 0,
+      overdue: parseInt(r.overdue) || 0,
+      today: parseInt(r.today) || 0,
+      upcoming: parseInt(r.upcoming) || 0
+    }));
+  }
+
+
   /**
      * Müşterileri Excel veya CSV formatında dışa aktarır
      * 

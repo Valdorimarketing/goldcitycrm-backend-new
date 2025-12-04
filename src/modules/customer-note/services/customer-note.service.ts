@@ -53,7 +53,7 @@ export class CustomerNoteService extends BaseService<CustomerNote> {
  
         
 
-        if (customerWithStatus?.statusData?.name === 'TEKRAR ARANACAK') {
+        if (customerWithStatus.statusData.isRemindable) {
           const remindingDate = new Date();
           remindingDate.setDate(remindingDate.getDate() + customerWithStatus.statusData.remindingDay);
 
