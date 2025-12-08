@@ -3,6 +3,24 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "**/*.html",
+        "exclude": "**/node_modules/**",
+        "watchAssets": true
+      },
+      {
+        "include": "modules/proforma/templates/*.html",
+        "outDir": "dist/modules/proforma/templates",
+        "watchAssets": true
+      },
+      {
+        "include": "templates/**/*",
+        "outDir": "dist/templates",
+        "watchAssets": true
+      }
+    ],
+    "watchAssets": true
   }
 }
