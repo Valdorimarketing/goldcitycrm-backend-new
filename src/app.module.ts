@@ -46,6 +46,7 @@ import { WhatConvertsModule } from './modules/whatconverts/whatconverts.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SalesSheetSyncModule } from './modules/sales-sheet-sync/sync.module';
 import { HealthController } from './modules/system/health.controller';
+import { ProformaModule } from './modules/proformas/proforma.module';
 
 @Module({
   imports: [
@@ -105,7 +106,8 @@ import { HealthController } from './modules/system/health.controller';
     CustomerEngagementModule,
     EventEmitterModule.forRoot(),
     WhatConvertsModule,
-    SalesSheetSyncModule
+    SalesSheetSyncModule,
+    ProformaModule
   ],
   controllers: [AppController, HealthController],
   providers: [

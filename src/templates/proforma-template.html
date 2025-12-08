@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIV Hospital - Proforma Invoice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #1a1a1a;
+            background: #fff;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+        }
+
+        /* TAM SAYFA RESİMLER - Her zaman yeni sayfa */
+        .image-page {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            height: auto;
+            page-break-after: always;
+            page-break-inside: avoid;
+            display: block;
+        }
+
+        .image-page img {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0;
+            padding: 0;
+            border: none;
+            object-fit: cover;
+        }
+
+        /* İÇERİK SAYFALARI - SADECE GEREKLİ YERLERDE SAYFA KIRMA */
+        .content-page {
+            padding: 40px 60px;
+            box-sizing: border-box;
+        }
+
+        /* İlk content page: yeni sayfa */
+        .content-page.first {
+            page-break-before: always;
+        }
+
+        /* Sadece belirtilenlerde yeni sayfa */
+        .page-break {
+            page-break-before: always;
+        }
+
+        h1 {
+            color: #0891b2;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: #1a1a1a;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        h3 {
+            color: #0891b2;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #4a4a4a;
+            line-height: 1.6;
+        }
+
+        /* TABLO */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid #d1d5db;
+            page-break-inside: avoid;
+        }
+
+        table th {
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+        }
+
+        table td {
+            padding: 12px 15px;
+            font-size: 14px;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            vertical-align: top;
+        }
+
+        .general-info-table th {
+            width: 35%;
+            background: #f9fafb;
+        }
+
+        .total-row {
+            text-align: right;
+            padding: 15px 0;
+            font-size: 15px;
+            color: #374151;
+        }
+
+        .total-row strong {
+            color: #1a1a1a;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        /* LISTE */
+        ul {
+            margin: 12px 0 20px 20px;
+        }
+
+        ul li {
+            font-size: 13px;
+            margin-bottom: 3px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        /* BANKA KUTUSU */
+        .bank-box {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 25px 30px;
+            margin: 25px 0;
+            max-width: 450px;
+            background: #f9fafb;
+            page-break-inside: avoid;
+        }
+
+        .bank-title {
+            color: #0891b2;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .bank-row {
+            display: flex;
+            font-size: 14px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .bank-row:last-child {
+            border-bottom: none;
+        }
+
+        .bank-label {
+            width: 130px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .bank-value {
+            flex: 1;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        .stamp {
+            margin-top: 35px;
+            page-break-inside: avoid;
+        }
+
+        .stamp img {
+            max-width: 180px;
+            height: auto;
+            display: block;
+        }
+
+        .issued-by {
+            color: #0891b2;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .address {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* Sayfa kırılmasını önle */
+        .no-break {
+            page-break-inside: avoid;
+        }
+
+        /* Services box */
+        .services-box {
+            background: #f0f9ff;
+            padding: 15px;
+            border-left: 3px solid #0891b2;
+            border-radius: 4px;
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- KAPAK SAYFASI (Sayfa 1) -->
+        <div class="image-page">
+            <img src="https://vcrmapi.mlpcare.com/uploads/1.jpg" alt="Cover" />
+        </div>
+
+        <!-- GENEL BİLGİLER + TEDAVİ DETAYLARI (Sayfa 2-3, tek akış) -->
+        <div class="content-page first">
+            <p class="issued-by">Issued by:</p>
+
+            <h1>PROFORMA INVOICE</h1>
+            <h2>{{HOSPITAL}}</h2>
+            <p class="address">{{HOSPITAL_ADDRESS}}</p>
+
+            <p>
+                Thank you for choosing LIV Hospital Group for your healthcare needs. We are committed to providing you
+                with excellent medical care and a comfortable experience. Below, you will find detailed information about
+                your requested treatment.
+            </p>
+
+            <h1 style="margin-top: 35px;">GENERAL INFORMATION</h1>
+            <table class="general-info-table">
+                <tr>
+                    <th>Patient Name</th>
+                    <td>{{PATIENT_NAME}}</td>
+                </tr>
+                <tr>
+                    <th>Hospital</th>
+                    <td>{{HOSPITAL}}</td>
+                </tr>
+                <tr>
+                    <th>Physician's Name</th>
+                    <td>{{PHYSICIAN_NAME}}</td>
+                </tr>
+                <tr>
+                    <th>Physician's Department</th>
+                    <td>{{PHYSICIAN_DEPARTMENT}}</td>
+                </tr>
+                <tr>
+                    <th>Age</th>
+                    <td>{{AGE}}</td>
+                </tr>
+                <tr>
+                    <th>Country</th>
+                    <td>{{COUNTRY}}</td>
+                </tr>
+                <tr>
+                    <th>COMED No</th>
+                    <td>{{COMED_NO}}</td>
+                </tr>
+            </table>
+
+            <!-- EK BİLGİLER (varsa, aynı sayfada) -->
+            <div style="display: {{ADDITIONAL_INFO_DISPLAY}};" class="no-break">
+                <h1 style="margin-top: 35px;">ADDITIONAL INFORMATION</h1>
+                <p>{{ADDITIONAL_INFO}}</p>
+            </div>
+
+            <!-- HEKİM GÖRÜŞÜ (varsa, yeni sayfada) -->
+            <div style="display: {{PHYSICIAN_OPINION_DISPLAY}};" class="page-break">
+                <p class="issued-by">Issued by:</p>
+                <h1>PHYSICIAN'S OPINION</h1>
+                <p style="text-align: justify; line-height: 1.7;">{{PHYSICIAN_OPINION}}</p>
+            </div>
+
+            <!-- TEDAVİ DETAYLARI (yeni sayfada) -->
+            <div class="page-break">
+                <p class="issued-by">Issued by:</p>
+                <h1>RECOMMENDED TREATMENT & ESTIMATED COST DETAILS</h1>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Procedure</th>
+                            <th>Visit Type</th>
+                            <th style="text-align: center;">Estimated Cost</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{TREATMENT_ITEMS}}
+                    </tbody>
+                </table>
+
+                <div class="total-row">
+                    GRAND TOTAL: <strong>{{GRAND_TOTAL}}</strong>
+                </div>
+
+                <!-- SERVICES (varsa) -->
+                <div style="display: {{SERVICES_DISPLAY}};" class="no-break">
+                    <h3>Services Included in the Treatment Plan</h3>
+                    <div class="services-box">
+                        {{SERVICES_INCLUDED}}
+                    </div>
+                </div>
+
+                <!-- Bilgilendirme metinleri -->
+                <div class="no-break">
+                    <h3>Treatment Information</h3>
+                    <p>
+                        The Medical Second Opinion is not intended to replace a full medical evaluation, the exact investigation
+                        and treatment plan may be only known according to the outcomes of the initial consultations and
+                        investigations which will be done in our hospital. The exact cost of treatment will be confirmed according
+                        to the result of the investigation process.
+                    </p>
+                </div>
+
+                <div class="no-break">
+                    <h3>General Information</h3>
+                    <ul>
+                        <li>Free airport transfer for hotels in Şişli, Beşiktaş, Beyoğlu, Kağıthane, or Sarıyer.</li>
+                        <li>Interpretation services are free.</li>
+                        <li>Valid for one month.</li>
+                        <li>Patients must present their passports for registration.</li>
+                        <li>Contact our office for international insurance verification.</li>
+                    </ul>
+                </div>
+
+                <div class="no-break">
+                    <h3>Financial Information</h3>
+                    <ul>
+                        <li>Listed costs are estimates and may vary.</li>
+                        <li>Costs do not cover complications.</li>
+                        <li>Prices in currencies other than Turkish Lira may fluctuate.</li>
+                        <li>Payment is due before or on the first appointment. Accepted methods: credit card, money order, or wire transfer.</li>
+                        <li>Any additional treatment costs will be verified and billed accordingly.</li>
+                        <li>Remaining balances will be processed via bank account or credit card.</li>
+                        <li>Patients are responsible for transfer costs (air/land ambulance) during or after treatment.</li>
+                    </ul>
+                </div>
+
+                <!-- BANKA BİLGİLERİ (yeni sayfada) -->
+                <div class="page-break">
+                    <p class="issued-by">Issued by:</p>
+
+                    <p>
+                        Please feel free to contact the Liv Hospital Group International Patients Services Department if you have any
+                        further questions or inquiries. Contact details are mentioned below.
+                    </p>
+
+                    <div class="bank-box">
+                        <div class="bank-title">Bank Account Information – {{BANK_CURRENCY}}</div>
+                        <div class="bank-row">
+                            <span class="bank-label">Bank</span>
+                            <span class="bank-value">{{BANK_NAME}}</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Receiver Name</span>
+                            <span class="bank-value">{{RECEIVER_NAME}}</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Branch Name</span>
+                            <span class="bank-value">{{BRANCH_NAME}}</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Branch Code</span>
+                            <span class="bank-value">{{BRANCH_CODE}}</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Currency</span>
+                            <span class="bank-value">{{BANK_CURRENCY}}</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">IBAN No</span>
+                            <span class="bank-value">{{IBAN}}</span>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">SWIFT</span>
+                            <span class="bank-value">{{SWIFT_CODE}}</span>
+                        </div>
+                    </div>
+
+                    <div class="stamp">
+                        <img src="https://vcrmapi.mlpcare.com/uploads/4.jpg" alt="Stamp" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SON 2 RESİM (Sayfa 4-5) -->
+        <div class="image-page">
+            <img src="https://vcrmapi.mlpcare.com/uploads/2.jpg" alt="Info 1" />
+        </div>
+
+        <div class="image-page">
+            <img src="https://vcrmapi.mlpcare.com/uploads/3.jpg" alt="Info 2" />
+        </div>
+
+    </div>
+
+</body>
+
+</html>
