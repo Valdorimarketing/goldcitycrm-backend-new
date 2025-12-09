@@ -301,7 +301,6 @@ export class SalesSheetSyncService implements OnModuleInit {
       const nextMonthDate = new Date(parseInt(year), parseInt(monthNum), 1);
       const endDate = nextMonthDate.toISOString().split('T')[0];
 
-      // MySQL için ? kullan (PostgreSQL için $1, $2)
       dateFilter = `AND s.created_at >= ? AND s.created_at < ?`;
       params.push(startDate, endDate);
     }
@@ -325,35 +324,40 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     const statsByCurrency = await this.dataSource.query(query, params);
 
-
     const eurStats = statsByCurrency.find((s: any) => s.currencyCode === 'EUR');
     const usdStats = statsByCurrency.find((s: any) => s.currencyCode === 'USD');
 
     const eurTotalSales = parseFloat(eurStats?.totalSales) || 0;
     const eurTotalPaid = parseFloat(eurStats?.totalPaid) || 0;
     const eurTotalRemaining = parseFloat(eurStats?.totalRemaining) || 0;
+    const eurSalesCount = parseInt(eurStats?.salesCount) || 0; // ✅ YENİ
 
     const usdTotalSales = parseFloat(usdStats?.totalSales) || 0;
     const usdTotalPaid = parseFloat(usdStats?.totalPaid) || 0;
     const usdTotalRemaining = parseFloat(usdStats?.totalRemaining) || 0;
+    const usdSalesCount = parseInt(usdStats?.salesCount) || 0; // ✅ YENİ
 
     const eurRateToUsd = rates.EUR || 1.09;
 
     const totalSalesUsd = (eurTotalSales * eurRateToUsd) + usdTotalSales;
     const totalPaidUsd = (eurTotalPaid * eurRateToUsd) + usdTotalPaid;
     const totalRemainingUsd = (eurTotalRemaining * eurRateToUsd) + usdTotalRemaining;
+    const totalSalesCount = eurSalesCount + usdSalesCount; // ✅ YENİ
 
     return {
       totalSalesUsd: Math.round(totalSalesUsd * 100) / 100,
       totalPaidUsd: Math.round(totalPaidUsd * 100) / 100,
       totalRemainingUsd: Math.round(totalRemainingUsd * 100) / 100,
+      totalSalesCount, // ✅ YENİ
       eurTotalSales,
       eurTotalPaid,
       eurTotalRemaining,
+      eurSalesCount, // ✅ YENİ
       eurRateToUsd,
       usdTotalSales,
       usdTotalPaid,
       usdTotalRemaining,
+      usdSalesCount, // ✅ YENİ
       exchangeRates: {
         EUR: rates.EUR || 1.09,
         USD: rates.USD || 1,
@@ -374,6 +378,7 @@ export class SalesSheetSyncService implements OnModuleInit {
   /**
    * Google Sheets'e yaz
    */
+
   private async writeToSheet(sheetName: string, data: any): Promise<void> {
     if (!this.sheets) {
       throw new Error('Google Sheets not initialized');
@@ -388,17 +393,20 @@ export class SalesSheetSyncService implements OnModuleInit {
       ['Toplam Satış (USD)', data.totalSalesUsd],
       ['Kasaya Giren (USD)', data.totalPaidUsd],
       ['Beklenen (USD)', data.totalRemainingUsd],
+      ['Genel Toplam Adet', data.totalSalesCount], // ✅ YENİ
       ['', ''],
       ['=== EUR DETAY ===', ''],
       ['EUR Toplam Satış', data.eurTotalSales],
       ['EUR Kasaya Giren', data.eurTotalPaid],
       ['EUR Beklenen', data.eurTotalRemaining],
+      ['EUR Toplam Adet', data.eurSalesCount], // ✅ YENİ
       ['EUR/USD Kur', data.eurRateToUsd],
       ['', ''],
       ['=== USD DETAY ===', ''],
       ['USD Toplam Satış', data.usdTotalSales],
       ['USD Kasaya Giren', data.usdTotalPaid],
       ['USD Beklenen', data.usdTotalRemaining],
+      ['USD Toplam Adet', data.usdSalesCount], // ✅ YENİ
       ['', ''],
       ['=== KURLAR ===', ''],
       ['EUR Rate', data.exchangeRates.EUR],
@@ -408,7 +416,7 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
-      range: `${sheetName}!A1:B24`,
+      range: `${sheetName}!A1:B28`, // ✅ Satır sayısını 24'ten 28'e çıkardım
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
     });
