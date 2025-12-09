@@ -400,24 +400,38 @@ export class ProformaService {
  * Generate HTML for PDF - WITH DEBUG INFO
  */
   private async generateHTML(proforma: Proforma): Promise<string> {
-    // Template loading (same as before)
-    const templatePath = path.join(__dirname, '../templates/proforma-template.html');
     let html: string;
 
-    try {
-      html = fs.readFileSync(templatePath, 'utf-8');
-      console.log('✅ Template loaded from:', templatePath);
-    } catch (error) {
-      const altTemplatePath = path.join(process.cwd(), 'templates/proforma-template.html');
+    const paths = [
+      path.join(__dirname, '../templates/proforma-template.html'),
+      path.join(__dirname, '../../templates/proforma-template.html'),
+      path.join(__dirname, '../../../templates/proforma-template.html'),
+      path.join(process.cwd(), 'dist/templates/proforma-template.html'),
+      path.join(process.cwd(), 'templates/proforma-template.html'),
+      path.join(process.cwd(), 'src/templates/proforma-template.html'),
+    ];
+
+    let templateFound = false;
+
+    for (const templatePath of paths) {
       try {
-        html = fs.readFileSync(altTemplatePath, 'utf-8');
-        console.log('✅ Template loaded from:', altTemplatePath);
-      } catch (altError) {
-        const srcTemplatePath = path.join(process.cwd(), 'src/templates/proforma-template.html');
-        html = fs.readFileSync(srcTemplatePath, 'utf-8');
-        console.log('✅ Template loaded from:', srcTemplatePath);
+        if (fs.existsSync(templatePath)) {
+          html = fs.readFileSync(templatePath, 'utf-8');
+          console.log('✅ Template loaded from:', templatePath);
+          templateFound = true;
+          break;
+        }
+      } catch (error) {
+        continue;
       }
     }
+
+    if (!templateFound) {
+      console.error('❌ Template not found in any of these paths:');
+      paths.forEach(p => console.error('  -', p));
+      throw new Error('Template file not found');
+    }
+
 
     console.log('📏 Original template size:', html.length, 'chars');
 
