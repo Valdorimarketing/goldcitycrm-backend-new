@@ -65,113 +65,142 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
   // TAKIM İSTATİSTİKLERİ
   // ============================================
 
- 
-/**
- * Tüm takımların satış özetini getirir (avatar dahil)
- */
+
+  /**
+   * Tüm takımların satış özetini getirir (avatar dahil)
+   */
 
 
 
-// sales.repository.ts
+  // sales.repository.ts
+  async findAllTeamsSalesSummary(): Promise<{ success: boolean; data: any }> {
+    try {
+      const result = await this.dataSource
+        .createQueryBuilder()
+        .select('t.id', 'teamId')
+        .addSelect('t.name', 'teamName')
+        .addSelect('u.id', 'userId')
+        .addSelect('u.name', 'userName')
+        .addSelect('u.avatar', 'avatar')
+        .addSelect("COALESCE(pc.code, spc.code, 'TRY')", 'currencyCode') // ✅ Hem product hem sp currency
+        .addSelect('COALESCE(SUM(sp.total_price), 0)', 'totalSales')
+        .addSelect('COALESCE(SUM(sp.paid_amount), 0)', 'totalPaid')
+        .addSelect('COUNT(sp.id)', 'productCount') // ✅ YENİ: Ürün sayısı
+        .from('teams', 't')
+        .leftJoin('user', 'u', 'u.userTeamId = t.id')
+        .leftJoin('sales', 's', 's.user = u.id')
+        .leftJoin('sales_product', 'sp', 'sp.sales = s.id')
+        .leftJoin('product', 'p', 'sp.product = p.id') // ✅ Product tablosu join
+        .leftJoin('currencies', 'pc', 'p.currency_id = pc.id') // ✅ Product currency
+        .leftJoin('currencies', 'spc', 'sp.currency = spc.id') // ✅ Sales Product currency
+        .groupBy('t.id')
+        .addGroupBy('t.name')
+        .addGroupBy('u.id')
+        .addGroupBy('u.name')
+        .addGroupBy('u.avatar')
+        .addGroupBy("COALESCE(pc.code, spc.code, 'TRY')") // ✅ Currency'yi de grupla
+        .orderBy('t.name', 'ASC')
+        .addOrderBy('u.name', 'ASC')
+        .getRawMany();
 
-async findAllTeamsSalesSummary(): Promise<{ success: boolean; data: any }> {
-  try {
-    const result = await this.dataSource
-      .createQueryBuilder()
-      .select('t.id', 'teamId')
-      .addSelect('t.name', 'teamName')
-      .addSelect('u.id', 'userId')
-      .addSelect('u.name', 'userName')
-      .addSelect('u.avatar', 'avatar')
-      .addSelect("COALESCE(c.code, 'TRY')", 'currencyCode')
-      .addSelect('COALESCE(SUM(sp.total_price), 0)', 'totalSales')
-      .addSelect('COALESCE(SUM(sp.paid_amount), 0)', 'totalPaid')  // ← Paid eklendi
-      .from('teams', 't')
-      .leftJoin('user', 'u', 'u.userTeamId = t.id')
-      .leftJoin('sales', 's', 's.user = u.id')
-      .leftJoin('sales_product', 'sp', 'sp.sales = s.id')
-      .leftJoin('currencies', 'c', 'sp.currency = c.id')
-      .groupBy('t.id')
-      .addGroupBy('t.name')
-      .addGroupBy('u.id')
-      .addGroupBy('u.name')
-      .addGroupBy('u.avatar')
-      .addGroupBy("COALESCE(c.code, 'TRY')")
-      .orderBy('t.name', 'ASC')
-      .addOrderBy('u.name', 'ASC')
-      .getRawMany();
+      // Takımlara göre grupla
+      const teamsMap = new Map<number, any>();
+      const grandTotalsByCurrency: {
+        [key: string]: {
+          totalSales: number;
+          totalPaid: number;
+          productCount: number; // ✅ YENİ
+        }
+      } = {};
 
-    // Takımlara göre grupla
-    const teamsMap = new Map<number, any>();
-    const grandTotalsByCurrency: { [key: string]: { totalSales: number; totalPaid: number } } = {};
+      result.forEach((row) => {
+        if (!row.teamId) return;
 
-    result.forEach((row) => {
-      if (!row.teamId) return;
-
-      if (!teamsMap.has(row.teamId)) {
-        teamsMap.set(row.teamId, {
-          id: row.teamId,
-          name: row.teamName,
-          members: [],
-          totalsByCurrency: {},
-        });
-      }
-
-      const team = teamsMap.get(row.teamId);
-
-      if (row.userId) {
-        let member = team.members.find((m: any) => m.userId === row.userId);
-        if (!member) {
-          member = {
-            userId: row.userId,
-            userName: row.userName,
-            avatar: row.avatar,
+        if (!teamsMap.has(row.teamId)) {
+          teamsMap.set(row.teamId, {
+            id: row.teamId,
+            name: row.teamName,
+            members: [],
             totalsByCurrency: {},
-          };
-          team.members.push(member);
+          });
         }
 
-        const currencyCode = row.currencyCode || 'TRY';
-        const sales = parseFloat(row.totalSales) || 0;
-        const paid = parseFloat(row.totalPaid) || 0;
+        const team = teamsMap.get(row.teamId);
 
-        if (sales > 0 || paid > 0) {
-          // Member totalsByCurrency (obje formatında)
-          if (!member.totalsByCurrency[currencyCode]) {
-            member.totalsByCurrency[currencyCode] = { totalSales: 0, totalPaid: 0 };
+        if (row.userId) {
+          let member = team.members.find((m: any) => m.userId === row.userId);
+          if (!member) {
+            member = {
+              userId: row.userId,
+              name: row.userName,
+              userName: row.userName,
+              avatar: row.avatar,
+              salesByCurrency: {}, // ✅ salesByCurrency kullan (index.html ile uyumlu)
+            };
+            team.members.push(member);
           }
-          member.totalsByCurrency[currencyCode].totalSales += sales;
-          member.totalsByCurrency[currencyCode].totalPaid += paid;
 
-          // Team totalsByCurrency
-          if (!team.totalsByCurrency[currencyCode]) {
-            team.totalsByCurrency[currencyCode] = { totalSales: 0, totalPaid: 0 };
-          }
-          team.totalsByCurrency[currencyCode].totalSales += sales;
-          team.totalsByCurrency[currencyCode].totalPaid += paid;
+          const currencyCode = row.currencyCode || 'TRY';
+          const sales = parseFloat(row.totalSales) || 0;
+          const paid = parseFloat(row.totalPaid) || 0;
+          const productCount = parseInt(row.productCount) || 0; // ✅ YENİ
 
-          // Grand totals
-          if (!grandTotalsByCurrency[currencyCode]) {
-            grandTotalsByCurrency[currencyCode] = { totalSales: 0, totalPaid: 0 };
+          if (sales > 0 || paid > 0 || productCount > 0) {
+            // Member salesByCurrency (index.html'de bu aranıyor)
+            if (!member.salesByCurrency[currencyCode]) {
+              member.salesByCurrency[currencyCode] = {
+                totalSales: 0,
+                totalPaid: 0,
+                productCount: 0, // ✅ YENİ
+              };
+            }
+            member.salesByCurrency[currencyCode].totalSales += sales;
+            member.salesByCurrency[currencyCode].totalPaid += paid;
+            member.salesByCurrency[currencyCode].productCount += productCount; // ✅ YENİ
+
+            // Team totalsByCurrency
+            if (!team.totalsByCurrency[currencyCode]) {
+              team.totalsByCurrency[currencyCode] = {
+                totalSales: 0,
+                totalPaid: 0,
+                productCount: 0, // ✅ YENİ
+              };
+            }
+            team.totalsByCurrency[currencyCode].totalSales += sales;
+            team.totalsByCurrency[currencyCode].totalPaid += paid;
+            team.totalsByCurrency[currencyCode].productCount += productCount; // ✅ YENİ
+
+            // Grand totals
+            if (!grandTotalsByCurrency[currencyCode]) {
+              grandTotalsByCurrency[currencyCode] = {
+                totalSales: 0,
+                totalPaid: 0,
+                productCount: 0, // ✅ YENİ
+              };
+            }
+            grandTotalsByCurrency[currencyCode].totalSales += sales;
+            grandTotalsByCurrency[currencyCode].totalPaid += paid;
+            grandTotalsByCurrency[currencyCode].productCount += productCount; // ✅ YENİ
           }
-          grandTotalsByCurrency[currencyCode].totalSales += sales;
-          grandTotalsByCurrency[currencyCode].totalPaid += paid;
         }
-      }
-    });
+      });
 
-    return {
-      success: true,
-      data: {
-        teams: Array.from(teamsMap.values()),
-        grandTotalsByCurrency,
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching team sales summary:', error);
-    return { success: false, data: null };
+      return {
+        success: true,
+        data: {
+          teams: Array.from(teamsMap.values()),
+          grandTotalsByCurrency,
+          goalsByCurrency: { // ✅ Frontend için hedefler
+            EUR: 50000,
+            USD: 50000,
+          },
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching team sales summary:', error);
+      return { success: false, data: null };
+    }
   }
-}
 
   // ============================================
   // SATIŞ LİSTESİ (Vue sayfası için)
@@ -183,26 +212,174 @@ async findAllTeamsSalesSummary(): Promise<{ success: boolean; data: any }> {
    */
 
 
-/**
- * Son satışları minimal ilişkilerle getirir (index2.html için optimize)
+
+  /**
+ * Sales Repository - findUserSalesGroupedByCurrency metodu
+ * 
+ * Bu metodu sales.repository.ts içine ekle
  */
-async findRecentSalesOptimized(limit: number = 10): Promise<Sales[]> {
-  return this.salesRepository
-    .createQueryBuilder('sales')
-    .leftJoinAndSelect('sales.userDetails', 'user')
-    .leftJoin('user.userTeam', 'userTeam')
-    .addSelect(['userTeam.id', 'userTeam.name'])
-    .leftJoinAndSelect('sales.salesProducts', 'sp')
-    .leftJoin('sp.currency', 'spCurrency')
-    .addSelect(['spCurrency.id', 'spCurrency.code'])
-    .leftJoin('sp.productDetails', 'product')
-    .addSelect(['product.id', 'product.name'])
-    .leftJoin('product.currency', 'productCurrency')  // ← Ekle
-    .addSelect(['productCurrency.id', 'productCurrency.code'])  // ← Ekle
-    .orderBy('sales.createdAt', 'DESC')
-    .take(limit)
-    .getMany();
-}
+
+  /**
+   * Satışları para birimi bazında gruplar ve ayrı kayıtlar olarak döndürür
+   * 
+   * ÖRN: ID 48 satışta 1 EUR + 1 USD ürün var
+   * SONUÇ: 2 ayrı kayıt döner:
+   *   - ID 48 (EUR): 2500 EUR
+   *   - ID 48 (USD): 580 USD
+   */
+  async findUserSalesGroupedByCurrency(
+    filters: SalesQueryFilterDto,
+  ): Promise<any[]> {
+    const queryBuilder = this.salesRepository.createQueryBuilder('sales');
+
+    queryBuilder
+      .leftJoinAndSelect('sales.customerDetails', 'customer')
+      .leftJoinAndSelect('sales.userDetails', 'user')
+      .leftJoinAndSelect('user.userTeam', 'userTeam')
+      .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
+      .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
+      .leftJoinAndSelect('salesProducts.productDetails', 'product')
+      .leftJoinAndSelect('product.currency', 'productCurrency')
+      .leftJoinAndSelect('salesProducts.currency', 'spCurrency')
+      .orderBy('sales.createdAt', 'DESC');
+
+    // Filters
+    if (filters.user !== undefined && filters.user !== null) {
+      queryBuilder.andWhere('sales.user = :userId', { userId: filters.user });
+    }
+
+    if (filters.customer !== undefined && filters.customer !== null) {
+      queryBuilder.andWhere('sales.customer = :customerId', {
+        customerId: filters.customer,
+      });
+    }
+
+    if (filters.responsibleUser !== undefined && filters.responsibleUser !== null) {
+      queryBuilder.andWhere('sales.responsible_user = :responsibleUserId', {
+        responsibleUserId: filters.responsibleUser,
+      });
+    }
+
+    if (filters.startDate) {
+      queryBuilder.andWhere('sales.createdAt >= :startDate', {
+        startDate: new Date(filters.startDate),
+      });
+    }
+
+    if (filters.endDate) {
+      const endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('sales.createdAt <= :endDate', { endDate });
+    }
+
+    // Tüm satışları getir
+    const allSales = await queryBuilder.getMany();
+
+    // Para birimlerine göre grupla
+    const groupedSales: any[] = [];
+
+    for (const sale of allSales) {
+      // Para birimlerine göre ürünleri grupla
+      const productsByCurrency = new Map<string, any[]>();
+
+      for (const sp of sale.salesProducts || []) {
+        // Para birimi belirleme önceliği:
+        // 1. sp.currency.code (salesProduct'ın kendi currency'si)
+        // 2. sp.spCurrency.code (join ile gelen)
+        // 3. sp.productDetails.currency.code (ürünün varsayılan currency'si)
+        // 4. 'TRY' (fallback)
+        const currency = sp.currency?.code ||
+          sp.spCurrency?.code ||
+          sp.productDetails?.currency?.code ||
+          'TRY';
+
+        if (!productsByCurrency.has(currency)) {
+          productsByCurrency.set(currency, []);
+        }
+        productsByCurrency.get(currency).push(sp);
+      }
+
+      // Her para birimi için ayrı kayıt oluştur
+      for (const [currency, products] of productsByCurrency.entries()) {
+        const totalAmount = products.reduce((sum, p) => sum + (parseFloat(p.totalPrice) || 0), 0);
+        const paidAmount = products.reduce((sum, p) => sum + (parseFloat(p.paidAmount) || 0), 0);
+        const remainingAmount = totalAmount - paidAmount;
+        const isFullyPaid = products.length > 0 && products.every(p => p.isPayCompleted === true);
+
+        // Currency filter kontrolü (frontend'den gelen)
+        if (filters.currency && filters.currency !== currency) {
+          continue;
+        }
+
+        // Payment status filter kontrolü
+        if (filters.paymentStatus && filters.paymentStatus !== 'all') {
+          if (filters.paymentStatus === 'completed' && !isFullyPaid) continue;
+          if (filters.paymentStatus === 'partial' && (isFullyPaid || paidAmount === 0)) continue;
+          if (filters.paymentStatus === 'unpaid' && (isFullyPaid || paidAmount > 0)) continue;
+        }
+
+        groupedSales.push({
+          id: sale.id,
+          createdAt: sale.createdAt,
+          updatesAt: sale.updatesAt,
+          customer: sale.customer,
+          customerDetails: sale.customerDetails,
+          user: sale.user,
+          userDetails: sale.userDetails,
+          title: sale.title,
+          responsibleUser: sale.responsibleUser,
+          responsibleUserDetails: sale.responsibleUserDetails,
+          followerUser: sale.followerUser,
+          maturityDate: sale.maturityDate,
+          description: sale.description,
+          salesProducts: products, // ← Sadece bu para birimindeki ürünler
+          // Hesaplanan değerler (frontend için)
+          currency,
+          totalAmount,
+          paidAmount,
+          remainingAmount,
+          isFullyPaid,
+        });
+      }
+    }
+
+    return groupedSales;
+  }
+
+
+  /**
+   * Son satışları minimal ilişkilerle getirir (index2.html için optimize)
+   */
+  /**
+   * Son satışları minimal ilişkilerle getirir (index2.html için optimize)
+   */
+  async findRecentSalesOptimized(limit: number = 10): Promise<Sales[]> {
+    return this.salesRepository
+      .createQueryBuilder('sales')
+      // User bilgileri
+      .leftJoinAndSelect('sales.userDetails', 'user')
+      .leftJoin('user.userTeam', 'userTeam')
+      .addSelect(['userTeam.id', 'userTeam.name'])
+
+      // Sales Products
+      .leftJoinAndSelect('sales.salesProducts', 'sp')
+
+      // Sales Product'ın kendi currency'si (eğer override edildiyse)
+      .leftJoin('sp.currency', 'spCurrency')
+      .addSelect(['spCurrency.id', 'spCurrency.code'])
+
+      // Product bilgileri
+      .leftJoin('sp.productDetails', 'product')
+      .addSelect(['product.id', 'product.name'])
+
+      // Product'ın default currency'si
+      .leftJoin('product.currency', 'productCurrency')
+      .addSelect(['productCurrency.id', 'productCurrency.code'])
+
+      .orderBy('sales.createdAt', 'DESC')
+      .take(limit)
+      .getMany();
+  }
 
 
   async findUserSalesWithRelations(

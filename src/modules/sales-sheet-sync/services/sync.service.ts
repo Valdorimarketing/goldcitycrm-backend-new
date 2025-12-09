@@ -288,6 +288,19 @@ export class SalesSheetSyncService implements OnModuleInit {
   /**
    * Satış verilerini veritabanından çek
    */
+
+
+  /**
+ * DÜZELTME: Sheets Sync - Doğru hesaplama
+ */
+
+  /**
+  * FIX: Satış sayısı 0 dönen sorun
+  */
+  /**
+  * FINAL FIX: WHERE clause problemi çözüldü
+  */
+
   async getSalesData(month?: string): Promise<any> {
     const ratesData = await this.exchangeRateService.getExchangeRatesForFrontend();
     const rates = ratesData.rates;
@@ -301,71 +314,178 @@ export class SalesSheetSyncService implements OnModuleInit {
       const nextMonthDate = new Date(parseInt(year), parseInt(monthNum), 1);
       const endDate = nextMonthDate.toISOString().split('T')[0];
 
-      dateFilter = `AND s.created_at >= ? AND s.created_at < ?`;
+      dateFilter = `s.created_at >= ? AND s.created_at < ?`;
       params.push(startDate, endDate);
     }
 
-    const query = `
-    SELECT 
-      COALESCE(spc.code, pc.code) as currencyCode,
-      COUNT(DISTINCT s.id) as salesCount,
-      COALESCE(SUM(sp.total_price), 0) as totalSales,
-      COALESCE(SUM(sp.paid_amount), 0) as totalPaid,
-      COALESCE(SUM(sp.total_price - sp.paid_amount), 0) as totalRemaining
+    const whereClause = dateFilter ? `WHERE ${dateFilter}` : '';
+    const andWhere = dateFilter ? 'AND' : 'WHERE';
+
+    // ✅ 1. TOPLAM ÜRÜN SAYISI (Tüm satışlardaki tüm ürünler)
+    const totalProductCountQuery = `
+    SELECT COUNT(sp.id) as totalProductCount
+    FROM sales s
+    INNER JOIN sales_product sp ON sp.sales = s.id
+    ${whereClause}
+  `;
+
+    const totalProductResult = await this.dataSource.query(totalProductCountQuery, params);
+    const totalProductCount = parseInt(totalProductResult[0]?.totalProductCount) || 0;
+
+    this.logger.log(`✅ Total Product Count (All): ${totalProductCount}`);
+
+    // ✅ 2. EUR ÜRÜN SAYISI
+    const eurProductCountQuery = `
+    SELECT COUNT(sp.id) as eurProductCount
     FROM sales s
     INNER JOIN sales_product sp ON sp.sales = s.id
     LEFT JOIN product p ON sp.product = p.id
-    LEFT JOIN currencies pc ON p.currency_id = pc.id
-    LEFT JOIN currencies spc ON sp.currency = spc.id
-    WHERE COALESCE(spc.code, pc.code) IS NOT NULL
-    ${dateFilter}
-    GROUP BY COALESCE(spc.code, pc.code)
+    LEFT JOIN currencies c ON COALESCE(sp.currency, p.currency_id) = c.id
+    ${whereClause}
+    ${andWhere} c.code = 'EUR'
   `;
 
-    const statsByCurrency = await this.dataSource.query(query, params);
+    const eurProductResult = await this.dataSource.query(eurProductCountQuery, params);
+    const eurProductCount = parseInt(eurProductResult[0]?.eurProductCount) || 0;
 
+    this.logger.log(`✅ EUR Product Count: ${eurProductCount}`);
+
+    // ✅ 3. USD ÜRÜN SAYISI
+    const usdProductCountQuery = `
+    SELECT COUNT(sp.id) as usdProductCount
+    FROM sales s
+    INNER JOIN sales_product sp ON sp.sales = s.id
+    LEFT JOIN product p ON sp.product = p.id
+    LEFT JOIN currencies c ON COALESCE(sp.currency, p.currency_id) = c.id
+    ${whereClause}
+    ${andWhere} c.code = 'USD'
+  `;
+
+    const usdProductResult = await this.dataSource.query(usdProductCountQuery, params);
+    const usdProductCount = parseInt(usdProductResult[0]?.usdProductCount) || 0;
+
+    this.logger.log(`✅ USD Product Count: ${usdProductCount}`);
+
+    // ✅ 4. PARA BİRİMİ BAZINDA TUTAR TOPLAMLARI
+    const currencyQuery = `
+    SELECT 
+      c.code as currencyCode,
+      SUM(sp.total_price) as totalSales,
+      SUM(sp.paid_amount) as totalPaid,
+      SUM(sp.total_price - sp.paid_amount) as totalRemaining
+    FROM sales s
+    INNER JOIN sales_product sp ON sp.sales = s.id
+    LEFT JOIN product p ON sp.product = p.id
+    LEFT JOIN currencies c ON COALESCE(sp.currency, p.currency_id) = c.id
+    ${whereClause}
+    ${andWhere} c.code IS NOT NULL
+    GROUP BY c.code
+  `;
+
+    const statsByCurrency = await this.dataSource.query(currencyQuery, params);
+
+    this.logger.log(`Currency Stats:`, JSON.stringify(statsByCurrency));
+
+    // Para birimi bazında toplamlar
     const eurStats = statsByCurrency.find((s: any) => s.currencyCode === 'EUR');
     const usdStats = statsByCurrency.find((s: any) => s.currencyCode === 'USD');
 
     const eurTotalSales = parseFloat(eurStats?.totalSales) || 0;
     const eurTotalPaid = parseFloat(eurStats?.totalPaid) || 0;
     const eurTotalRemaining = parseFloat(eurStats?.totalRemaining) || 0;
-    const eurSalesCount = parseInt(eurStats?.salesCount) || 0; // ✅ YENİ
 
     const usdTotalSales = parseFloat(usdStats?.totalSales) || 0;
     const usdTotalPaid = parseFloat(usdStats?.totalPaid) || 0;
     const usdTotalRemaining = parseFloat(usdStats?.totalRemaining) || 0;
-    const usdSalesCount = parseInt(usdStats?.salesCount) || 0; // ✅ YENİ
 
     const eurRateToUsd = rates.EUR || 1.09;
 
     const totalSalesUsd = (eurTotalSales * eurRateToUsd) + usdTotalSales;
     const totalPaidUsd = (eurTotalPaid * eurRateToUsd) + usdTotalPaid;
     const totalRemainingUsd = (eurTotalRemaining * eurRateToUsd) + usdTotalRemaining;
-    const totalSalesCount = eurSalesCount + usdSalesCount; // ✅ YENİ
 
-    return {
+    const result = {
+      // GENEL TOPLAM (USD)
       totalSalesUsd: Math.round(totalSalesUsd * 100) / 100,
       totalPaidUsd: Math.round(totalPaidUsd * 100) / 100,
       totalRemainingUsd: Math.round(totalRemainingUsd * 100) / 100,
-      totalSalesCount, // ✅ YENİ
+      totalProductCount, // ✅ TOPLAM ÜRÜN SAYISI (EUR + USD + diğer)
+
+      // EUR DETAY
       eurTotalSales,
       eurTotalPaid,
       eurTotalRemaining,
-      eurSalesCount, // ✅ YENİ
+      eurProductCount, // ✅ EUR cinsinden kaç ürün satıldı
+
       eurRateToUsd,
+
+      // USD DETAY
       usdTotalSales,
       usdTotalPaid,
       usdTotalRemaining,
-      usdSalesCount, // ✅ YENİ
+      usdProductCount, // ✅ USD cinsinden kaç ürün satıldı
+
+      // KURLAR
       exchangeRates: {
         EUR: rates.EUR || 1.09,
         USD: rates.USD || 1,
         TRY: rates.TRY || 0.029,
       },
+
       lastUpdated: new Date().toISOString(),
       month: month || 'all',
     };
+
+    this.logger.log(`=== FINAL RESULT ===`);
+    this.logger.log(JSON.stringify(result, null, 2));
+
+    return result;
+  }
+
+  /**
+   * Sheets'e yazma - Satır sayısı arttı
+   */
+  private async writeToSheet(sheetName: string, data: any): Promise<void> {
+    if (!this.sheets) {
+      throw new Error('Google Sheets not initialized');
+    }
+
+    const values = [
+      ['Alan', 'Değer'],                                    // 1
+      ['Son Güncelleme', data.lastUpdated],                 // 2
+      ['Dönem', data.month === 'all' ? 'Tümü' : data.month], // 3
+      ['', ''],                                              // 4
+      ['=== GENEL TOPLAM (USD) ===', ''],                   // 5
+      ['Toplam Satış (USD)', data.totalSalesUsd],           // 6
+      ['Kasaya Giren (USD)', data.totalPaidUsd],            // 7
+      ['Beklenen (USD)', data.totalRemainingUsd],           // 8
+      ['Toplam Ürün Adedi', data.totalProductCount],        // 9
+      ['', ''],                                              // 10
+      ['=== EUR DETAY ===', ''],                            // 11
+      ['EUR Toplam Satış', data.eurTotalSales],             // 12
+      ['EUR Kasaya Giren', data.eurTotalPaid],              // 13
+      ['EUR Beklenen', data.eurTotalRemaining],             // 14
+      ['EUR Ürün Adedi', data.eurProductCount],             // 15
+      ['EUR/USD Kur', data.eurRateToUsd],                   // 16
+      ['', ''],                                              // 17
+      ['=== USD DETAY ===', ''],                            // 18
+      ['USD Toplam Satış', data.usdTotalSales],             // 19
+      ['USD Kasaya Giren', data.usdTotalPaid],              // 20
+      ['USD Beklenen', data.usdTotalRemaining],             // 21
+      ['USD Ürün Adedi', data.usdProductCount],             // 22
+      ['', ''],                                              // 23
+      ['=== KURLAR ===', ''],                               // 24
+      ['EUR Rate', data.exchangeRates.EUR],                 // 25
+      ['USD Rate', data.exchangeRates.USD],                 // 26
+      ['TRY Rate', data.exchangeRates.TRY],                 // 27
+    ];
+
+    await this.sheets.spreadsheets.values.update({
+      spreadsheetId: this.spreadsheetId,
+      range: `${sheetName}!A1:B27`, // ✅ 26'dan 27'ye yükselttik
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values },
+    });
   }
 
   /**
@@ -379,46 +499,5 @@ export class SalesSheetSyncService implements OnModuleInit {
    * Google Sheets'e yaz
    */
 
-  private async writeToSheet(sheetName: string, data: any): Promise<void> {
-    if (!this.sheets) {
-      throw new Error('Google Sheets not initialized');
-    }
 
-    const values = [
-      ['Alan', 'Değer'],
-      ['Son Güncelleme', data.lastUpdated],
-      ['Dönem', data.month === 'all' ? 'Tümü' : data.month],
-      ['', ''],
-      ['=== GENEL TOPLAM (USD) ===', ''],
-      ['Toplam Satış (USD)', data.totalSalesUsd],
-      ['Kasaya Giren (USD)', data.totalPaidUsd],
-      ['Beklenen (USD)', data.totalRemainingUsd],
-      ['Genel Toplam Adet', data.totalSalesCount], // ✅ YENİ
-      ['', ''],
-      ['=== EUR DETAY ===', ''],
-      ['EUR Toplam Satış', data.eurTotalSales],
-      ['EUR Kasaya Giren', data.eurTotalPaid],
-      ['EUR Beklenen', data.eurTotalRemaining],
-      ['EUR Toplam Adet', data.eurSalesCount], // ✅ YENİ
-      ['EUR/USD Kur', data.eurRateToUsd],
-      ['', ''],
-      ['=== USD DETAY ===', ''],
-      ['USD Toplam Satış', data.usdTotalSales],
-      ['USD Kasaya Giren', data.usdTotalPaid],
-      ['USD Beklenen', data.usdTotalRemaining],
-      ['USD Toplam Adet', data.usdSalesCount], // ✅ YENİ
-      ['', ''],
-      ['=== KURLAR ===', ''],
-      ['EUR Rate', data.exchangeRates.EUR],
-      ['USD Rate', data.exchangeRates.USD],
-      ['TRY Rate', data.exchangeRates.TRY],
-    ];
-
-    await this.sheets.spreadsheets.values.update({
-      spreadsheetId: this.spreadsheetId,
-      range: `${sheetName}!A1:B28`, // ✅ Satır sayısını 24'ten 28'e çıkardım
-      valueInputOption: 'USER_ENTERED',
-      requestBody: { values },
-    });
-  }
 }
