@@ -1,9 +1,12 @@
+import { User } from 'src/modules/user/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity('proformas')
@@ -110,9 +113,15 @@ export class Proforma {
   @Column({ name: 'pdf_url', nullable: true })
   pdfUrl: string;
 
-  @Column({ name: 'created_by', nullable: true })
-  createdBy: number;
+  // ✅ İlişki - sadece okuma için
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
 
+  // ✅ Column - yazma için
+  @Column({ nullable: true, name: 'created_by' })
+  created_by: number;
+ 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

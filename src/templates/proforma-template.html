@@ -13,7 +13,8 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -33,6 +34,49 @@
             margin: 0;
         }
 
+        html,
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        /* FIX: Minimal margin prevents blank pages */
+        .image-page {
+            margin: 0 !important;
+            padding: 1px !important;
+            width: 100% !important;
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+
+        .image-page img {
+            width: calc(100% - 1px) !important;
+            max-width: calc(100% - 1px) !important;
+            height: auto !important;
+            display: block !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            object-fit: contain !important;
+        }
+
+        .content-page {
+            padding: 40px 60px !important;
+            box-sizing: border-box !important;
+        }
+
+        .content-page.first {
+            page-break-before: always;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        .no-break {
+            page-break-inside: avoid !important;
+        }
+
         .container {
             width: 100%;
             margin: 0;
@@ -40,16 +84,6 @@
             background: #fff;
         }
 
-        /* TAM SAYFA RESİMLER - Her zaman yeni sayfa */
-        .image-page {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100%;
-            height: auto;
-            page-break-after: always;
-            page-break-inside: avoid;
-            display: block;
-        }
 
         .image-page img {
             width: 100%;
@@ -61,21 +95,7 @@
             object-fit: cover;
         }
 
-        /* İÇERİK SAYFALARI - SADECE GEREKLİ YERLERDE SAYFA KIRMA */
-        .content-page {
-            padding: 40px 60px;
-            box-sizing: border-box;
-        }
 
-        /* İlk content page: yeni sayfa */
-        .content-page.first {
-            page-break-before: always;
-        }
-
-        /* Sadece belirtilenlerde yeni sayfa */
-        .page-break {
-            page-break-before: always;
-        }
 
         h1 {
             color: #0891b2;
@@ -253,7 +273,8 @@
 
         <!-- KAPAK SAYFASI (Sayfa 1) -->
         <div class="image-page">
-            <img src="https://vcrmapi.mlpcare.com/uploads/1.jpg" alt="Cover" />
+            <!-- <img src="https://vcrmapi.mlpcare.com/uploads/1.jpg" alt="Cover" /> -->
+            <img src="http://localhost:3001/uploads/proforma/1.jpg" alt="Cover" />
         </div>
 
         <!-- GENEL BİLGİLER + TEDAVİ DETAYLARI (Sayfa 2-3, tek akış) -->
@@ -266,7 +287,8 @@
 
             <p>
                 Thank you for choosing LIV Hospital Group for your healthcare needs. We are committed to providing you
-                with excellent medical care and a comfortable experience. Below, you will find detailed information about
+                with excellent medical care and a comfortable experience. Below, you will find detailed information
+                about
                 your requested treatment.
             </p>
 
@@ -309,14 +331,14 @@
             </div>
 
             <!-- HEKİM GÖRÜŞÜ (varsa, yeni sayfada) -->
-            <div style="display: {{PHYSICIAN_OPINION_DISPLAY}};" class="page-break">
+            <div style="display: {{PHYSICIAN_OPINION_DISPLAY}};" class="no-break">
                 <p class="issued-by">Issued by:</p>
                 <h1>PHYSICIAN'S OPINION</h1>
                 <p style="text-align: justify; line-height: 1.7;">{{PHYSICIAN_OPINION}}</p>
             </div>
 
             <!-- TEDAVİ DETAYLARI (yeni sayfada) -->
-            <div class="page-break">
+            <div class="page-break" style="margin-top: 35px;">
                 <p class="issued-by">Issued by:</p>
                 <h1>RECOMMENDED TREATMENT & ESTIMATED COST DETAILS</h1>
 
@@ -350,9 +372,11 @@
                 <div class="no-break">
                     <h3>Treatment Information</h3>
                     <p>
-                        The Medical Second Opinion is not intended to replace a full medical evaluation, the exact investigation
+                        The Medical Second Opinion is not intended to replace a full medical evaluation, the exact
+                        investigation
                         and treatment plan may be only known according to the outcomes of the initial consultations and
-                        investigations which will be done in our hospital. The exact cost of treatment will be confirmed according
+                        investigations which will be done in our hospital. The exact cost of treatment will be confirmed
+                        according
                         to the result of the investigation process.
                     </p>
                 </div>
@@ -374,19 +398,22 @@
                         <li>Listed costs are estimates and may vary.</li>
                         <li>Costs do not cover complications.</li>
                         <li>Prices in currencies other than Turkish Lira may fluctuate.</li>
-                        <li>Payment is due before or on the first appointment. Accepted methods: credit card, money order, or wire transfer.</li>
+                        <li>Payment is due before or on the first appointment. Accepted methods: credit card, money
+                            order, or wire transfer.</li>
                         <li>Any additional treatment costs will be verified and billed accordingly.</li>
                         <li>Remaining balances will be processed via bank account or credit card.</li>
-                        <li>Patients are responsible for transfer costs (air/land ambulance) during or after treatment.</li>
+                        <li>Patients are responsible for transfer costs (air/land ambulance) during or after treatment.
+                        </li>
                     </ul>
                 </div>
 
                 <!-- BANKA BİLGİLERİ (yeni sayfada) -->
-                <div class="page-break">
+                <div class="page-break" style="margin-top: 35px;">
                     <p class="issued-by">Issued by:</p>
 
                     <p>
-                        Please feel free to contact the Liv Hospital Group International Patients Services Department if you have any
+                        Please feel free to contact the Liv Hospital Group International Patients Services Department if
+                        you have any
                         further questions or inquiries. Contact details are mentioned below.
                     </p>
 
@@ -423,7 +450,8 @@
                     </div>
 
                     <div class="stamp">
-                        <img src="https://vcrmapi.mlpcare.com/uploads/4.jpg" alt="Stamp" />
+                        <!-- <img src="https://vcrmapi.mlpcare.com/uploads/4.jpg" alt="Stamp" /> -->
+                        <img src="http://localhost:3001/uploads/proforma/4.jpg" alt="Stamp" />
                     </div>
                 </div>
             </div>
@@ -431,11 +459,13 @@
 
         <!-- SON 2 RESİM (Sayfa 4-5) -->
         <div class="image-page">
-            <img src="https://vcrmapi.mlpcare.com/uploads/2.jpg" alt="Info 1" />
+            <!-- <img src="https://vcrmapi.mlpcare.com/uploads/2.jpg" alt="Info 1" /> -->
+            <img src="http://localhost:3001/uploads/proforma/2.jpg" alt="Info 1" />
         </div>
 
         <div class="image-page">
-            <img src="https://vcrmapi.mlpcare.com/uploads/3.jpg" alt="Info 2" />
+            <!-- <img src="https://vcrmapi.mlpcare.com/uploads/3.jpg" alt="Info 2" /> -->
+            <img src="http://localhost:3001/uploads/proforma/3.jpg" alt="Info 2" />
         </div>
 
     </div>
