@@ -432,7 +432,7 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
       followerUser: convertDto.followerUser,
       maturityDate: convertDto.maturityDate,
     });
-
+ 
     // sales_product kayıtları oluştur
     // isPayCompleted değeri HESAPLANARAK aktarılır, doğrudan kopyalanmaz
     const salesProducts = [];
@@ -469,6 +469,10 @@ export class Customer2ProductService extends BaseService<Customer2Product> {
       convertDto.userId,
       sales.id,
     );
+
+    
+    customer.status = 3;
+    await this.customerRepository.update(customer.id, { status: 3 });
 
     this.gateway.notifyNewSale(sales);
 
