@@ -382,97 +382,102 @@ export class SalesRepository extends BaseRepositoryAbstract<Sales> {
   }
 
 
-  async findUserSalesWithRelations(
-    filters: SalesQueryFilterDto,
-  ): Promise<SelectQueryBuilder<Sales>> {
-    const queryBuilder = this.salesRepository.createQueryBuilder('sales');
+async findUserSalesWithRelations(
+  filters: SalesQueryFilterDto,
+): Promise<SelectQueryBuilder<Sales>> {
+  const queryBuilder = this.salesRepository.createQueryBuilder('sales');
 
-    queryBuilder
-      .leftJoinAndSelect('sales.customerDetails', 'customer')
-      .leftJoinAndSelect('sales.userDetails', 'user')
-      .leftJoinAndSelect('user.userTeam', 'userTeam')  // ← Ekle
-      .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
-      .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
-      .leftJoinAndSelect('salesProducts.productDetails', 'product')
-      .leftJoinAndSelect('product.currency', 'productCurrency')
-      .leftJoinAndSelect('salesProducts.currency', 'spCurrency')
-      .orderBy('sales.createdAt', 'DESC');
+  queryBuilder
+    .leftJoinAndSelect('sales.customerDetails', 'customer')
+    .leftJoinAndSelect('sales.userDetails', 'user')
+    .leftJoinAndSelect('user.userTeam', 'userTeam')
+    .leftJoinAndSelect('sales.responsibleUserDetails', 'responsibleUser')
+    .leftJoinAndSelect('sales.salesProducts', 'salesProducts')
+    .leftJoinAndSelect('salesProducts.productDetails', 'product')
+    .leftJoinAndSelect('product.currency', 'productCurrency')
+    .leftJoinAndSelect('salesProducts.currency', 'spCurrency')
+    .orderBy('sales.createdAt', 'DESC');
 
-    // User filter
-    if (filters.user !== undefined && filters.user !== null) {
-      queryBuilder.andWhere('sales.user = :userId', { userId: filters.user });
-    }
+  // ✅ YENİ: Boş salesProducts olan satışları filtrele
+  queryBuilder.andWhere(
+    `EXISTS (
+      SELECT 1 FROM sales_product sp 
+      WHERE sp.sales = sales.id
+    )`,
+  );
 
-    // Customer filter
-    if (filters.customer !== undefined && filters.customer !== null) {
-      queryBuilder.andWhere('sales.customer = :customerId', {
-        customerId: filters.customer,
-      });
-    }
+  // User filter
+  if (filters.user !== undefined && filters.user !== null) {
+    queryBuilder.andWhere('sales.user = :userId', { userId: filters.user });
+  }
 
-    // Responsible user filter
-    if (filters.responsibleUser !== undefined && filters.responsibleUser !== null) {
-      queryBuilder.andWhere('sales.responsible_user = :responsibleUserId', {
-        responsibleUserId: filters.responsibleUser,
-      });
-    }
+  // Customer filter
+  if (filters.customer !== undefined && filters.customer !== null) {
+    queryBuilder.andWhere('sales.customer = :customerId', {
+      customerId: filters.customer,
+    });
+  }
 
-    // Currency filter
-    if (filters.currency) {
+  // Responsible user filter
+  if (filters.responsibleUser !== undefined && filters.responsibleUser !== null) {
+    queryBuilder.andWhere('sales.responsible_user = :responsibleUserId', {
+      responsibleUserId: filters.responsibleUser,
+    });
+  }
+
+  // Currency filter
+  if (filters.currency) {
+    queryBuilder.andWhere(
+      `EXISTS (
+        SELECT 1 FROM sales_product sp 
+        LEFT JOIN currency c ON sp.currency = c.id 
+        WHERE sp.sales = sales.id AND c.code = :currencyCode
+      )`,
+      { currencyCode: filters.currency },
+    );
+  }
+
+  // Date filters
+  if (filters.startDate) {
+    queryBuilder.andWhere('sales.createdAt >= :startDate', {
+      startDate: new Date(filters.startDate),
+    });
+  }
+
+  if (filters.endDate) {
+    const endDate = new Date(filters.endDate);
+    endDate.setHours(23, 59, 59, 999);
+    queryBuilder.andWhere('sales.createdAt <= :endDate', { endDate });
+  }
+
+  // Payment status filter
+  if (filters.paymentStatus && filters.paymentStatus !== 'all') {
+    if (filters.paymentStatus === 'completed') {
+      queryBuilder.andWhere(
+        `NOT EXISTS (
+          SELECT 1 FROM sales_product sp 
+          WHERE sp.sales = sales.id AND sp.is_pay_completed = false
+        )`,
+      );
+    } else if (filters.paymentStatus === 'partial') {
       queryBuilder.andWhere(
         `EXISTS (
           SELECT 1 FROM sales_product sp 
-          LEFT JOIN currency c ON sp.currency = c.id 
-          WHERE sp.sales = sales.id AND c.code = :currencyCode
+          WHERE sp.sales = sales.id AND sp.paid_amount > 0 AND sp.is_pay_completed = false
         )`,
-        { currencyCode: filters.currency },
+      );
+    } else if (filters.paymentStatus === 'unpaid') {
+      queryBuilder.andWhere(
+        `NOT EXISTS (
+          SELECT 1 FROM sales_product sp 
+          WHERE sp.sales = sales.id AND (sp.paid_amount > 0 OR sp.is_pay_completed = true)
+        )`,
       );
     }
-
-    // Date filters
-    if (filters.startDate) {
-      queryBuilder.andWhere('sales.createdAt >= :startDate', {
-        startDate: new Date(filters.startDate),
-      });
-    }
-
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      endDate.setHours(23, 59, 59, 999);
-      queryBuilder.andWhere('sales.createdAt <= :endDate', { endDate });
-    }
-
-    // Payment status filter (Vue'dan gelen)
-    if (filters.paymentStatus && filters.paymentStatus !== 'all') {
-      if (filters.paymentStatus === 'completed') {
-        // Tüm ürünleri tamamlanmış satışlar
-        queryBuilder.andWhere(
-          `NOT EXISTS (
-            SELECT 1 FROM sales_product sp 
-            WHERE sp.sales = sales.id AND sp.is_pay_completed = false
-          )`,
-        );
-      } else if (filters.paymentStatus === 'partial') {
-        // En az bir ödeme yapılmış ama tamamlanmamış
-        queryBuilder.andWhere(
-          `EXISTS (
-            SELECT 1 FROM sales_product sp 
-            WHERE sp.sales = sales.id AND sp.paid_amount > 0 AND sp.is_pay_completed = false
-          )`,
-        );
-      } else if (filters.paymentStatus === 'unpaid') {
-        // Hiç ödeme yapılmamış
-        queryBuilder.andWhere(
-          `NOT EXISTS (
-            SELECT 1 FROM sales_product sp 
-            WHERE sp.sales = sales.id AND (sp.paid_amount > 0 OR sp.is_pay_completed = true)
-          )`,
-        );
-      }
-    }
-
-    return queryBuilder;
   }
+
+  return queryBuilder;
+}
 
   // ============================================
   // DASHBOARD İSTATİSTİKLERİ (Vue sayfası için)

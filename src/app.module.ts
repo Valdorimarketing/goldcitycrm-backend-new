@@ -67,7 +67,7 @@ import { ProformaModule } from './modules/proformas/proforma.module';
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_DATABASE || 'valdori_crm',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV !== 'production',
+      synchronize: false,
       logging: process.env.NODE_ENV === 'development',
     }),
     AuthModule,

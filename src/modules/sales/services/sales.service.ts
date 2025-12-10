@@ -203,8 +203,8 @@ export class SalesService extends BaseService<Sales> {
   }
 
   async getRecentSalesOptimized(limit: number = 10): Promise<Sales[]> {
-  return this.salesRepository.findRecentSalesOptimized(limit);
-}
+    return this.salesRepository.findRecentSalesOptimized(limit);
+  }
 
   // ============================================
   // SATIŞ ÜRÜNLERİ
