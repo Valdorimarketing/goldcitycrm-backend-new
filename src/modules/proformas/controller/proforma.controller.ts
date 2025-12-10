@@ -9,6 +9,7 @@ import {
   Query,
   Res,
   HttpStatus,
+  Request
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ProformaService } from '../services/proforma.service';
@@ -20,8 +21,8 @@ export class ProformaController {
   constructor(private readonly proformaService: ProformaService) {}
 
   @Post()
-  async create(@Body() createProformaDto: CreateProformaDto) {
-    const userId = 1;
+  async create(@Body() createProformaDto: CreateProformaDto, @Request() req) {
+    const userId = req.user.id || 1;
     return await this.proformaService.create(createProformaDto, userId);
   }
 
@@ -60,7 +61,8 @@ export class ProformaController {
   }
 
 
-  
+
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.proformaService.findOne(+id);
@@ -90,67 +92,6 @@ export class ProformaController {
     return await this.proformaService.getProformaDataFromSale(+saleId);
   }
 
-
-  /**
-   * Download PDF
-   */
-  @Get(':id/pdf')
-  async downloadPDF(@Param('id') id: string, @Res() res: Response) {
-    try {
-      console.log('🔍 PDF Download Request for ID:', id);
-      
-      const proforma = await this.proformaService.findOne(+id);
-      console.log('✅ Proforma found:', proforma.proformaNumber);
-      
-      const pdf = await this.proformaService.generatePDF(+id);
-      console.log('✅ PDF generated, size:', pdf.length, 'bytes');
-
-      // PDF header kontrolü
-      const header = Buffer.from(pdf).slice(0, 10).toString('utf-8');
-      console.log('📄 PDF Header:', header);
-      
-      if (!header.startsWith('%PDF')) {
-        console.error('❌ Invalid PDF header! This is not a valid PDF.');
-        throw new Error('Generated PDF is invalid');
-      }
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${proforma.proformaNumber}.pdf"`,
-      );
-      res.setHeader('Content-Length', pdf.length);
-      
-      res.send(Buffer.from(pdf));
-      console.log('✅ PDF sent to client');
-    } catch (error) {
-      console.error('❌ PDF Download Error:', error);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Failed to generate PDF',
-        error: error.message,
-        stack: error.stack,
-      });
-    }
-  }
-
-  /**
-   * Generate and save PDF
-   */
-  @Post(':id/generate-pdf')
-  async generateAndSavePDF(@Param('id') id: string) {
-    try {
-      const pdfUrl = await this.proformaService.savePDFToFile(+id);
-      return {
-        success: true,
-        message: 'PDF generated successfully',
-        pdfUrl,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to generate PDF',
-        error: error.message,
-      };
-    }
-  }
+ 
+ 
 }
