@@ -11,7 +11,7 @@ import { Logger } from '@nestjs/common';
   cors: {
     origin: '*',
   },
-  namespace: '/sales',
+  namespace: '/',
 })
 export class SalesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
