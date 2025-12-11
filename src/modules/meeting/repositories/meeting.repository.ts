@@ -14,51 +14,51 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
     super(meetingRepository);
   }
 
-
   async getByCustomer(): Promise<Record<string, any>[]> {
     const data: Meeting[] = await this.getRepository().find({
-      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch'],
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
 
     const plain = instanceToPlain(data, { excludeExtraneousValues: true });
     return Array.isArray(plain) ? plain : [plain];
   }
 
-
   async findByCustomer(customer: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { customer },
-      relations: ['salesProduct', 'hospital', 'doctor', 'branch'],
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
   }
 
   async findByUser(user: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { user },
-      relations: ['salesProduct', 'hospital', 'doctor'],
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
   }
 
-  async findByStatus(meetingStatus: number): Promise<Meeting[]> {
+  // ✅ DÜZELTİLDİ: meetingStatusId kullanılıyor
+  async findByStatus(meetingStatusId: number): Promise<Meeting[]> {
     return this.getRepository().find({
-      where: { meetingStatus },
-      relations: ['salesProduct', 'hospital', 'doctor'],
+      where: { meetingStatusId },
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
   }
 
   async findBySalesProduct(salesProductId: number): Promise<Meeting[]> {
     return this.getRepository().find({
       where: { salesProductId },
-      relations: ['salesProduct', 'hospital', 'doctor'],
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
   }
 
+  // ✅ DÜZELTİLDİ: await eklendi
   async findOneWithSalesProduct(id: number): Promise<Meeting> {
-    const data = this.getRepository().findOne({
+    const data = await this.getRepository().findOne({
       where: { id },
-      relations: ['salesProduct', 'hospital', 'doctor', 'customerData', 'branch'],
+      relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
-     const plain = instanceToPlain(data, { excludeExtraneousValues: true }) as any;
-     return plain;
+    const plain = instanceToPlain(data, { excludeExtraneousValues: true }) as any;
+    return plain;
   }
 }

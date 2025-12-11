@@ -1,71 +1,121 @@
-import { IsOptional, IsString, IsNumber, IsDateString } from 'class-validator';
-import { Expose, Type } from 'class-transformer';
+// dto/create-meeting.dto.ts
+
+import { IsInt, IsOptional, IsString, IsDateString } from 'class-validator';
+import { Expose } from 'class-transformer';
 
 export class CreateMeetingDto {
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @IsInt()
   @Expose()
-  customer?: number;
+  customer: number;
 
+  @IsInt()
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
   @Expose()
   hospitalId?: number;
 
+  @IsInt()
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
   @Expose()
   branchId?: number;
 
+  @IsInt()
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
   @Expose()
   doctorId?: number;
 
-  @IsOptional()
   @IsDateString()
+  @IsOptional()
   @Expose()
   remindingAt?: Date;
 
-  @IsOptional()
   @IsDateString()
+  @IsOptional()
   @Expose()
   startTime?: Date;
 
-  @IsOptional()
   @IsDateString()
+  @IsOptional()
   @Expose()
   endTime?: Date;
 
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @IsInt()
   @Expose()
-  user?: number;
+  user: number;
 
+  // ✅ DÜZELTİLDİ: meetingStatus → meetingStatusId
+  @IsInt()
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
   @Expose()
-  meetingStatus?: number;
+  meetingStatusId?: number;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   @Expose()
   description?: string;
 
+  @IsInt()
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
   @Expose()
   salesProductId?: number;
 }
 
-export class UpdateMeetingDto extends CreateMeetingDto {}
+export class UpdateMeetingDto {
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  customer?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  hospitalId?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  branchId?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  doctorId?: number;
+
+  @IsDateString()
+  @IsOptional()
+  @Expose()
+  remindingAt?: Date;
+
+  @IsDateString()
+  @IsOptional()
+  @Expose()
+  startTime?: Date;
+
+  @IsDateString()
+  @IsOptional()
+  @Expose()
+  endTime?: Date;
+
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  user?: number;
+
+  // ✅ DÜZELTİLDİ: meetingStatus → meetingStatusId
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  meetingStatusId?: number;
+
+  @IsString()
+  @IsOptional()
+  @Expose()
+  description?: string;
+
+  @IsInt()
+  @IsOptional()
+  @Expose()
+  salesProductId?: number;
+}
 
 export class MeetingResponseDto {
   @Expose()
@@ -75,50 +125,57 @@ export class MeetingResponseDto {
   customer: number;
 
   @Expose()
-  hospitalId: number;
+  customerData?: any;
+
+  @Expose()
+  hospitalId?: number;
 
   @Expose()
   hospital?: any;
 
   @Expose()
-  doctorId: number;
+  branchId?: number;
 
   @Expose()
-  branchId: number;
+  branch?: any;
 
   @Expose()
-  branch?: number;
+  doctorId?: number;
 
   @Expose()
   doctor?: any;
 
   @Expose()
-  remindingAt: Date;
+  remindingAt?: Date;
 
   @Expose()
-  startTime: Date;
+  startTime?: Date;
 
   @Expose()
-  endTime: Date;
+  endTime?: Date;
 
   @Expose()
   user: number;
 
+  // ✅ DÜZELTİLDİ: Hem ID hem relation
   @Expose()
-  meetingStatus: number;
+  meetingStatusId?: number;
 
   @Expose()
-  description: string;
+  meetingStatus?: any;
 
   @Expose()
-  salesProductId: number;
+  description?: string;
+
+  @Expose()
+  salesProductId?: number;
 
   @Expose()
   salesProduct?: any;
 
   @Expose()
-  createdAt: Date;
+  createdAt?: Date;
 
   @Expose()
-  updatesAt: Date;
+  updatedAt?: Date;
 }

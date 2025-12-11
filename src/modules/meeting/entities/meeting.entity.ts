@@ -6,6 +6,7 @@ import { Hospital } from '../../hospital/entities/hospital.entity';
 import { Doctor } from '../../doctor/entities/doctor.entity';
 import { Customer } from 'src/modules/customer/entities/customer.entity';
 import { Branch } from 'src/modules/branch/entities/branch.entity';
+import { MeetingStatus } from 'src/modules/meeting-status/entities/meeting-status.entity';
 
 @Entity('meeting')
 export class Meeting extends CustomBaseEntity {
@@ -18,7 +19,6 @@ export class Meeting extends CustomBaseEntity {
   @Transform(({ value }) => value ? {name: value.name, surname: value.surname, id: value.id} : null)
   @Expose()
   customerData: Customer;
-
 
   @Column({ type: 'int', nullable: true, name: 'hospital_id' })
   @Expose()
@@ -63,9 +63,15 @@ export class Meeting extends CustomBaseEntity {
   @Expose()
   user: number;
 
-  @Column({ type: 'int', name: 'meeting_status' })
+  // ✅ DÜZELTİLDİ: Meeting Status İlişkisi
+  @Column({ type: 'int', nullable: true, name: 'meeting_status' })
   @Expose()
-  meetingStatus: number;
+  meetingStatusId: number;
+
+  @ManyToOne(() => MeetingStatus, { nullable: true })
+  @JoinColumn({ name: 'meeting_status' })
+  @Expose()
+  meetingStatus: MeetingStatus;
 
   @Column({ type: 'text', nullable: true })
   @Expose()

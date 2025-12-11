@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, OneToOne, Index } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Expose, Transform } from 'class-transformer';
 import { User } from '../../user/entities/user.entity';
@@ -8,6 +8,11 @@ import { Source } from 'src/modules/source/entities/source.entity';
 import { Status } from 'src/modules/status/entities/status.entity';
 
 @Entity('customer')
+
+@Index(['phone'], { unique: true, where: 'phone IS NOT NULL' })  // ✅ Unique index with null handling
+@Index(['email'], { unique: true, where: 'email IS NOT NULL' })  // ✅ Unique index with null handling
+@Index(['identityNumber'], { unique: true, where: 'identity_number IS NOT NULL' })
+
 export class Customer extends CustomBaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Expose()
@@ -21,7 +26,7 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   title: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
   @Expose()
   email: string;
 
@@ -56,7 +61,7 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   job: string;
 
-  @Column({ type: 'int', nullable: true, name: 'identity_number' })
+  @Column({ type: 'int', nullable: true, name: 'identity_number', unique: true })
   @Expose()
   identityNumber: number;
 

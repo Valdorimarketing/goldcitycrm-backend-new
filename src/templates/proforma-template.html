@@ -337,6 +337,7 @@
                 <p style="text-align: justify; line-height: 1.7;">{{PHYSICIAN_OPINION}}</p>
             </div>
 
+
             <!-- TEDAVİ DETAYLARI (yeni sayfada) -->
             <div class="page-break" style="margin-top: 35px;">
                 <p class="issued-by">Issued by:</p>
@@ -346,19 +347,22 @@
                     <thead>
                         <tr>
                             <th>Procedure</th>
+                            <th>Physician Department</th>
                             <th>Visit Type</th>
-                            <th style="text-align: center;">Estimated Cost</th>
+                            <th style="text-align: center; min-width: 140px;">Estimated Cost</th>
                             <th>Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{TREATMENT_ITEMS}}
                     </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3"><strong>GRAND TOTAL:</strong></td>
+                            <td colspan="2" style="text-align: left;"><strong>{{GRAND_TOTAL}}</strong></td>
+                        </tr>
+                    </tfoot>
                 </table>
-
-                <div class="total-row">
-                    GRAND TOTAL: <strong>{{GRAND_TOTAL}}</strong>
-                </div>
 
                 <!-- SERVICES (varsa) -->
                 <div style="display: {{SERVICES_DISPLAY}};" class="no-break">

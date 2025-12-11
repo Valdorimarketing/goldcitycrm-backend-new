@@ -77,22 +77,24 @@ export class MeetingService extends BaseService<Meeting> {
   ): Promise<MeetingResponseDto> {
     // Get current meeting to check for status change
     const currentMeeting = await this.findOneById(id);
-    const oldStatus = currentMeeting?.meetingStatus;
+    // ✅ DÜZELTİLDİ: meetingStatusId kullan
+    const oldStatusId = currentMeeting?.meetingStatusId;
 
     const meeting = await this.update(updateMeetingDto, id, MeetingResponseDto);
 
     // Check for meeting status change
+    // ✅ DÜZELTİLDİ: meetingStatusId ile karşılaştır
     if (
-      updateMeetingDto.meetingStatus &&
-      oldStatus !== updateMeetingDto.meetingStatus &&
+      updateMeetingDto.meetingStatusId &&
+      oldStatusId !== updateMeetingDto.meetingStatusId &&
       currentMeeting?.customer
     ) {
       // Get status names for history log
-      const oldStatusEntity = oldStatus
-        ? await this.meetingStatusRepository.findOneById(oldStatus)
+      const oldStatusEntity = oldStatusId
+        ? await this.meetingStatusRepository.findOneById(oldStatusId)
         : null;
       const newStatusEntity = await this.meetingStatusRepository.findOneById(
-        updateMeetingDto.meetingStatus,
+        updateMeetingDto.meetingStatusId,
       );
 
       const oldStatusName = oldStatusEntity?.name || 'Belirtilmemiş';
@@ -102,7 +104,7 @@ export class MeetingService extends BaseService<Meeting> {
         currentMeeting.customer,
         CustomerHistoryAction.MEETING_STATUS_CHANGE,
         `Toplantı durumu değiştirildi: ${oldStatusName}->${newStatusName}`,
-        { oldStatus, newStatus: updateMeetingDto.meetingStatus },
+        { oldStatus: oldStatusId, newStatus: updateMeetingDto.meetingStatusId },
         null,
         updateMeetingDto.user,
         id,
@@ -137,8 +139,9 @@ export class MeetingService extends BaseService<Meeting> {
     return this.meetingRepository.findByUser(user);
   }
 
-  async getMeetingsByStatus(meetingStatus: number): Promise<Meeting[]> {
-    return this.meetingRepository.findByStatus(meetingStatus);
+  // ✅ DÜZELTİLDİ: meetingStatusId parametresi
+  async getMeetingsByStatus(meetingStatusId: number): Promise<Meeting[]> {
+    return this.meetingRepository.findByStatus(meetingStatusId);
   }
 
   async getMeetingsBySalesProduct(salesProductId: number): Promise<Meeting[]> {

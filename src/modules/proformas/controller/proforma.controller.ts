@@ -15,14 +15,14 @@ import { Response } from 'express';
 import { ProformaService } from '../services/proforma.service';
 import { CreateProformaDto } from '../dto/create.proforma.dto';
 import { UpdateProformaDto } from '../dto/update.proforma.dto';
+import { CurrentUserId } from 'src/core/decorators/current-user.decorator';
 
 @Controller('proformas')
 export class ProformaController {
   constructor(private readonly proformaService: ProformaService) {}
 
   @Post()
-  async create(@Body() createProformaDto: CreateProformaDto, @Request() req) {
-    const userId = req.user.id || 1;
+  async create(@Body() createProformaDto: CreateProformaDto, @CurrentUserId() userId) {
     return await this.proformaService.create(createProformaDto, userId);
   }
 
@@ -49,6 +49,7 @@ export class ProformaController {
   @Get(':id/preview')
   async getHTMLPreview(@Param('id') id: string, @Res() res: Response) {
     try {
+      
       const html = await this.proformaService.generateHTMLPreview(+id);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
