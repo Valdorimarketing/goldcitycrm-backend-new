@@ -37,9 +37,9 @@ export class ProformaService {
   /**
    * Create new proforma
    */
-/**
- * Create new proforma
- */
+  /**
+   * Create new proforma
+   */
   async create(createProformaDto: CreateProformaDto, userId: number): Promise<Proforma> {
     const proformaNumber = await this.generateProformaNumber();
 
@@ -104,7 +104,10 @@ export class ProformaService {
    * Get single proforma by ID
    */
   async findOne(id: number): Promise<Proforma> {
-    const proforma = await this.proformaRepository.findOne({ where: { id } });
+    const proforma = await this.proformaRepository.findOne({
+      where: { id },
+      relations: ['createdBy'], // ✅ Bu satırı ekle
+    });
 
     if (!proforma) {
       throw new NotFoundException(`Proforma with ID ${id} not found`);
@@ -175,7 +178,7 @@ export class ProformaService {
       swiftCode: 'DENITRIS',
     };
   }
-  
+
   /**
    * Generate HTML for PDF
    */
@@ -184,7 +187,7 @@ export class ProformaService {
   /**
  * Generate HTML for PDF - WITH DEBUG INFO
  */
-  private async generateHTML(proforma: Proforma): Promise<string> {
+ private async generateHTML(proforma: Proforma): Promise<string> {
     let html: string;
 
     const paths = [
@@ -217,7 +220,6 @@ export class ProformaService {
       throw new Error('Template file not found');
     }
 
-
     console.log('📏 Original template size:', html.length, 'chars');
 
     // Basic Info
@@ -242,26 +244,22 @@ export class ProformaService {
     const hasPhysicianOpinion = proforma.physicianOpinion && proforma.physicianOpinion.trim().length > 0;
     html = html.replace('{{PHYSICIAN_OPINION_DISPLAY}}', hasPhysicianOpinion ? 'block' : 'none');
 
-    // DEBUG: Check physician opinion length
     if (hasPhysicianOpinion) {
       console.log('📝 Physician Opinion length:', proforma.physicianOpinion.length, 'chars');
-      if (proforma.physicianOpinion.length > 1000) {
-        console.warn('⚠️ PHYSICIAN OPINION TOO LONG! This might cause extra pages.');
-        console.warn('   Consider truncating or paginating.');
-      }
     }
 
     html = html.replace('{{PHYSICIAN_OPINION}}', this.escapeHtml(proforma.physicianOpinion || ''));
 
-    // Treatment Items
+    // Treatment Items - ✅ Doğru sıralama: Procedure, Physician Department, Visit Type, Estimated Cost, Notes
     console.log('💊 Treatment items count:', proforma.treatmentItems?.length || 0);
 
     const treatmentRows = proforma.treatmentItems
       .map((item) => `
       <tr>
         <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.procedure)}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(proforma.physicianDepartment || '-')}</td>
         <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.visitType)}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 10.5px;">${this.escapeHtml(item.estimatedCost)}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 10.5px; min-width: 140px;">${this.escapeHtml(item.estimatedCost)}</td>
         <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.notes || '')}</td>
       </tr>
     `)
@@ -302,7 +300,6 @@ export class ProformaService {
     html = html.replace('{{HOSPITAL_EMAIL}}', this.escapeHtml(proforma.hospitalEmail || '-'));
 
     console.log('📏 Final HTML size:', html.length, 'chars');
-    console.log('📊 Size increase:', html.length - 28239, 'chars'); // Your original size
 
     // Check for remaining placeholders
     const remainingPlaceholders = html.match(/{{[A-Z_]+}}/g);
@@ -315,7 +312,7 @@ export class ProformaService {
     return html;
   }
 
- 
+
 
   /**
    * Helper: Safely convert to number

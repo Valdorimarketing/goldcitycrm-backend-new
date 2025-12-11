@@ -7,7 +7,7 @@ import {
   ValidateNested,
   IsEnum
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class TreatmentItemDto {
   @IsOptional()
@@ -46,12 +46,24 @@ export class CreateProformaDto {
   patientName?: string;
 
   @IsOptional()
+  @IsNumber()
+  hospitalId?: number;
+
+  @IsOptional()
   @IsString()
   hospital?: string;
 
   @IsOptional()
+  @IsNumber()
+  doctorId?: number;
+
+  @IsOptional()
   @IsString()
   physicianName?: string;
+
+  @IsOptional()
+  @IsNumber()
+  branchId?: number;
 
   @IsOptional()
   @IsString()
@@ -84,6 +96,12 @@ export class CreateProformaDto {
   @Type(() => TreatmentItemDto)
   treatmentItems: TreatmentItemDto[];
 
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return parseFloat(value);
+    }
+    return value;
+  })
   @IsNumber()
   grandTotal: number;
 
