@@ -33,9 +33,9 @@ export class Customer2Product {
    * Alınan Tutar - Müşteriden alınan ön ödeme veya kısmi ödeme tutarı
    * Eski adı: discount
    */
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'paid_amount' })
-  paidAmount: number;
 
+  @Column('decimal', { precision: 15, scale: 2, default: 0, name: 'paid_amount' })
+  paidAmount: number;
   /**
    * Teklif Tutarı - Müşteriye sunulan toplam tutar
    */

@@ -285,8 +285,6 @@ export class SalesSheetSyncService implements OnModuleInit {
   /**
    * Satış verilerini veritabanından çek
    */
-
-
   async getSalesData(month?: string): Promise<any> {
     const ratesData = await this.exchangeRateService.getExchangeRatesForFrontend();
     const rates = ratesData.rates;
@@ -379,9 +377,23 @@ export class SalesSheetSyncService implements OnModuleInit {
     const usdSalesResult = await this.dataSource.query(usdSalesCountQuery, params);
     const usdSalesCount = parseInt(usdSalesResult[0]?.usdSalesCount) || 0;
 
-    this.logger.log(`✅ EUR: ${eurSalesCount}, USD: ${usdSalesCount}, Total: ${totalSalesCount}`);
+    // ✅ 4. TRY SATIŞ SAYISI
+    const trySalesCountQuery = `
+    SELECT COUNT(DISTINCT s.id) as trySalesCount
+    FROM sales s
+    INNER JOIN sales_product sp ON sp.sales = s.id
+    LEFT JOIN product p ON sp.product = p.id
+    LEFT JOIN currencies c ON COALESCE(sp.currency, p.currency_id) = c.id
+    ${whereClause}
+    AND c.code = 'TRY'
+  `;
 
-    // ✅ 4. PARA BİRİMİ TOPLAMLAR
+    const trySalesResult = await this.dataSource.query(trySalesCountQuery, params);
+    const trySalesCount = parseInt(trySalesResult[0]?.trySalesCount) || 0;
+
+    this.logger.log(`✅ EUR: ${eurSalesCount}, USD: ${usdSalesCount}, TRY: ${trySalesCount}, Total: ${totalSalesCount}`);
+
+    // ✅ 5. PARA BİRİMİ TOPLAMLAR
     const currencyQuery = `
     SELECT 
       c.code as currencyCode,
@@ -402,6 +414,7 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     const eurStats = statsByCurrency.find((s: any) => s.currencyCode === 'EUR');
     const usdStats = statsByCurrency.find((s: any) => s.currencyCode === 'USD');
+    const tryStats = statsByCurrency.find((s: any) => s.currencyCode === 'TRY');
 
     const eurTotalSales = parseFloat(eurStats?.totalSales) || 0;
     const eurTotalPaid = parseFloat(eurStats?.totalPaid) || 0;
@@ -411,29 +424,39 @@ export class SalesSheetSyncService implements OnModuleInit {
     const usdTotalPaid = parseFloat(usdStats?.totalPaid) || 0;
     const usdTotalRemaining = parseFloat(usdStats?.totalRemaining) || 0;
 
-    const eurRateToUsd = rates.EUR || 1.09;
+    const tryTotalSales = parseFloat(tryStats?.totalSales) || 0;
+    const tryTotalPaid = parseFloat(tryStats?.totalPaid) || 0;
+    const tryTotalRemaining = parseFloat(tryStats?.totalRemaining) || 0;
 
-    const totalSalesUsd = (eurTotalSales * eurRateToUsd) + usdTotalSales;
-    const totalPaidUsd = (eurTotalPaid * eurRateToUsd) + usdTotalPaid;
-    const totalRemainingUsd = (eurTotalRemaining * eurRateToUsd) + usdTotalRemaining;
+    const eurRateToUsd = rates.EUR || 1.09;
+    const tryRateToUsd = rates.TRY || 0.029;
+
+    const totalSalesUsd = (eurTotalSales * eurRateToUsd) + usdTotalSales + (tryTotalSales * tryRateToUsd);
+    const totalPaidUsd = (eurTotalPaid * eurRateToUsd) + usdTotalPaid + (tryTotalPaid * tryRateToUsd);
+    const totalRemainingUsd = (eurTotalRemaining * eurRateToUsd) + usdTotalRemaining + (tryTotalRemaining * tryRateToUsd);
 
     const result = {
       totalSalesUsd: Math.round(totalSalesUsd * 100) / 100,
       totalPaidUsd: Math.round(totalPaidUsd * 100) / 100,
       totalRemainingUsd: Math.round(totalRemainingUsd * 100) / 100,
-      totalSalesCount, // ✅ Satış sayısı (ürün değil)
+      totalSalesCount,
 
       eurTotalSales,
       eurTotalPaid,
       eurTotalRemaining,
-      eurSalesCount, // ✅ EUR satış sayısı
-
+      eurSalesCount,
       eurRateToUsd,
 
       usdTotalSales,
       usdTotalPaid,
       usdTotalRemaining,
-      usdSalesCount, // ✅ USD satış sayısı
+      usdSalesCount,
+
+      tryTotalSales,
+      tryTotalPaid,
+      tryTotalRemaining,
+      trySalesCount,
+      tryRateToUsd,
 
       exchangeRates: {
         EUR: rates.EUR || 1.09,
@@ -448,12 +471,9 @@ export class SalesSheetSyncService implements OnModuleInit {
     return result;
   }
 
-
   /**
-   * Sheets'e yazma - Satır sayısı arttı
+   * Sheets'e yazma - TRY desteği eklendi
    */
-
-
   private async writeToSheet(sheetName: string, data: any): Promise<void> {
     if (!this.sheets) {
       throw new Error('Google Sheets not initialized');
@@ -468,20 +488,27 @@ export class SalesSheetSyncService implements OnModuleInit {
       ['Toplam Satış (USD)', data.totalSalesUsd],
       ['Kasaya Giren (USD)', data.totalPaidUsd],
       ['Beklenen (USD)', data.totalRemainingUsd],
-      ['Satış Adedi', data.totalSalesCount], // ✅ Değişti: Ürün Adedi → Satış Adedi
+      ['Satış Adedi', data.totalSalesCount],
       ['', ''],
       ["'=== EUR DETAY ===", ''],
       ['EUR Toplam Satış', data.eurTotalSales],
       ['EUR Kasaya Giren', data.eurTotalPaid],
       ['EUR Beklenen', data.eurTotalRemaining],
-      ['EUR Satış Adedi', data.eurSalesCount], // ✅ Değişti
+      ['EUR Satış Adedi', data.eurSalesCount],
       ['EUR/USD Kur', data.eurRateToUsd],
       ['', ''],
       ["'=== USD DETAY ===", ''],
       ['USD Toplam Satış', data.usdTotalSales],
       ['USD Kasaya Giren', data.usdTotalPaid],
       ['USD Beklenen', data.usdTotalRemaining],
-      ['USD Satış Adedi', data.usdSalesCount], // ✅ Değişti
+      ['USD Satış Adedi', data.usdSalesCount],
+      ['', ''],
+      ["'=== TRY DETAY ===", ''],
+      ['TRY Toplam Satış', data.tryTotalSales],
+      ['TRY Kasaya Giren', data.tryTotalPaid],
+      ['TRY Beklenen', data.tryTotalRemaining],
+      ['TRY Satış Adedi', data.trySalesCount],
+      ['TRY/USD Kur', data.tryRateToUsd],
       ['', ''],
       ["'=== KURLAR ===", ''],
       ['EUR Rate', data.exchangeRates.EUR],
@@ -491,7 +518,7 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     await this.sheets.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
-      range: `${sheetName}!A1:B27`,
+      range: `${sheetName}!A1:B${values.length}`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
     });
@@ -503,10 +530,4 @@ export class SalesSheetSyncService implements OnModuleInit {
   async getSalesDataByMonth(month?: string): Promise<any> {
     return this.getSalesData(month);
   }
-
-  /**
-   * Google Sheets'e yaz
-   */
-
-
 }
