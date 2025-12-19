@@ -295,13 +295,8 @@ export class ProformaService {
     let html: string;
 
     // ✅ Dil bazlı template seçimi
-    const templateName = proforma.language === 'en'
-      ? 'proforma-template-en.html'
-      : 'proforma-template.html';
-
-    console.log('🔍 Starting aggressive template search for:', templateName);
-    console.log('📁 Current working directory:', process.cwd());
-    console.log('📁 __dirname:', __dirname);
+    const templateName = "proforma-template.html";
+ 
 
     // 🔥 Path kombinasyonları - HER OLASI YER
     const basePaths = [
@@ -381,19 +376,13 @@ export class ProformaService {
 
     // 🔥 HALA BULUNAMADIYSA, detaylı debug bilgisi ver
     if (!templateFound) {
-      console.error('❌ Template not found after exhaustive search');
-      console.error('📂 Checked paths:');
       paths.slice(0, 20).forEach(p => console.error('  -', p));
-      console.error('  ... and', paths.length - 20, 'more paths');
 
-      // Dizinleri listele
-      console.error('\n📁 Available directories:');
       this.listDirectories(process.cwd(), 2);
 
       throw new Error(`Template file not found: ${templateName}. Searched ${paths.length} locations.`);
     }
 
-    console.log('📏 Template size:', html.length, 'chars');
     // Basic Info
     html = html.replace('{{PROFORMA_NUMBER}}', proforma.proformaNumber);
     html = html.replace('{{DATE}}', new Date(proforma.date).toLocaleDateString('en-US'));
