@@ -292,38 +292,17 @@ export class CustomerService extends BaseService<Customer> {
     // ✅ let yerine const kullanmayın, scope sorunu olabilir
     let engagementHandled = false;
 
-    console.log('🎯 BAŞLANGIÇ - engagementHandled:', engagementHandled);
 
     //------------------------------------------------------------
     //-- 3) ENGAGEMENT YÖNETİMİ
     //------------------------------------------------------------
     if (updateCustomerDto.status && oldStatus !== updateCustomerDto.status) {
-      console.log('🔄 Status değişikliği tespit edildi');
 
       const newStatus = await this.statusService.findOneById(updateCustomerDto.status);
       const oldStatusEntity = oldStatus ? await this.statusRepository.findOneById(oldStatus) : null;
 
-      console.log('📊 Status kontrol:', {
-        isDoctor: newStatus?.isDoctor,
-        wasDoctor: oldStatusEntity?.isDoctor,
-      });
-
-      console.log('📊 Status detayları:', {
-        oldStatus: {
-          id: oldStatusEntity?.id,
-          name: oldStatusEntity?.name,
-          isDoctor: oldStatusEntity?.isDoctor,
-        },
-        newStatus: {
-          id: newStatus?.id,
-          name: newStatus?.name,
-          isDoctor: newStatus?.isDoctor,
-        },
-      });
-
       //--- ÖZEL DURUM 1: SALES → DOCTOR GEÇİŞİ
       if (newStatus?.isDoctor && !oldStatusEntity?.isDoctor) {
-        console.log('🏥 DOCTOR GEÇİŞİ TETİKLENDİ');
 
         const doctorUser = await this.findAvailableDoctorUser();
 
@@ -354,12 +333,10 @@ export class CustomerService extends BaseService<Customer> {
           );
 
           engagementHandled = true;
-          console.log('✅ DOCTOR engagement açıldı, engagementHandled:', engagementHandled);
         }
       }
       //--- ÖZEL DURUM 2: DOCTOR → SALES GERİ DÖNÜŞÜ
       else if (oldStatusEntity?.isDoctor && !newStatus?.isDoctor) {
-        console.log('👤 SALES GERİ DÖNÜŞÜ TETİKLENDİ');
 
         await this.customerEngagementService.closeDoctorEngagements(id);
 
@@ -378,12 +355,10 @@ export class CustomerService extends BaseService<Customer> {
           );
 
           engagementHandled = true;
-          console.log('✅ SALES engagement açıldı, engagementHandled:', engagementHandled);
         }
       }
       //--- DİĞER TÜM DURUM DEĞİŞİKLİKLERİ
       else {
-        console.log('📝 Normal durum değişikliği');
 
         await this.customerEngagementService.closeAllEngagements(id);
 
@@ -392,11 +367,9 @@ export class CustomerService extends BaseService<Customer> {
         }
 
         engagementHandled = true;
-        console.log('✅ Engagement kapatıldı, engagementHandled:', engagementHandled);
       }
     }
 
-    console.log('🔍 BÖLÜM 4 ÖNCESİ - engagementHandled:', engagementHandled);
 
     //------------------------------------------------------------
     //-- 4) SATIŞÇI ATAMASI
@@ -411,7 +384,6 @@ export class CustomerService extends BaseService<Customer> {
       updateCustomerDto.relevantUser &&
       updateCustomerDto.relevantUser !== previousRelevantUser
     ) {
-      console.log('👤 BÖLÜM 4 ÇALIŞIYOR - Yeni kullanıcı ataması');
 
       await this.customerEngagementService.closeSalesEngagements(id);
 
@@ -425,14 +397,6 @@ export class CustomerService extends BaseService<Customer> {
         [updateCustomerDto.relevantUser],
       );
 
-      console.log('👤 Yeni kullanıcıya SALES engagement açıldı');
-    } else {
-      console.log('⏭️ BÖLÜM 4 ATLANDI', {
-        engagementHandled,
-        isDoctorProcess, // ✅ Log'a ekle
-        hasRelevantUser: !!updateCustomerDto.relevantUser,
-        userChanged: updateCustomerDto.relevantUser !== previousRelevantUser,
-      });
     }
 
 

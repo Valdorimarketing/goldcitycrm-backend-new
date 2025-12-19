@@ -131,7 +131,7 @@
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-            border: 1px solid #d1d5db;
+            border: none;
             page-break-inside: avoid;
         }
 
@@ -161,14 +161,18 @@
         .total-row {
             text-align: right;
             padding: 15px 0;
-            font-size: 15px;
+            font-size: 1em;
             color: #374151;
         }
 
         .total-row strong {
             color: #1a1a1a;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 1em;
+        }
+        .total-row td {
+            border: none;
+            padding: 5px;
         }
 
         /* LISTE */
@@ -273,8 +277,8 @@
 
         <!-- KAPAK SAYFASI (Sayfa 1) -->
         <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/1.jpg" alt="Cover" />
-            <!-- <img src="http://localhost:3001/uploads/proforma/1.jpg" alt="Cover" /> -->
+            <!-- <img src="https://vcrm.mlpcare.com/1.jpg" alt="Cover" /> -->
+            <img src="http://localhost:3000/1.jpg" alt="Cover" />
         </div>
 
         <!-- GENEL BİLGİLER + TEDAVİ DETAYLARI (Sayfa 2-3, tek akış) -->
@@ -357,12 +361,13 @@
                         {{TREATMENT_ITEMS}}
                     </tbody>
                     <tfoot>
-                        <tr class="total-row">
-                            <td colspan="3"><strong>GRAND TOTAL:</strong></td>
-                            <td colspan="2" style="text-align: left;"><strong>{{GRAND_TOTAL}}</strong></td>
+                        <tr class="total-row" style="border:none">
+                            <td colspan="3" style="text-align: right; padding-right: 0;"><strong>GRAND TOTAL:</strong></td>
+                            <td style="text-align: center;"><strong>{{GRAND_TOTAL}}</strong></td>
                         </tr>
                     </tfoot>
                 </table>
+                
 
                 <!-- SERVICES (varsa) -->
                 <div style="display: {{SERVICES_DISPLAY}};" class="no-break">
@@ -454,8 +459,8 @@
                     </div>
 
                     <div class="stamp">
-                        <img src="https://vcrm.mlpcare.com/4.jpg" alt="Stamp" />
-                        <!-- <img src="http://localhost:3001/uploads/proforma/4.jpg" alt="Stamp" /> -->
+                        <!-- <img src="https://vcrm.mlpcare.com/4.jpg" alt="Stamp" /> -->
+                        <img src="http://localhost:3000/4.jpg" alt="Stamp" />
                     </div>
                 </div>
             </div>
@@ -463,13 +468,13 @@
 
         <!-- SON 2 RESİM (Sayfa 4-5) -->
         <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/2.jpg" alt="Info 1" />
-            <!-- <img src="http://localhost:3001/uploads/proforma/2.jpg" alt="Info 1" /> -->
+            <!-- <img src="https://vcrm.mlpcare.com/2.jpg" alt="Info 1" /> -->
+            <img src="http://localhost:3000/2.jpg" alt="Info 1" />
         </div>
 
         <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/3.jpg" alt="Info 2" />
-            <!-- <img src="http://localhost:3001/uploads/proforma/3.jpg" alt="Info 2" /> -->
+            <!-- <img src="https://vcrm.mlpcare.com/3.jpg" alt="Info 2" /> -->
+            <img src="http://localhost:3000/3.jpg" alt="Info 2" />
         </div>
 
     </div>

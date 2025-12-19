@@ -26,15 +26,31 @@ export class Proforma {
   @Column({ type: 'date' })
   date: Date;
 
+  // ✅ Proforma dili
+  @Column({ name: 'language', default: 'tr' })
+  language: string;
+
   // GENERAL INFORMATION
   @Column({ name: 'patient_name', nullable: true })
   patientName: string;
 
+  // ✅ Hospital ID - ilişki için
+  @Column({ name: 'hospital_id', nullable: true })
+  hospitalId: number;
+
   @Column({ name: 'hospital', nullable: true })
   hospital: string;
 
+  // ✅ Doctor ID - ilişki için
+  @Column({ name: 'doctor_id', nullable: true })
+  doctorId: number;
+
   @Column({ name: 'physician_name', nullable: true })
   physicianName: string;
+
+  // ✅ Branch ID - ilişki için
+  @Column({ name: 'branch_id', nullable: true })
+  branchId: number;
 
   @Column({ name: 'physician_department', nullable: true })
   physicianDepartment: string;
@@ -110,17 +126,34 @@ export class Proforma {
   })
   status: string;
 
+  // ✅ İndirme onayı - sadece admin, doktor veya onaylanmış user indirebilir
+  @Column({ name: 'download_approved', default: false })
+  downloadApproved: boolean;
+
+  // ✅ İndirme onayını veren kullanıcı
+  @Column({ name: 'approved_by', nullable: true })
+  approvedBy: number;
+
+  // ✅ Onaylama tarihi
+  @Column({ name: 'approved_at', type: 'timestamp', nullable: true })
+  approvedAt: Date;
+
   @Column({ name: 'pdf_url', nullable: true })
   pdfUrl: string;
 
-  // ✅ İlişki - sadece okuma için
+  // İlişki - sadece okuma için
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
-  // ✅ Column - yazma için
+  // Column - yazma için
   @Column({ nullable: true, name: 'created_by' })
   created_by: number;
+
+  // ✅ Onaylayan kullanıcı ilişkisi
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'approved_by' })
+  approver: User;
  
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

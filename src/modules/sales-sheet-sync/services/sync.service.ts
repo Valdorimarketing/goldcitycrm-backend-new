@@ -38,13 +38,7 @@ export class SalesSheetSyncService implements OnModuleInit {
     try {
       const settings = await this.settingsService.getAllSettings();
 
-      this.logger.log('=== Google OAuth Config (from DB) ===');
-      this.logger.log(`Client ID: ${settings.clientId ? settings.clientId.substring(0, 20) + '...' : 'NOT SET!'}`);
-      this.logger.log(`Client Secret: ${settings.clientSecret ? '***SET***' : 'NOT SET!'}`);
-      this.logger.log(`Redirect URI: ${settings.redirectUri}`);
-      this.logger.log(`Spreadsheet ID: ${settings.spreadsheetId}`);
-      this.logger.log(`Is Configured: ${settings.isConfigured}`);
-      this.logger.log('=====================================');
+ 
 
       if (!settings.clientId || !settings.clientSecret) {
         this.isInitialized = false;
@@ -68,14 +62,12 @@ export class SalesSheetSyncService implements OnModuleInit {
         });
         this.sheets = google.sheets({ version: 'v4', auth: this.oauth2Client });
         this.isInitialized = true;
-        this.logger.log('Google Sheets OAuth initialized with refresh token from DB');
         return {
           success: true,
           message: 'OAuth initialized successfully',
         };
       } else {
-        this.isInitialized = false;
-        this.logger.warn('Refresh token not set. Run OAuth flow to get one.');
+        this.isInitialized = false; 
         return {
           success: false,
           message: 'Refresh token not configured',
@@ -158,8 +150,7 @@ export class SalesSheetSyncService implements OnModuleInit {
       // OAuth'u yeniden başlat
       await this.reinitialize();
     }
-
-    this.logger.log('Google OAuth tokens received and saved to database');
+ 
 
     return tokens;
   }
@@ -200,7 +191,7 @@ export class SalesSheetSyncService implements OnModuleInit {
             ],
           },
         });
-        this.logger.log(`Created new sheet: ${sheetName}`);
+       
       }
     } catch (error) {
       this.logger.error(`Failed to ensure sheet exists: ${sheetName}`, error);
@@ -210,14 +201,13 @@ export class SalesSheetSyncService implements OnModuleInit {
   /**
    * Her 30 dakikada bir sync et
    */
-  @Cron('*/30 * * * *', { name: 'sales-sheet-sync' })
+  // @Cron('*/30 * * * *', { name: 'sales-sheet-sync' })
   async syncSalesToSheet(): Promise<void> {
     if (!this.sheets || !this.isInitialized) {
       this.logger.warn('Google Sheets not initialized. Skipping sync.');
       return;
     }
-
-    this.logger.log('Starting sales data sync to Google Sheets...');
+ 
 
     try {
       // Tüm veriler
@@ -249,8 +239,7 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     const salesData = await this.getSalesData(month);
     await this.writeToSheet(sheetName, salesData);
-
-    this.logger.log(`Synced data to sheet: ${sheetName}`);
+ 
   }
 
   /**
@@ -302,8 +291,7 @@ export class SalesSheetSyncService implements OnModuleInit {
 
       dateFilter = `s.created_at >= ? AND s.created_at < ?`;
       params.push(startDateStr, endDateStr);
-
-      this.logger.log(`📅 Date Range: ${startDateStr} → ${endDateStr}`);
+ 
     }
 
     const baseFilter = 'sp.id IS NOT NULL AND sp.total_price IS NOT NULL';
@@ -331,10 +319,7 @@ export class SalesSheetSyncService implements OnModuleInit {
   `;
 
     const debugSales = await this.dataSource.query(debugSalesQuery, params);
-    this.logger.log(`📊 Found ${debugSales.length} sales with products:`);
-    debugSales.forEach(s => {
-      this.logger.log(`   #${s.id} (${s.productCount} ürün) - ${s.title}`);
-    });
+  
 
     // ✅ 1. TOPLAM SATIŞ SAYISI (ÜRÜN DEĞİL!)
     const totalSalesCountQuery = `
@@ -346,8 +331,6 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     const totalSalesResult = await this.dataSource.query(totalSalesCountQuery, params);
     const totalSalesCount = parseInt(totalSalesResult[0]?.totalSalesCount) || 0;
-
-    this.logger.log(`✅ Total Sales Count: ${totalSalesCount}`);
 
     // ✅ 2. EUR SATIŞ SAYISI
     const eurSalesCountQuery = `
@@ -390,8 +373,7 @@ export class SalesSheetSyncService implements OnModuleInit {
 
     const trySalesResult = await this.dataSource.query(trySalesCountQuery, params);
     const trySalesCount = parseInt(trySalesResult[0]?.trySalesCount) || 0;
-
-    this.logger.log(`✅ EUR: ${eurSalesCount}, USD: ${usdSalesCount}, TRY: ${trySalesCount}, Total: ${totalSalesCount}`);
+ 
 
     // ✅ 5. PARA BİRİMİ TOPLAMLAR
     const currencyQuery = `
@@ -409,8 +391,7 @@ export class SalesSheetSyncService implements OnModuleInit {
     GROUP BY c.code
   `;
 
-    const statsByCurrency = await this.dataSource.query(currencyQuery, params);
-    this.logger.log(`💰 Currency Stats:`, JSON.stringify(statsByCurrency));
+    const statsByCurrency = await this.dataSource.query(currencyQuery, params); 
 
     const eurStats = statsByCurrency.find((s: any) => s.currencyCode === 'EUR');
     const usdStats = statsByCurrency.find((s: any) => s.currencyCode === 'USD');

@@ -5,7 +5,8 @@ import {
   IsDateString, 
   IsArray, 
   ValidateNested,
-  IsEnum
+  IsEnum,
+  IsBoolean
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
@@ -39,6 +40,11 @@ export class CreateProformaDto {
 
   @IsDateString()
   date: string;
+
+  // ✅ Proforma dili
+  @IsOptional()
+  @IsString()
+  language?: string;
 
   // GENERAL INFORMATION
   @IsOptional()
@@ -159,4 +165,9 @@ export class CreateProformaDto {
   @IsOptional()
   @IsEnum(['draft', 'sent', 'paid', 'cancelled'])
   status?: string;
+
+  // ✅ İndirme onayı
+  @IsOptional()
+  @IsBoolean()
+  downloadApproved?: boolean;
 }

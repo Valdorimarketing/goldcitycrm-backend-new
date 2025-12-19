@@ -1,18 +1,29 @@
-import { Entity, Column } from 'typeorm';
-import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
-import { Expose } from 'class-transformer';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Translation } from './translation.entity';
 
-@Entity('language')
-export class Language extends CustomBaseEntity {
-  @Column({ type: 'varchar', length: 255 })
-  @Expose()
+@Entity('languages')
+export class Language {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'varchar', length: 10, unique: true })
+  code: string;
+
+  @Column({ type: 'varchar', length: 100 })
   name: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  @Expose()
-  flag: string;
+  @Column({ type: 'tinyint', default: 0, name: 'is_default' })
+  isDefault: boolean;
 
-  constructor(partial?: Partial<Language>) {
-    super(partial);
-  }
+  @Column({ type: 'tinyint', default: 1, name: 'is_active' })
+  isActive: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @OneToMany(() => Translation, translation => translation.language)
+  translations: Translation[];
 }
