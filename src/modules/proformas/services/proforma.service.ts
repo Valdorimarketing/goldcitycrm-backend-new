@@ -287,6 +287,10 @@ export class ProformaService {
   /**
    * Generate HTML for PDF - WITH LANGUAGE SUPPORT
    */
+
+  /**
+ * Generate HTML for PDF - WITH AGGRESSIVE PATH FINDING
+ */
   private async generateHTML(proforma: Proforma): Promise<string> {
     let html: string;
 
@@ -295,38 +299,101 @@ export class ProformaService {
       ? 'proforma-template-en.html'
       : 'proforma-template.html';
 
-    const paths = [
-      path.join(__dirname, `../templates/${templateName}`),
-      path.join(__dirname, `../../templates/${templateName}`),
-      path.join(__dirname, `../../../templates/${templateName}`),
-      path.join(process.cwd(), `dist/templates/${templateName}`),
-      path.join(process.cwd(), `templates/${templateName}`),
-      path.join(process.cwd(), `src/templates/${templateName}`),
+    console.log('🔍 Starting aggressive template search for:', templateName);
+    console.log('📁 Current working directory:', process.cwd());
+    console.log('📁 __dirname:', __dirname);
+
+    // 🔥 Path kombinasyonları - HER OLASI YER
+    const basePaths = [
+      process.cwd(),
+      __dirname,
+      path.join(__dirname, '..'),
+      path.join(__dirname, '../..'),
+      path.join(__dirname, '../../..'),
+      path.join(__dirname, '../../../..'),
+      '/app',
+      '/usr/src/app',
     ];
+
+    const templatePaths = [
+      'templates',
+      'src/templates',
+      'dist/templates',
+      'modules/proforma/templates',
+      'src/modules/proforma/templates',
+      'dist/modules/proforma/templates',
+    ];
+
+    const paths: string[] = [];
+
+    // Tüm kombinasyonları oluştur
+    for (const base of basePaths) {
+      for (const template of templatePaths) {
+        paths.push(path.join(base, template, templateName));
+      }
+      // Direkt base path'e de bak
+      paths.push(path.join(base, templateName));
+    }
 
     let templateFound = false;
 
+    // Önce normal arama
     for (const templatePath of paths) {
       try {
         if (fs.existsSync(templatePath)) {
           html = fs.readFileSync(templatePath, 'utf-8');
-          console.log('✅ Template loaded from:', templatePath);
+          console.log('✅ Template found at:', templatePath);
           templateFound = true;
           break;
         }
       } catch (error) {
+        // Sessizce devam et
         continue;
       }
     }
 
+    // 🔥 Eğer hala bulunamadıysa, RECURSIVE SEARCH yap
     if (!templateFound) {
-      console.error('❌ Template not found in any of these paths:');
-      paths.forEach(p => console.error('  -', p));
-      throw new Error('Template file not found');
+      console.log('⚠️ Standard paths failed, trying recursive search...');
+
+      const searchDirs = [
+        process.cwd(),
+        '/app',
+        '/usr/src/app',
+      ];
+
+      for (const searchDir of searchDirs) {
+        if (!fs.existsSync(searchDir)) continue;
+
+        const foundPath = this.recursiveSearch(searchDir, templateName, 5); // Max 5 level
+        if (foundPath) {
+          try {
+            html = fs.readFileSync(foundPath, 'utf-8');
+            console.log('✅ Template found via recursive search at:', foundPath);
+            templateFound = true;
+            break;
+          } catch (error) {
+            console.error('❌ Error reading found file:', error.message);
+          }
+        }
+      }
     }
 
-    console.log('📏 Original template size:', html.length, 'chars');
+    // 🔥 HALA BULUNAMADIYSA, detaylı debug bilgisi ver
+    if (!templateFound) {
+      console.error('❌ Template not found after exhaustive search');
+      console.error('📂 Checked paths:');
+      paths.slice(0, 20).forEach(p => console.error('  -', p));
+      console.error('  ... and', paths.length - 20, 'more paths');
 
+      // Dizinleri listele
+      console.error('\n📁 Available directories:');
+      this.listDirectories(process.cwd(), 2);
+
+      throw new Error(`Template file not found: ${templateName}. Searched ${paths.length} locations.`);
+    }
+
+    console.log('📏 Template size:', html.length, 'chars');
     // Basic Info
     html = html.replace('{{PROFORMA_NUMBER}}', proforma.proformaNumber);
     html = html.replace('{{DATE}}', new Date(proforma.date).toLocaleDateString('en-US'));
@@ -348,26 +415,19 @@ export class ProformaService {
 
     const hasPhysicianOpinion = proforma.physicianOpinion && proforma.physicianOpinion.trim().length > 0;
     html = html.replace('{{PHYSICIAN_OPINION_DISPLAY}}', hasPhysicianOpinion ? 'block' : 'none');
-
-    if (hasPhysicianOpinion) {
-      console.log('📝 Physician Opinion length:', proforma.physicianOpinion.length, 'chars');
-    }
-
     html = html.replace('{{PHYSICIAN_OPINION}}', this.escapeHtml(proforma.physicianOpinion || ''));
 
     // Treatment Items
-    console.log('💊 Treatment items count:', proforma.treatmentItems?.length || 0);
-
     const treatmentRows = proforma.treatmentItems
       .map((item) => `
-      <tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.procedure)}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(proforma.physicianDepartment || '-')}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.visitType)}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 10.5px; min-width: 140px;">${this.escapeHtml(item.estimatedCost)}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.notes || '')}</td>
-      </tr>
-    `)
+    <tr>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.procedure)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(proforma.physicianDepartment || '-')}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.visitType)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 10.5px; min-width: 140px;">${this.escapeHtml(item.estimatedCost)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.notes || '')}</td>
+    </tr>
+  `)
       .join('');
     html = html.replace('{{TREATMENT_ITEMS}}', treatmentRows);
 
@@ -378,8 +438,6 @@ export class ProformaService {
     // Services Included
     const hasServices = proforma.servicesIncluded && proforma.servicesIncluded.length > 0;
     html = html.replace('{{SERVICES_DISPLAY}}', hasServices ? 'block' : 'none');
-
-    console.log('🎁 Services included count:', proforma.servicesIncluded?.length || 0);
 
     if (hasServices) {
       const servicesList = proforma.servicesIncluded
@@ -404,17 +462,77 @@ export class ProformaService {
     html = html.replace('{{HOSPITAL_PHONE}}', this.escapeHtml(proforma.hospitalPhone || '-'));
     html = html.replace('{{HOSPITAL_EMAIL}}', this.escapeHtml(proforma.hospitalEmail || '-'));
 
-    console.log('📏 Final HTML size:', html.length, 'chars');
-
-    // Check for remaining placeholders
-    const remainingPlaceholders = html.match(/{{[A-Z_]+}}/g);
-    if (remainingPlaceholders && remainingPlaceholders.length > 0) {
-      console.warn('⚠️ Unfilled placeholders found:', remainingPlaceholders);
-    }
-
-    console.log('✅ HTML placeholders replaced successfully');
+    console.log('✅ HTML generated successfully');
 
     return html;
+  }
+
+  /**
+   * 🔥 Recursive file search
+   */
+  private recursiveSearch(dir: string, filename: string, maxDepth: number): string | null {
+    if (maxDepth <= 0) return null;
+
+    try {
+      const files = fs.readdirSync(dir);
+
+      for (const file of files) {
+        const fullPath = path.join(dir, file);
+
+        try {
+          const stat = fs.statSync(fullPath);
+
+          if (stat.isFile() && file === filename) {
+            return fullPath;
+          }
+
+          if (stat.isDirectory() && !file.startsWith('.') && file !== 'node_modules') {
+            const found = this.recursiveSearch(fullPath, filename, maxDepth - 1);
+            if (found) return found;
+          }
+        } catch (error) {
+          // Skip inaccessible files/dirs
+          continue;
+        }
+      }
+    } catch (error) {
+      // Skip inaccessible directories
+      return null;
+    }
+
+    return null;
+  }
+
+  /**
+   * 🔥 List directories for debugging
+   */
+  private listDirectories(dir: string, maxDepth: number, indent: string = ''): void {
+    if (maxDepth <= 0) return;
+
+    try {
+      const items = fs.readdirSync(dir);
+
+      for (const item of items) {
+        if (item.startsWith('.') || item === 'node_modules') continue;
+
+        const fullPath = path.join(dir, item);
+
+        try {
+          const stat = fs.statSync(fullPath);
+
+          if (stat.isDirectory()) {
+            console.error(`${indent}📁 ${item}`);
+            this.listDirectories(fullPath, maxDepth - 1, indent + '  ');
+          } else if (item.endsWith('.html')) {
+            console.error(`${indent}📄 ${item}`);
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+    } catch (error) {
+      // Skip
+    }
   }
 
   /**
