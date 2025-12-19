@@ -9,7 +9,8 @@ import {
   Query,
   Res,
   HttpStatus,
-  Request
+  Request,
+  ForbiddenException
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ProformaService } from '../services/proforma.service';
@@ -43,13 +44,33 @@ export class ProformaController {
     });
   }
 
-    /**
-   * HTML Preview endpoint - DEBUG İÇİN ÖNEMLİ!
+  /**
+   * HTML Preview endpoint - İNDİRME İZNİ KONTROLÜ İLE
    */
-  @Get(':id/preview')
-  async getHTMLPreview(@Param('id') id: string, @Res() res: Response) {
+  @Get(':id/preview/:uuid')
+  async getHTMLPreview(
+    @Param('id') id: string, 
+    @Param('uuid') uuid: any, 
+    @Res() res: Response,
+  ) {
     try {
-      
+      const proforma = await this.proformaService.findOne(+id);
+    
+
+      // ✅ İndirme izni kontrolü
+      const canDownload = await this.proformaService.canUserDownloadProforma(
+        proforma,
+        uuid
+      );
+ 
+
+      if (!canDownload) {
+        return res.status(HttpStatus.FORBIDDEN).json({
+          message: 'Bu proformayı indirme yetkiniz yok. Lütfen onay bekleyin.',
+          error: 'Forbidden',
+        });
+      }
+
       const html = await this.proformaService.generateHTMLPreview(+id);
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
@@ -60,9 +81,6 @@ export class ProformaController {
       });
     }
   }
-
-
-
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
@@ -82,6 +100,25 @@ export class ProformaController {
     return await this.proformaService.update(+id, updateProformaDto);
   }
 
+  /**
+   * ✅ İndirme onayı verme endpoint'i
+   */
+  @Patch(':id/approve-download')
+  async approveDownload(
+    @Param('id') id: string,
+    @CurrentUserId() userId: number,
+  ) {
+    return await this.proformaService.approveDownload(+id, userId);
+  }
+
+  /**
+   * ✅ İndirme onayını iptal etme endpoint'i
+   */
+  @Patch(':id/revoke-download')
+  async revokeDownload(@Param('id') id: string) {
+    return await this.proformaService.revokeDownload(+id);
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.proformaService.remove(+id);
@@ -92,7 +129,4 @@ export class ProformaController {
   async getProformaFromSale(@Param('saleId') saleId: string) {
     return await this.proformaService.getProformaDataFromSale(+saleId);
   }
-
- 
- 
 }

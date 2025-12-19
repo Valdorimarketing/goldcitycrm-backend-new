@@ -45,8 +45,7 @@ export class BranchController {
   @ApiOperation({ summary: 'Get all branches with pagination and search' })
   @ApiResponse({ status: 200, description: 'Branches retrieved successfully' })
   async findAll(@Query() query: BranchQueryFilterDto) {
-    const queryBuilder = await this.branchService.findByFiltersBaseQuery(query);
-    return this.branchService.paginate(queryBuilder, query, Branch);
+    return this.branchService.findAllPaginated(query);
   }
 
   @Get(':id')

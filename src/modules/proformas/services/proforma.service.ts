@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Proforma } from '../entities/proforma.entity';
@@ -6,12 +6,16 @@ import { CreateProformaDto } from '../dto/create.proforma.dto';
 import { UpdateProformaDto } from '../dto/update.proforma.dto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { User } from 'src/modules/user/entities/user.entity';
 
 @Injectable()
 export class ProformaService {
   constructor(
     @InjectRepository(Proforma)
     private readonly proformaRepository: Repository<Proforma>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) { }
 
   /**
@@ -37,17 +41,107 @@ export class ProformaService {
   /**
    * Create new proforma
    */
-  /**
-   * Create new proforma
-   */
   async create(createProformaDto: CreateProformaDto, userId: number): Promise<Proforma> {
     const proformaNumber = await this.generateProformaNumber();
+
+    // ✅ Estimated Cost'ları topla ve Grand Total'ı hesapla
+    let calculatedGrandTotal = 0;
+    if (createProformaDto.treatmentItems && createProformaDto.treatmentItems.length > 0) {
+      calculatedGrandTotal = createProformaDto.treatmentItems.reduce((sum, item) => {
+        // Örnek: "24.000 USD" veya "24000" formatını parse et
+        const cost = this.parseEstimatedCost(item.estimatedCost);
+        return sum + cost;
+      }, 0);
+    }
+
+    // ✅ Eğer manuel grand total girilmişse onu kullan, yoksa hesaplanan değeri kullan
+    const finalGrandTotal = createProformaDto.grandTotal || calculatedGrandTotal;
 
     const proforma = this.proformaRepository.create({
       ...createProformaDto,
       proformaNumber,
-      created_by: userId, // ✅ İlişki değil, direkt column kullan
+      grandTotal: finalGrandTotal,
+      created_by: userId,
     });
+
+    return await this.proformaRepository.save(proforma);
+  }
+
+  /**
+   * ✅ Estimated Cost string'ini sayıya çevir
+   * Örnek: "24.000 USD" -> 24000
+   * Örnek: "24,000.50 EUR" -> 24000.5
+   */
+  private parseEstimatedCost(costString: string): number {
+    if (!costString) return 0;
+
+    // Sayı olmayan karakterleri temizle (para birimi, nokta, virgül)
+    const cleaned = costString
+      .replace(/[A-Z₺$€£]/gi, '') // Para birimi sembolleri
+      .replace(/\./g, '') // Bin ayırıcı nokta
+      .replace(/,/g, '.') // Virgülü noktaya çevir
+      .trim();
+
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  /**
+   * ✅ İndirme izni kontrolü
+   * - Admin ve doctor rolleri her zaman indirebilir
+   * - User rolü sadece downloadApproved=true ise indirebilir
+   * @param proforma - Kontrol edilecek proforma
+   * @param userId - Kullanıcının ID'si
+   * @returns boolean - İndirme izni var mı?
+   */
+  async canUserDownloadProforma(proforma: Proforma, userId: number): Promise<boolean> {
+    if (!userId) return false;
+
+    // User'ı ID ile database'den çek
+    const user = await this.userRepository.findOne({
+      where: { id: userId }
+    });
+
+    if (!user) return false;
+
+    const userRole = user.role?.toLowerCase();
+
+
+    // Admin ve doctor her zaman indirebilir
+    if (userRole === 'admin' || userRole === 'doctor') {
+      return true;
+    }
+
+    // User rolü için onay kontrolü
+    if (userRole === 'user') {
+      return proforma.downloadApproved === true;
+    }
+
+    return false;
+  }
+
+  /**
+   * ✅ İndirme onayı ver (sadece admin ve doctor yapabilir)
+   */
+  async approveDownload(id: number, approverId: number): Promise<Proforma> {
+    const proforma = await this.findOne(id);
+
+    proforma.downloadApproved = true;
+    proforma.approvedBy = approverId;
+    proforma.approvedAt = new Date();
+
+    return await this.proformaRepository.save(proforma);
+  }
+
+  /**
+   * ✅ İndirme onayını iptal et
+   */
+  async revokeDownload(id: number): Promise<Proforma> {
+    const proforma = await this.findOne(id);
+
+    proforma.downloadApproved = false;
+    proforma.approvedBy = null;
+    proforma.approvedAt = null;
 
     return await this.proformaRepository.save(proforma);
   }
@@ -74,8 +168,8 @@ export class ProformaService {
     const query = this.proformaRepository
       .createQueryBuilder('proforma')
       .leftJoinAndSelect('proforma.createdBy', 'createdBy')
+      .leftJoinAndSelect('proforma.approver', 'approver')
       .orderBy('proforma.createdAt', 'DESC');
-
 
     if (filters?.status) {
       query.andWhere('proforma.status = :status', { status: filters.status });
@@ -106,7 +200,7 @@ export class ProformaService {
   async findOne(id: number): Promise<Proforma> {
     const proforma = await this.proformaRepository.findOne({
       where: { id },
-      relations: ['createdBy'], // ✅ Bu satırı ekle
+      relations: ['createdBy', 'approver'],
     });
 
     if (!proforma) {
@@ -137,6 +231,19 @@ export class ProformaService {
   async update(id: number, updateProformaDto: UpdateProformaDto): Promise<Proforma> {
     const proforma = await this.findOne(id);
 
+    // ✅ Eğer treatmentItems güncelleniyorsa, grand total'ı yeniden hesapla
+    if (updateProformaDto.treatmentItems) {
+      const calculatedGrandTotal = updateProformaDto.treatmentItems.reduce((sum, item) => {
+        const cost = this.parseEstimatedCost(item.estimatedCost);
+        return sum + cost;
+      }, 0);
+
+      // Manuel grand total girilmemişse hesaplanan değeri kullan
+      if (!updateProformaDto.grandTotal) {
+        updateProformaDto.grandTotal = calculatedGrandTotal;
+      }
+    }
+
     Object.assign(proforma, updateProformaDto);
 
     return await this.proformaRepository.save(proforma);
@@ -154,8 +261,6 @@ export class ProformaService {
    * Get proforma data from patient and sale
    */
   async getProformaDataFromSale(saleId: number): Promise<any> {
-    // This would integrate with your existing patient and sales modules
-    // For now, returning a structure with new fields
     return {
       patientId: null,
       patientName: null,
@@ -168,7 +273,7 @@ export class ProformaService {
       treatmentItems: [],
       grandTotal: 0,
       currency: 'USD',
-      // Bank defaults
+      language: 'tr',
       bankName: 'DENİZ BANK',
       receiverName: 'Samsun Medikal Grup Özel Sağlık Hizmetleri A.Ş. Vadi Branch',
       branchName: 'AVRUPA KURUMSAL, Istanbul – Turkey',
@@ -180,23 +285,23 @@ export class ProformaService {
   }
 
   /**
-   * Generate HTML for PDF
+   * Generate HTML for PDF - WITH LANGUAGE SUPPORT
    */
-
-
-  /**
- * Generate HTML for PDF - WITH DEBUG INFO
- */
- private async generateHTML(proforma: Proforma): Promise<string> {
+  private async generateHTML(proforma: Proforma): Promise<string> {
     let html: string;
 
+    // ✅ Dil bazlı template seçimi
+    const templateName = proforma.language === 'en'
+      ? 'proforma-template-en.html'
+      : 'proforma-template.html';
+
     const paths = [
-      path.join(__dirname, '../templates/proforma-template.html'),
-      path.join(__dirname, '../../templates/proforma-template.html'),
-      path.join(__dirname, '../../../templates/proforma-template.html'),
-      path.join(process.cwd(), 'dist/templates/proforma-template.html'),
-      path.join(process.cwd(), 'templates/proforma-template.html'),
-      path.join(process.cwd(), 'src/templates/proforma-template.html'),
+      path.join(__dirname, `../templates/${templateName}`),
+      path.join(__dirname, `../../templates/${templateName}`),
+      path.join(__dirname, `../../../templates/${templateName}`),
+      path.join(process.cwd(), `dist/templates/${templateName}`),
+      path.join(process.cwd(), `templates/${templateName}`),
+      path.join(process.cwd(), `src/templates/${templateName}`),
     ];
 
     let templateFound = false;
@@ -250,7 +355,7 @@ export class ProformaService {
 
     html = html.replace('{{PHYSICIAN_OPINION}}', this.escapeHtml(proforma.physicianOpinion || ''));
 
-    // Treatment Items - ✅ Doğru sıralama: Procedure, Physician Department, Visit Type, Estimated Cost, Notes
+    // Treatment Items
     console.log('💊 Treatment items count:', proforma.treatmentItems?.length || 0);
 
     const treatmentRows = proforma.treatmentItems
@@ -268,7 +373,7 @@ export class ProformaService {
 
     // Grand Total
     const grandTotalValue = this.toNumber(proforma.grandTotal);
-    html = html.replace('{{GRAND_TOTAL}}', `${proforma.currency} ${grandTotalValue.toFixed(2)}`);
+    html = html.replace('{{GRAND_TOTAL}}', `${grandTotalValue.toFixed(2)} ${proforma.currency}`);
 
     // Services Included
     const hasServices = proforma.servicesIncluded && proforma.servicesIncluded.length > 0;
@@ -311,8 +416,6 @@ export class ProformaService {
 
     return html;
   }
-
-
 
   /**
    * Helper: Safely convert to number

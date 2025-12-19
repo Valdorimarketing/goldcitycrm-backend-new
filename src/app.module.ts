@@ -47,6 +47,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SalesSheetSyncModule } from './modules/sales-sheet-sync/sync.module';
 import { HealthController } from './modules/system/health.controller';
 import { ProformaModule } from './modules/proformas/proforma.module';
+import { LanguageModule } from './modules/language/language.module';
 
 @Module({
   imports: [
@@ -107,7 +108,8 @@ import { ProformaModule } from './modules/proformas/proforma.module';
     EventEmitterModule.forRoot(),
     WhatConvertsModule,
     SalesSheetSyncModule,
-    ProformaModule
+    ProformaModule,
+    LanguageModule
   ],
   controllers: [AppController, HealthController],
   providers: [
