@@ -6,6 +6,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { UserService } from './modules/user/services/user.service';
 import { UpdateLastActiveInterceptor } from './core/middleware/update-last-active.middleware';
+import { AllExceptionsFilter } from './core/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -49,6 +50,8 @@ async function bootstrap() {
       operationsSorter: 'alpha',
     },
   });
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // CORS ayarları
   app.enableCors({

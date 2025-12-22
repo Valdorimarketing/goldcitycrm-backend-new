@@ -15,14 +15,17 @@ export class Branch extends CustomBaseEntity {
   description: string;
 
   @OneToMany(() => Branch2Hospital, (branch2Hospital) => branch2Hospital.branch)
+  @Expose()
   branch2Hospitals: Branch2Hospital[];
 
   @OneToMany(() => BranchTranslation, (translation) => translation.branch, {
     cascade: true,
     eager: false,
   })
+  @Expose()  // ✅ ÖNEMLİ: Bu eksikti!
   translations: BranchTranslation[];
 
   // Virtual property for current language name
+  @Expose()
   name?: string;
 }

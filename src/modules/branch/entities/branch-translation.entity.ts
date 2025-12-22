@@ -2,17 +2,21 @@ import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { CustomBaseEntity } from '../../../core/base/entities/base.entity';
 import { Branch } from './branch.entity';
 import { Language } from '../../language/entities/language.entity';
+import { Expose } from 'class-transformer';
 
 @Entity('branch_translations')
 @Index(['branchId', 'languageId'], { unique: true })
 export class BranchTranslation extends CustomBaseEntity {
   @Column({ name: 'branch_id' })
+  @Expose()
   branchId: number;
 
   @Column({ name: 'language_id' })
+  @Expose()
   languageId: number;
 
   @Column({ type: 'varchar', length: 255 })
+  @Expose()
   name: string;
 
   @ManyToOne(() => Branch, (branch) => branch.translations, {
@@ -23,5 +27,6 @@ export class BranchTranslation extends CustomBaseEntity {
 
   @ManyToOne(() => Language, { eager: true })
   @JoinColumn({ name: 'language_id' })
+  @Expose()
   language: Language;
 }
