@@ -138,6 +138,8 @@ export class CustomerController {
 
 
 
+ 
+
   @Get('assignments/today')
   async getTodayAssignments(): Promise<TodayAssignmentDto[]> {
     return this.customerService.getTodayAssignments();
@@ -167,19 +169,17 @@ export class CustomerController {
   }
 
 
+   
+
   @Get('check-phone')
-  @ApiOperation({ summary: 'Check if phone number exists' })
+  @ApiOperation({ summary: 'Check if phone number exists or similar numbers' })
   @ApiResponse({
     status: 200,
-    description: 'Phone check result',
-    type: CheckPhoneResponseDto,
+    description: 'Phone check result with similar matches',
   })
-  async checkPhone(@Query('phone') phone: string): Promise<CheckPhoneResponseDto> {
-    const exists = await this.customerService.checkPhoneExists(phone);
-    return {
-      exists,
-      phone,
-    };
+  async checkPhoneCheck(@Query('phone') phone: string): Promise<any> {
+    const result = await this.customerService.checkPhoneWithSimilar(phone);
+    return result;
   }
 
   @Get('export')
