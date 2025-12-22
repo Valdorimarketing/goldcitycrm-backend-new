@@ -157,12 +157,34 @@ export class ProformaService {
   /**
    * Get all proformas with filters
    */
+
+
+
+  // ============================================================
+  // PROFORMA SERVICE GÜNCELLEMESI
+  // ============================================================
+  // Dosya: src/modules/proforma/services/proforma.service.ts
+  // 
+  // Aşağıdaki findAll metodunu mevcut proforma.service.ts dosyanızdaki
+  // findAll metodunun yerine kopyalayın
+  // ============================================================
+
+  /**
+   * Get all proformas with filters
+   */
   async findAll(filters?: {
     status?: string;
     patientId?: number;
     saleId?: number;
     startDate?: Date;
     endDate?: Date;
+    proformaNumber?: string;
+    patientName?: string;
+    createdBy?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    currency?: string;
+    downloadApproved?: boolean;
   }): Promise<Proforma[]> {
 
     const query = this.proformaRepository
@@ -189,6 +211,49 @@ export class ProformaService {
 
     if (filters?.endDate) {
       query.andWhere('proforma.date <= :endDate', { endDate: filters.endDate });
+    }
+
+    // ✅ Proforma numarasına göre filtreleme (LIKE ile kısmi eşleşme)
+    if (filters?.proformaNumber) {
+      query.andWhere('proforma.proforma_number LIKE :proformaNumber', {
+        proformaNumber: `%${filters.proformaNumber}%`
+      });
+    }
+
+    // ✅ Hasta adına göre filtreleme (LIKE ile kısmi eşleşme)
+    if (filters?.patientName) {
+      query.andWhere('proforma.patient_name LIKE :patientName', {
+        patientName: `%${filters.patientName}%`
+      });
+    }
+
+    // ✅ Oluşturan kişiye göre filtreleme (isim ile LIKE)
+    if (filters?.createdBy) {
+      query.andWhere('createdBy.name LIKE :createdBy', {
+        createdBy: `%${filters.createdBy}%`
+      });
+    }
+
+    // ✅ Minimum tutara göre filtreleme
+    if (filters?.minAmount !== undefined && filters?.minAmount !== null) {
+      query.andWhere('proforma.grand_total >= :minAmount', { minAmount: filters.minAmount });
+    }
+
+    // ✅ Maximum tutara göre filtreleme
+    if (filters?.maxAmount !== undefined && filters?.maxAmount !== null) {
+      query.andWhere('proforma.grand_total <= :maxAmount', { maxAmount: filters.maxAmount });
+    }
+
+    // ✅ Para birimine göre filtreleme
+    if (filters?.currency) {
+      query.andWhere('proforma.currency = :currency', { currency: filters.currency });
+    }
+
+    // ✅ İndirme onayına göre filtreleme
+    if (filters?.downloadApproved !== undefined && filters?.downloadApproved !== null) {
+      query.andWhere('proforma.download_approved = :downloadApproved', {
+        downloadApproved: filters.downloadApproved
+      });
     }
 
     return await query.orderBy('proforma.created_at', 'DESC').getMany();
@@ -244,6 +309,8 @@ export class ProformaService {
       }
     }
 
+    updateProformaDto.downloadApproved = false;
+
     Object.assign(proforma, updateProformaDto);
 
     return await this.proformaRepository.save(proforma);
@@ -296,7 +363,7 @@ export class ProformaService {
 
     // ✅ Dil bazlı template seçimi
     const templateName = "proforma-template.html";
- 
+
 
     // 🔥 Path kombinasyonları - HER OLASI YER
     const basePaths = [

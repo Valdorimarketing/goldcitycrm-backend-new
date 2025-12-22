@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository } from 'typeorm';
 import { BaseRepositoryAbstract } from '../../../core/base/repositories/base.repository.abstract';
 import { Branch } from '../entities/branch.entity';
 import { BranchQueryFilterDto } from '../dto/branch-query-filter.dto';
@@ -14,8 +14,6 @@ export class BranchRepository extends BaseRepositoryAbstract<Branch> {
     super(branchRepository);
   }
 
-
-
   async findAllPaginated(
     filters: BranchQueryFilterDto,
   ): Promise<{ items: Branch[]; total: number }> {
@@ -23,15 +21,35 @@ export class BranchRepository extends BaseRepositoryAbstract<Branch> {
 
     const queryBuilder = this.branchRepository
       .createQueryBuilder('branch')
+      // ✅ EXPLICIT JOIN - naming strategy sorununu çözer
+      .leftJoin('branch.translations', 'translations')
+      .leftJoin('translations.language', 'language')
       .leftJoin(
         'branch.translations',
-        'translation',
-        'translation.languageId = :languageId',
+        'currentTranslation',
+        'currentTranslation.languageId = :languageId',
         { languageId },
       )
-      .leftJoinAndSelect('branch.branch2Hospitals', 'branch2Hospitals')
-      .leftJoinAndSelect('branch2Hospitals.hospital', 'hospital')
-      .addSelect('translation.name', 'branch_name');
+      .leftJoin('branch.branch2Hospitals', 'branch2Hospitals')
+      .leftJoin('branch2Hospitals.hospital', 'hospital')
+      // ✅ MANUALLY SELECT - translations'ı almak için
+      .addSelect([
+        'translations.id',
+        'translations.branchId',
+        'translations.languageId',
+        'translations.name',
+        'language.id',
+        'language.code',
+        'language.name',
+        'currentTranslation.name',
+        'branch2Hospitals.id',
+        'branch2Hospitals.hospitalId',
+        'branch2Hospitals.branchId',
+        'hospital.id',
+        'hospital.name',
+        'hospital.code',
+        'hospital.address',
+      ]);
 
     // Apply pagination
     if (filters.page && filters.limit) {
@@ -56,47 +74,25 @@ export class BranchRepository extends BaseRepositoryAbstract<Branch> {
     // Search functionality
     if (filters.search) {
       queryBuilder.andWhere(
-        '(translation.name LIKE :search OR branch.code LIKE :search OR branch.description LIKE :search)',
+        '(currentTranslation.name LIKE :search OR branch.code LIKE :search OR branch.description LIKE :search)',
         { search: `%${filters.search}%` },
       );
     }
 
-    // Get raw and entities
-    const rawAndEntities = await queryBuilder.getRawAndEntities();
+    // Get results
+    const [items, total] = await queryBuilder.getManyAndCount();
 
-    // Map translation names to branch entities
-    const items = rawAndEntities.entities.map((branch, index) => {
-      const raw = rawAndEntities.raw[index];
-      branch.name = raw.branch_name || '';
-      return branch;
+    // Map virtual name property
+    items.forEach((branch) => {
+      const currentTrans = branch.translations?.find(
+        (t) => t.languageId === languageId,
+      );
+      if (currentTrans) {
+        branch.name = currentTrans.name;
+      } else {
+        branch.name = branch.translations?.[0]?.name || '';
+      }
     });
-
-    // Get total count
-    const totalQuery = this.branchRepository
-      .createQueryBuilder('branch')
-      .leftJoin(
-        'branch.translations',
-        'translation',
-        'translation.languageId = :languageId',
-        { languageId },
-      )
-      .leftJoin('branch.branch2Hospitals', 'branch2Hospitals');
-
-    // Apply same filters to count query
-    if (filters.hospitalId) {
-      totalQuery.andWhere('branch2Hospitals.hospitalId = :hospitalId', {
-        hospitalId: filters.hospitalId,
-      });
-    }
-
-    if (filters.search) {
-      totalQuery.andWhere(
-        '(translation.name LIKE :search OR branch.code LIKE :search OR branch.description LIKE :search)',
-        { search: `%${filters.search}%` },
-      );
-    }
-
-    const total = await totalQuery.getCount();
 
     return { items, total };
   }
@@ -108,20 +104,38 @@ export class BranchRepository extends BaseRepositoryAbstract<Branch> {
     const queryBuilder = this.branchRepository
       .createQueryBuilder('branch')
       .where('branch.id = :id', { id })
-      .leftJoinAndSelect('branch.branch2Hospitals', 'branch2Hospitals')
-      .leftJoinAndSelect('branch2Hospitals.hospital', 'hospital');
+      .leftJoin('branch.translations', 'translations')
+      .leftJoin('translations.language', 'language')
+      .leftJoin('branch.branch2Hospitals', 'branch2Hospitals')
+      .leftJoin('branch2Hospitals.hospital', 'hospital')
+      .addSelect([
+        'translations.id',
+        'translations.branchId',
+        'translations.languageId',
+        'translations.name',
+        'language.id',
+        'language.code',
+        'language.name',
+        'branch2Hospitals.id',
+        'branch2Hospitals.hospitalId',
+        'branch2Hospitals.branchId',
+        'hospital.id',
+        'hospital.name',
+        'hospital.code',
+        'hospital.address',
+      ]);
 
-    if (languageId) {
-      queryBuilder.leftJoinAndSelect(
-        'branch.translations',
-        'translation',
-        'translation.languageId = :languageId',
-        { languageId },
+    const result = await queryBuilder.getOne();
+
+    if (result && languageId) {
+      const currentTrans = result.translations?.find(
+        (t) => t.languageId === languageId,
       );
-    } else {
-      queryBuilder.leftJoinAndSelect('branch.translations', 'translation');
+      if (currentTrans) {
+        result.name = currentTrans.name;
+      }
     }
 
-    return queryBuilder.getOne();
+    return result;
   }
 }

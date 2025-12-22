@@ -1,31 +1,43 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
   Res,
   HttpStatus,
-  Request,
-  ForbiddenException
+  UseGuards
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ProformaService } from '../services/proforma.service';
 import { CreateProformaDto } from '../dto/create.proforma.dto';
 import { UpdateProformaDto } from '../dto/update.proforma.dto';
 import { CurrentUserId } from 'src/core/decorators/current-user.decorator';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 
 @Controller('proformas')
 export class ProformaController {
-  constructor(private readonly proformaService: ProformaService) {}
+  constructor(private readonly proformaService: ProformaService) { }
 
+  
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() createProformaDto: CreateProformaDto, @CurrentUserId() userId) {
     return await this.proformaService.create(createProformaDto, userId);
   }
+
+
+  // ============================================================
+  // PROFORMA CONTROLLER GÜNCELLEMESI
+  // ============================================================
+  // Dosya: src/modules/proforma/controllers/proforma.controller.ts
+  // 
+  // Aşağıdaki @Get() endpoint'ini mevcut proforma.controller.ts dosyanızdaki
+  // findAll metodunun yerine kopyalayın
+  // ============================================================
 
   @Get()
   async findAll(
@@ -34,6 +46,13 @@ export class ProformaController {
     @Query('saleId') saleId?: number,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('proformaNumber') proformaNumber?: string,
+    @Query('patientName') patientName?: string,
+    @Query('createdBy') createdBy?: string,
+    @Query('minAmount') minAmount?: number,
+    @Query('maxAmount') maxAmount?: number,
+    @Query('currency') currency?: string,
+    @Query('downloadApproved') downloadApproved?: string,
   ) {
     return await this.proformaService.findAll({
       status,
@@ -41,28 +60,37 @@ export class ProformaController {
       saleId,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
+      proformaNumber,
+      patientName,
+      createdBy,
+      minAmount: minAmount ? +minAmount : undefined,
+      maxAmount: maxAmount ? +maxAmount : undefined,
+      currency,
+      downloadApproved: downloadApproved !== undefined ? downloadApproved === 'true' : undefined,
     });
   }
+
+
 
   /**
    * HTML Preview endpoint - İNDİRME İZNİ KONTROLÜ İLE
    */
   @Get(':id/preview/:uuid')
   async getHTMLPreview(
-    @Param('id') id: string, 
-    @Param('uuid') uuid: any, 
+    @Param('id') id: string,
+    @Param('uuid') uuid: any,
     @Res() res: Response,
   ) {
     try {
       const proforma = await this.proformaService.findOne(+id);
-    
+
 
       // ✅ İndirme izni kontrolü
       const canDownload = await this.proformaService.canUserDownloadProforma(
         proforma,
         uuid
       );
- 
+
 
       if (!canDownload) {
         return res.status(HttpStatus.FORBIDDEN).json({

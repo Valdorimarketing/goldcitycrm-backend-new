@@ -32,7 +32,7 @@ export class MeetingRepository extends BaseRepositoryAbstract<Meeting> {
 
   async findByUser(user: number): Promise<Meeting[]> {
     return this.getRepository().find({
-      where: { user },
+      where: { user: user },
       relations: ['customerData', 'salesProduct', 'hospital', 'doctor', 'branch', 'meetingStatus'],
     });
   }
