@@ -236,7 +236,21 @@ export class CustomerController {
     status: 200,
     description: 'Customers retrieved successfully',
   })
-  async findAll(@Query() query: CustomerQueryFilterDto) {
+  async findAll(@Query() query: any) {
+
+   if(query){
+    if(query.page){
+      query.page = Number(query.page);
+    }
+    if(query.limit){
+      query.limit = Number(query.limit);
+    }
+
+    if(query.hasRelevantUser){
+      query.hasRelevantUser = query.hasRelevantUser == 'false' ? false : true;
+    }
+   }
+   
     const queryBuilder =
       await this.customerService.findByFiltersBaseQuery(query);
     return this.customerService.paginate(queryBuilder, query, Customer);

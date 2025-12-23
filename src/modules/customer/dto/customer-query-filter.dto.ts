@@ -91,17 +91,7 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   @IsBoolean()
   isPricing?: boolean;
 
-  @ApiPropertyOptional({
-    description:
-      'Filter by whether relevant_user is filled or empty. true: has relevant_user (NOT NULL), false: no relevant_user (IS NULL)',
-    example: true,
-  })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
   @IsBoolean()
   hasRelevantUser?: boolean;
 
