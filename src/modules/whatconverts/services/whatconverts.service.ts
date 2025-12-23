@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class WhatConvertsService {
   private readonly logger = new Logger(WhatConvertsService.name);
-  
+
   // Varsayılan mapping config - .env veya DB'den alınabilir
   private mappingConfig: LeadMappingConfig = {
     defaultStatusId: 1,      // "Yeni" status ID
@@ -87,10 +87,10 @@ export class WhatConvertsService {
     webhookIp?: string,
   ): Promise<WebhookResponseDto> {
     const startTime = Date.now();
-    
+
     // Lead verisini çıkar (wrapper varsa veya direkt geldiyse)
     const leadData = this.extractLeadData(payload);
-    
+
     if (!leadData || !leadData.lead_id) {
       this.logger.error('Invalid webhook payload: missing lead_id');
       throw new BadRequestException('Invalid webhook payload: missing lead_id');
@@ -123,7 +123,7 @@ export class WhatConvertsService {
         log.status = WebhookLogStatus.SPAM;
         log.message = 'Lead marked as spam, skipped';
         await this.saveLog(log, startTime);
-        
+
         return this.createResponse(false, 'Lead skipped (spam)', leadData.lead_id, 'skipped');
       }
 
@@ -132,7 +132,7 @@ export class WhatConvertsService {
         log.status = WebhookLogStatus.DUPLICATE;
         log.message = 'Lead marked as duplicate by WhatConverts, skipped';
         await this.saveLog(log, startTime);
-        
+
         return this.createResponse(false, 'Lead skipped (duplicate)', leadData.lead_id, 'skipped');
       }
 
@@ -199,7 +199,7 @@ export class WhatConvertsService {
 
     } catch (error) {
       this.logger.error(`❌ Error processing lead ${leadData.lead_id}: ${error.message}`, error.stack);
-      
+
       log.status = WebhookLogStatus.ERROR;
       log.message = 'Error processing webhook';
       log.errorDetail = error.message;
@@ -217,7 +217,7 @@ export class WhatConvertsService {
     if (payload.lead && payload.lead.lead_id) {
       return payload.lead;
     }
-    
+
     // Direkt lead verisi geldiyse
     if (payload.lead_id) {
       return payload;
@@ -231,7 +231,7 @@ export class WhatConvertsService {
    */
   private normalizeLeadType(leadType: string): string {
     if (!leadType) return 'other';
-    
+
     const typeMap: Record<string, string> = {
       'Phone Call': 'phone_call',
       'Web Form': 'web_form',
@@ -252,34 +252,36 @@ export class WhatConvertsService {
    */
   private normalizePhone(phone: string): string {
     if (!phone) return null;
-    
+
     // Sadece rakamları al
     let cleaned = phone.replace(/\D/g, '');
-    
+
+    if (!cleaned) return null;
+
     // Türkiye numarası kontrolü
     if (cleaned.startsWith('90') && cleaned.length === 12) {
-      return `+${cleaned}`;
+      return cleaned; // 905551234567
     }
-    
+
     if (cleaned.startsWith('0') && cleaned.length === 11) {
-      return `+9${cleaned}`;
+      return `9${cleaned}`; // 05551234567 -> 905551234567
     }
-    
+
     if (cleaned.length === 10 && !cleaned.startsWith('0')) {
-      return `+90${cleaned}`;
+      return `90${cleaned}`; // 5551234567 -> 905551234567
     }
 
     // US/Diğer formatlar
     if (cleaned.startsWith('1') && cleaned.length === 11) {
-      return `+${cleaned}`;
+      return cleaned; // 13057785260
     }
 
-    // Zaten + ile başlıyorsa
-    if (phone.startsWith('+')) {
-      return phone;
+    // 10 haneli US numarası
+    if (cleaned.length === 10) {
+      return `1${cleaned}`; // 3057785260 -> 13057785260
     }
 
-    return phone;
+    return cleaned;
   }
 
   /**
@@ -287,16 +289,16 @@ export class WhatConvertsService {
    */
   private parseName(fullName: string): { name: string; surname: string } {
     if (!fullName) return { name: '', surname: '' };
-    
+
     const parts = fullName.trim().split(' ');
-    
+
     if (parts.length === 1) {
       return { name: parts[0], surname: '' };
     }
-    
+
     const surname = parts.pop();
     const name = parts.join(' ');
-    
+
     return { name, surname };
   }
 
@@ -321,26 +323,26 @@ export class WhatConvertsService {
       surname: surname || '',
       phone: phone,
       email: email,
-      
+
       // Kaynak ve Durum
       sourceId: this.mappingConfig.defaultSourceId,
       status: this.mappingConfig.defaultStatusId,
-      
+
       // URL bilgileri
       url: lead.landing_url || lead.lead_url,
       website: lead.lead_url,
-      
+
       // Konum
       district: lead.city,
       address: [lead.city, lead.state, lead.country].filter(Boolean).join(', '),
-      
+
       // Açıklamalar
       message: message,
       description: description,
-      
+
       // İlgili işlem (kampanya bilgisi)
       relatedTransaction: lead.lead_campaign || lead.lead_source,
-      
+
       // Aktif
       isActive: true,
 
@@ -359,7 +361,7 @@ export class WhatConvertsService {
    */
   private buildLeadMessage(lead: WhatConvertsLead): string {
     const parts: string[] = [];
-    
+
     // Lead tipi
     parts.push(`[${lead.lead_type || 'Lead'}]`);
 
@@ -471,7 +473,7 @@ export class WhatConvertsService {
 
       if (customer) {
         const newNote = `\n\n---\n📥 WhatConverts Lead #${lead.lead_id} (${new Date().toLocaleString('tr-TR')})\n${this.buildLeadMessage(lead)}`;
-        
+
         customer.description = (customer.description || '') + newNote;
         await this.customerRepository.save(customer);
       }
