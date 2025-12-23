@@ -620,7 +620,7 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
 
     // 🔗 Relevant user filled/empty filter
     if (filters.hasRelevantUser !== undefined && filters.hasRelevantUser !== null) {
-      if (filters.hasRelevantUser) {
+      if (filters.hasRelevantUser == true) {
         queryBuilder.andWhere(
           'customer.relevant_user IS NOT NULL AND customer.relevant_user != 0',
         );
@@ -629,10 +629,6 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
           '(customer.relevant_user IS NULL OR customer.relevant_user = 0)',
         );
       }
-    }else{
-        queryBuilder.andWhere(
-          '(customer.relevant_user IS NULL OR customer.relevant_user = 0)',
-        );
     }
 
     // 📆 Date filtering
