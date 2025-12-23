@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: docker/local/api/Dockerfile
-    image: valdoricrmapi:latest
+    # image: valdoricrmapi:latest
     container_name: valdoricrmapi
     stdin_open: true
     tty: true

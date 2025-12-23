@@ -50,6 +50,7 @@ export class CustomerService extends BaseService<Customer> {
     return this.customerRepository.findByFiltersBaseQuery(filters);
   }
 
+
   private async findAvailableDoctorUser() {
     // Role enum'ınıza göre değiştirin
     const doctors = await this.userService.getUsersByRole('doctor');
@@ -594,114 +595,103 @@ export class CustomerService extends BaseService<Customer> {
     return this.remove(id);
   }
 
+
+
  
+  /**
+   * Check if phone exists and find similar phone numbers
+   */
 
-
-
-  // customer.service.ts - Yeni method
-
-/**
- * Normalize phone number - remove all non-digit characters
- * +90 555 123 4567 -> 905551234567
- * 0555 123 4567 -> 5551234567
- * 555 123 4567 -> 5551234567
- */
-private normalizePhone(phone: string): string {
-  if (!phone) return '';
-  
-  // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-  
-  // Remove leading country code (90) if exists
-  if (digits.startsWith('90') && digits.length === 12) {
-    return digits.substring(2); // 905551234567 -> 5551234567
-  }
-  
-  // Remove leading zero if exists
-  if (digits.startsWith('0') && digits.length === 11) {
-    return digits.substring(1); // 05551234567 -> 5551234567
-  }
-  
-  return digits;
-}
-
-/**
- * Check if phone exists and find similar phone numbers
- */
-async checkPhoneWithSimilar(phone: string): Promise<{
-  exists: boolean;
-  exactMatch: Customer | null;
-  similarMatches: Array<{
-    id: number;
-    name: string;
-    surname: string;
-    phone: string;
-    similarity: 'exact' | 'similar';
-  }>;
-}> {
-  if (!phone || phone.trim().length < 10) {
-    return {
-      exists: false,
-      exactMatch: null,
-      similarMatches: [],
-    };
-  }
-
-  const normalizedInput = this.normalizePhone(phone);
-  
-  // Get all customers with phone numbers
-  const allCustomers = await this.customerRepository.findAll({
-    select: ['id', 'name', 'surname', 'phone'],
-  });
-
-  const exactMatch: Customer | null = null;
-  const similarMatches: any[] = [];
-
-  for (const customer of allCustomers) {
-    if (!customer.phone) continue;
-
-    const normalizedCustomerPhone = this.normalizePhone(customer.phone);
-
-    // Exact match
-    if (normalizedCustomerPhone === normalizedInput) {
+  async checkPhoneWithSimilar(phone: string): Promise<{
+    exists: boolean;
+    exactMatch: Customer | null;
+    similarMatches: Array<{
+      id: number;
+      name: string;
+      surname: string;
+      phone: string;
+      similarity: 'exact' | 'similar';
+    }>;
+  }> {
+    if (!phone || phone.trim().length < 10) {
       return {
-        exists: true,
-        exactMatch: customer,
-        similarMatches: [{
-          id: customer.id,
-          name: customer.name,
-          surname: customer.surname,
-          phone: customer.phone,
-          similarity: 'exact' as const,
-        }],
+        exists: false,
+        exactMatch: null,
+        similarMatches: [],
       };
     }
 
-    // Similar match (last 7 digits match)
-    // Turkish mobile: 5XX XXX XX XX (10 digits)
-    // Match if last 7 digits are the same
-    if (normalizedCustomerPhone.length >= 7 && normalizedInput.length >= 7) {
-      const customerLast7 = normalizedCustomerPhone.slice(-7);
-      const inputLast7 = normalizedInput.slice(-7);
+    // ✅ Normalize edilmiş numara ile ara
+    const normalizedInput = this.normalizePhone(phone);
 
-      if (customerLast7 === inputLast7) {
-        similarMatches.push({
-          id: customer.id,
-          name: customer.name,
-          surname: customer.surname,
-          phone: customer.phone,
-          similarity: 'similar' as const,
-        });
+    // Tüm müşterileri al
+    const allCustomers = await this.customerRepository.findAll({
+      select: ['id', 'name', 'surname', 'phone'],
+    });
+
+    const similarMatches: any[] = [];
+
+    for (const customer of allCustomers) {
+      if (!customer.phone) continue;
+
+      const normalizedCustomerPhone = this.normalizePhone(customer.phone);
+
+      // Exact match
+      if (normalizedCustomerPhone === normalizedInput) {
+        return {
+          exists: true,
+          exactMatch: customer,
+          similarMatches: [{
+            id: customer.id,
+            name: customer.name,
+            surname: customer.surname,
+            phone: customer.phone,
+            similarity: 'exact' as const,
+          }],
+        };
+      }
+
+      // Similar match (last 7 digits)
+      if (normalizedCustomerPhone.length >= 7 && normalizedInput.length >= 7) {
+        const customerLast7 = normalizedCustomerPhone.slice(-7);
+        const inputLast7 = normalizedInput.slice(-7);
+
+        if (customerLast7 === inputLast7) {
+          similarMatches.push({
+            id: customer.id,
+            name: customer.name,
+            surname: customer.surname,
+            phone: customer.phone,
+            similarity: 'similar' as const,
+          });
+        }
       }
     }
+
+    return {
+      exists: similarMatches.length > 0,
+      exactMatch: null,
+      similarMatches,
+    };
   }
 
-  return {
-    exists: similarMatches.length > 0,
-    exactMatch: null,
-    similarMatches,
-  };
-}
+  // ✅ normalizePhone helper'ı ekle
+  private normalizePhone(phone: string): string {
+    if (!phone) return '';
+
+    const digits = phone.replace(/\D/g, '');
+
+    // Türkiye
+    if (digits.startsWith('90') && digits.length === 12) return digits.substring(2);
+    if (digits.startsWith('0') && digits.length === 11) return digits.substring(1);
+    if (digits.length === 10 && !digits.startsWith('0')) return digits;
+
+    // US
+    if (digits.startsWith('1') && digits.length === 11) return digits.substring(1);
+    if (digits.length === 10) return digits;
+
+    return digits;
+  }
 
 
 }

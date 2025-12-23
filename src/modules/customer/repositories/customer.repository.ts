@@ -67,10 +67,11 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
   ): Promise<SelectQueryBuilder<Customer>> {
     const queryBuilder = this.customerRepository.createQueryBuilder('customer')
       .leftJoinAndSelect('customer.source', 'source')
-      .leftJoinAndSelect('customer.statusData', 'statusData')
+      .leftJoinAndSelect('customer.statusData', 'statusData') // ✅ Bu zaten var
       .leftJoinAndSelect('customer.relevantUserData', 'relevantUserData')
       .leftJoinAndSelect('customer.referanceCustomerData', 'referanceCustomerData')
       .orderBy('customer.createdAt', 'DESC');
+
 
     // Kullanıcı admin değilse sadece kendi müşterilerini görsün
     if (user && user.role !== 'admin') {
@@ -130,23 +131,27 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     }
 
     // 🔹 Status-based filters
+
+    // ✅ Status-based filters - statusData alias'ını kullan
     if (filters.isFirst !== undefined && filters.isFirst !== null) {
-      queryBuilder.andWhere('status.is_first = :isFirst', {
+      queryBuilder.andWhere('statusData.is_first = :isFirst', {
         isFirst: filters.isFirst,
       });
     }
 
     if (filters.isDoctor !== undefined && filters.isDoctor !== null) {
-      queryBuilder.andWhere('status.is_doctor = :isDoctor', {
+      queryBuilder.andWhere('statusData.is_doctor = :isDoctor', {
         isDoctor: filters.isDoctor,
       });
     }
 
     if (filters.isPricing !== undefined && filters.isPricing !== null) {
-      queryBuilder.andWhere('status.is_pricing = :isPricing', {
+      queryBuilder.andWhere('statusData.is_pricing = :isPricing', {
         isPricing: filters.isPricing,
       });
     }
+
+
 
     // 🔗 Relevant user filled/empty filter
     if (filters.hasRelevantUser !== undefined && filters.hasRelevantUser !== null) {
@@ -546,37 +551,34 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
   ): Promise<SelectQueryBuilder<Customer>> {
     const queryBuilder = await super.findByFiltersBaseQuery(filters);
 
-    // 🧩 SOURCE RELATION & FILTER 
+    // 🧩 RELATIONS
     queryBuilder.leftJoinAndSelect('customer.source', 'source');
     queryBuilder.leftJoinAndSelect('customer.relevantUserData', 'relevantUserData');
-    queryBuilder.leftJoinAndSelect('customer.statusData', 'statusData');
+    queryBuilder.leftJoinAndSelect('customer.statusData', 'statusData'); // ✅ Zaten bu var
 
     // 🔍 Search filter
     if (filters.search) {
       queryBuilder.andWhere(
         `(customer.name LIKE :search 
-      OR customer.id LIKE :search 
-      OR customer.surname LIKE :search 
-      OR customer.email LIKE :search 
-      OR customer.url LIKE :search 
-      OR customer.checkup_package LIKE :search 
-      OR customer.phone LIKE :search 
-      OR customer.identity_number LIKE :search)`,
+    OR customer.id LIKE :search 
+    OR customer.surname LIKE :search 
+    OR customer.email LIKE :search 
+    OR customer.url LIKE :search 
+    OR customer.checkup_package LIKE :search 
+    OR customer.phone LIKE :search 
+    OR customer.identity_number LIKE :search)`,
         { search: `%${filters.search}%` },
       );
     }
 
     // 🟢 Status filter - Çoklu ID desteği
     if (filters.status !== undefined && filters.status !== null) {
-      const statusValue = String(filters.status); // ✅ String'e çevir
+      const statusValue = String(filters.status);
 
-      // Virgül içeriyorsa çoklu status
       if (statusValue.includes(',')) {
         const statusIds = statusValue.split(',').map(id => parseInt(id.trim(), 10));
         queryBuilder.andWhere('customer.status IN (:...statusIds)', { statusIds });
-      }
-      // Tek status
-      else {
+      } else {
         const statusId = parseInt(statusValue, 10);
         queryBuilder.andWhere('customer.status = :status', { status: statusId });
       }
@@ -596,31 +598,22 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
-    // 🔗 Status table join (only if status-related filters exist)
-    const needsStatusJoin =
-      filters.isFirst !== undefined ||
-      filters.isDoctor !== undefined ||
-      filters.isPricing !== undefined;
-
-    if (needsStatusJoin) {
-      queryBuilder.leftJoin('status', 'status', 'customer.status = status.id');
-    }
-
-    // 🔹 Status-based filters
+    // ✅ DÜZELTME: Artık ekstra JOIN yapmaya gerek yok, statusData zaten var
+    // 🔹 Status-based filters - statusData alias'ını kullan
     if (filters.isFirst !== undefined && filters.isFirst !== null) {
-      queryBuilder.andWhere('status.is_first = :isFirst', {
+      queryBuilder.andWhere('statusData.is_first = :isFirst', {
         isFirst: filters.isFirst,
       });
     }
 
     if (filters.isDoctor !== undefined && filters.isDoctor !== null) {
-      queryBuilder.andWhere('status.is_doctor = :isDoctor', {
+      queryBuilder.andWhere('statusData.is_doctor = :isDoctor', {
         isDoctor: filters.isDoctor,
       });
     }
 
     if (filters.isPricing !== undefined && filters.isPricing !== null) {
-      queryBuilder.andWhere('status.is_pricing = :isPricing', {
+      queryBuilder.andWhere('statusData.is_pricing = :isPricing', {
         isPricing: filters.isPricing,
       });
     }
@@ -636,12 +629,16 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
           '(customer.relevant_user IS NULL OR customer.relevant_user = 0)',
         );
       }
+    }else{
+        queryBuilder.andWhere(
+          '(customer.relevant_user IS NULL OR customer.relevant_user = 0)',
+        );
     }
 
     // 📆 Date filtering
     if (
       filters.dateFilter &&
-      filters.dateFilter !== 'all' && // ✅ AND operatörü
+      filters.dateFilter !== 'all' &&
       (filters.dateFilter !== 'custom' || filters.startDate || filters.endDate)
     ) {
       const now = new Date();
@@ -677,7 +674,6 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
           break;
       }
 
-      // Tarih aralıkları belirlendiyse uygula
       if (startDate || endDate) {
         if (startDate && endDate) {
           queryBuilder.andWhere(
@@ -700,7 +696,7 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
     if (filters.order && (filters.order.toUpperCase() === 'ASC' || filters.order.toUpperCase() === 'DESC')) {
       queryBuilder.orderBy('customer.id', filters.order.toUpperCase() as 'ASC' | 'DESC');
     } else {
-      queryBuilder.orderBy('customer.updatesAt', 'DESC');   // ✅ Doğru
+      queryBuilder.orderBy('customer.updatesAt', 'DESC');
     }
 
     return queryBuilder;
