@@ -7,11 +7,12 @@ import {
   IsNumber,
   ValidateNested,
 } from 'class-validator';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Type, Transform } from 'class-transformer';
 
-class BranchTranslationDto {
+export class BranchTranslationDto {
   @IsNumber()
   @Expose()
+  @Transform(({ value }) => parseInt(value, 10))
   languageId: number;
 
   @IsString()
@@ -43,5 +44,11 @@ export class CreateBranchDto {
   @IsNumber({}, { each: true })
   @IsOptional()
   @Expose()
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map(v => parseInt(v, 10));
+    }
+    return value;
+  })
   hospitalIds?: number[];
 }

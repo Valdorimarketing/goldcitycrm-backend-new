@@ -19,11 +19,40 @@ export class DoctorRepository extends BaseRepositoryAbstract<Doctor> {
   ): Promise<SelectQueryBuilder<Doctor>> {
     const queryBuilder = await super.findByFiltersBaseQuery(filters);
 
-    // Search functionality
+    // ✅ Search functionality
     if (filters.search) {
       queryBuilder.andWhere('doctor.name LIKE :search', {
         search: `%${filters.search}%`,
       });
+    }
+
+    // ✅ Filter by branch ID
+    if (filters.branchId) {
+      queryBuilder.andWhere(
+        '(doctor.branchId = :branchId OR EXISTS (SELECT 1 FROM doctor2branch d2b WHERE d2b.doctor = doctor.id AND d2b.branch = :branchId))',
+        { branchId: filters.branchId }
+      );
+    }
+
+    // ✅ Sorting
+    const sortBy = filters.sortBy || 'createdAt';
+    const sortOrder = filters.sortOrder || 'DESC';
+
+    // Clear default sorting first
+    queryBuilder.orderBy();
+
+    switch (sortBy) {
+      case 'name':
+        queryBuilder.orderBy('doctor.name', sortOrder);
+        break;
+      case 'createdAt':
+        queryBuilder.orderBy('doctor.createdAt', sortOrder);
+        break;
+      case 'updatedAt':
+        queryBuilder.orderBy('doctor.updatesAt', sortOrder);
+        break;
+      default:
+        queryBuilder.orderBy('doctor.createdAt', 'DESC');
     }
 
     return queryBuilder;

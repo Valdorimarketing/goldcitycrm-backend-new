@@ -58,20 +58,40 @@ export class BranchService extends BaseService<Branch> {
     };
   }
 
+
   @LogMethod()
   async createBranch(createBranchDto: CreateBranchDto): Promise<Branch> {
+    console.log('🔍 [createBranch] Received DTO:', JSON.stringify(createBranchDto, null, 2));
+
     const { hospitalIds, translations, ...branchData } = createBranchDto;
 
+    console.log('🔍 [createBranch] Branch data:', branchData);
+    console.log('🔍 [createBranch] Translations:', translations);
+    console.log('🔍 [createBranch] Hospital IDs:', hospitalIds);
+
     const branch = await this.branchRepository.save(branchData);
+    console.log('✅ [createBranch] Branch saved:', branch.id);
 
     // Save translations
     if (translations && translations.length > 0) {
-      const translationEntities = translations.map((t) => ({
-        branchId: branch.id,
-        languageId: t.languageId,
-        name: t.name,
-      }));
-      await this.branchTranslationRepository.saveMany(translationEntities);
+      const translationEntities = translations.map((t) => {
+        console.log('🔍 [createBranch] Mapping translation:', t);
+        return {
+          branchId: branch.id,
+          languageId: t.languageId,
+          name: t.name,
+        };
+      });
+
+      console.log('🔍 [createBranch] Translation entities to save:', translationEntities);
+
+      try {
+        await this.branchTranslationRepository.saveMany(translationEntities);
+        console.log('✅ [createBranch] Translations saved');
+      } catch (error) {
+        console.error('❌ [createBranch] Translation save error:', error);
+        throw error;
+      }
     }
 
     // Save hospital relations
@@ -81,6 +101,7 @@ export class BranchService extends BaseService<Branch> {
         hospitalId,
       }));
       await this.branch2HospitalRepository.saveMany(branch2Hospitals);
+      console.log('✅ [createBranch] Hospital relations saved');
     }
 
     return this.findById(branch.id);

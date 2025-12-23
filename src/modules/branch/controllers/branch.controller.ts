@@ -38,6 +38,7 @@ export class BranchController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async create(@Body() createBranchDto: CreateBranchDto): Promise<Branch> {
+    console.log('📥 Received DTO:', JSON.stringify(createBranchDto, null, 2)); // ✅ Debug log
     return this.branchService.createBranch(createBranchDto);
   }
 
