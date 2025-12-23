@@ -46,7 +46,16 @@ export class DoctorController {
   @ApiResponse({ status: 200, description: 'Doctors retrieved successfully' })
   async findAll(@Query() query: DoctorQueryFilterDto) {
     const queryBuilder = await this.doctorService.findByFiltersBaseQuery(query);
-    queryBuilder.leftJoinAndSelect('doctor.branch', 'branch');
+    
+    queryBuilder
+      .leftJoinAndSelect('doctor.branch', 'branch')
+      .leftJoinAndSelect('branch.translations', 'translations')
+      .leftJoinAndSelect('translations.language', 'language')
+      .leftJoinAndSelect('doctor.doctor2Branches', 'doctor2Branches')
+      .leftJoinAndSelect('doctor2Branches.branch', 'd2b_branch')
+      .leftJoinAndSelect('doctor.doctor2Hospitals', 'doctor2Hospitals')
+      .leftJoinAndSelect('doctor2Hospitals.hospital', 'd2h_hospital');
+    
     return this.doctorService.paginate(queryBuilder, query, Doctor);
   }
 

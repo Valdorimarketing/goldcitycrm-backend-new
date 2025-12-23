@@ -22,11 +22,14 @@ export class Doctor extends CustomBaseEntity {
   branch: Branch;
 
   @OneToMany(() => Doctor2Branch, (doctor2Branch) => doctor2Branch.doctor)
+  @Expose() // ✅ Eklendi
   doctor2Branches: Doctor2Branch[];
 
   @OneToMany(() => Doctor2Hospital, (doctor2Hospital) => doctor2Hospital.doctor)
+  @Expose() // ✅ Eklendi
   doctor2Hospitals: Doctor2Hospital[];
 
   @OneToMany(() => Customer2Doctor, (customer2doctor) => customer2doctor.doctor)
+  @Expose() // ✅ Eklendi
   customer2doctors: Customer2Doctor[];
 }
