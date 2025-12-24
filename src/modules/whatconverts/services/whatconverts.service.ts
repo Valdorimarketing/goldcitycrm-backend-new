@@ -305,6 +305,11 @@ export class WhatConvertsService {
   /**
    * Lead'i Customer DTO'ya dönüştür
    */
+
+
+  /**
+ * Lead'i Customer DTO'ya dönüştür
+ */
   private async mapLeadToCustomer(lead: WhatConvertsLead): Promise<CreateCustomerDto> {
     const { name, surname } = this.parseName(lead.contact_name || lead.caller_name);
     const phone = this.normalizePhone(
@@ -315,8 +320,11 @@ export class WhatConvertsService {
     // Message oluştur (lead tipine göre)
     const message = this.buildLeadMessage(lead);
 
-    // Description oluştur
+    // Description oluştur (additional fields dahil)
     const description = this.buildLeadDescription(lead);
+
+    // ✅ URL'i kısalt (website sütunu için)
+    const websiteUrl = this.truncateUrl(lead.lead_url, 255);
 
     const customerDto: CreateCustomerDto = {
       name: name || 'WC Lead',
@@ -328,9 +336,9 @@ export class WhatConvertsService {
       sourceId: this.mappingConfig.defaultSourceId,
       status: this.mappingConfig.defaultStatusId,
 
-      // URL bilgileri
-      url: lead.landing_url || lead.lead_url,
-      website: lead.lead_url,
+      // URL bilgileri - ✅ KISALTILMIŞ
+      url: this.truncateUrl(lead.landing_url || lead.lead_url, 500), // url sütunu için
+      website: websiteUrl, // website sütunu için (255 char)
 
       // Konum
       district: lead.city,
@@ -349,11 +357,22 @@ export class WhatConvertsService {
       // Kullanıcı ataması (opsiyonel)
       relevantUser: this.mappingConfig.defaultUserId,
 
-      // Dynamic fields (WhatConverts additional_fields'ı buraya eklenebilir)
-      dynamicFields: this.mapAdditionalFields(lead),
+      // ✅ Dynamic fields'ı GÖNDERMİYORUZ - description'a eklendi
+      dynamicFields: [],
     };
 
     return customerDto;
+  }
+
+  /**
+   * URL'i belirtilen uzunluğa kısalt
+   */
+  private truncateUrl(url: string, maxLength: number): string {
+    if (!url) return null;
+    if (url.length <= maxLength) return url;
+
+    // URL'i kısalt ve "..." ekle
+    return url.substring(0, maxLength - 3) + '...';
   }
 
   /**
@@ -394,6 +413,9 @@ export class WhatConvertsService {
   /**
    * Lead için açıklama oluştur
    */
+  /**
+ * Lead için açıklama oluştur
+ */
   private buildLeadDescription(lead: WhatConvertsLead): string {
     const lines: string[] = [
       `📥 WhatConverts Lead #${lead.lead_id}`,
@@ -441,24 +463,34 @@ export class WhatConvertsService {
       }
     }
 
-    return lines.join('\n');
+
+
+    if (lead.additional_fields && Object.keys(lead.additional_fields).length > 0) {
+      lines.push('\n📋 Form Verileri:');
+      Object.entries(lead.additional_fields).forEach(([key, value]) => {
+        const cleanValue = typeof value === 'string'
+          ? value.replace(/<[^>]*>/g, '').trim()
+          : value;
+
+        if (cleanValue && cleanValue !== '') {
+          lines.push(`  • ${key}: ${cleanValue}`);
+        }
+      });
+    }
+
+    // ✅ MAX LENGTH kontrolü ekle (description sütunu TEXT ise 65535 char)
+    const fullDescription = lines.join('\n');
+
+    // Eğer çok uzunsa kısalt
+    if (fullDescription.length > 10000) {
+      return fullDescription.substring(0, 9997) + '...';
+    }
+
+    return fullDescription;
+
+
   }
 
-  /**
-   * Additional fields'ı dynamic fields'a dönüştür
-   */
-  private mapAdditionalFields(lead: WhatConvertsLead): any[] {
-    if (!lead.additional_fields) return [];
-
-    // Bu kısım projenizin dynamic field yapısına göre özelleştirilebilir
-    return Object.entries(lead.additional_fields).map(([key, value], index) => ({
-      customer_dynamic_field: null, // Dynamic field ID'si bilinmiyorsa null
-      name: key,
-      type: 'text',
-      file: typeof value === 'string' ? value : JSON.stringify(value),
-      order: index,
-    }));
-  }
 
   /**
    * Mevcut müşteriye not ekle

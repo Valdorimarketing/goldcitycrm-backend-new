@@ -94,7 +94,7 @@ export class Customer extends CustomBaseEntity {
   @Expose()
   statusData: Status;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'text', nullable: true })
   @Expose()
   website: string;
 
