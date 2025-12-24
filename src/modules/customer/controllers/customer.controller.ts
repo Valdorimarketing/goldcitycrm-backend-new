@@ -249,6 +249,10 @@ export class CustomerController {
     if(query.hasRelevantUser){
       query.hasRelevantUser = query.hasRelevantUser == 'false' ? false : true;
     }
+
+    if(query.isFirst){
+      query.isFirst = query.isFirst == 'false' ? false : true;
+    }
    }
    
     const queryBuilder =
