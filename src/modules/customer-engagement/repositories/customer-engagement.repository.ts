@@ -62,10 +62,6 @@ export class CustomerEngagementRepository extends BaseRepositoryAbstract<Custome
     customerId: number,
     role?: CustomerEngagementRole,
   ): Promise<void> {
-    console.log('🔒 closeActiveEngagements çağrıldı:', {
-      customerId,
-      role,
-    });
 
     const qb = this.engagementRepo
       .createQueryBuilder()
@@ -78,8 +74,7 @@ export class CustomerEngagementRepository extends BaseRepositoryAbstract<Custome
       qb.andWhere('role = :role', { role });
     }
 
-    const result = await qb.execute();
-    console.log('✅ Kapatılan engagement sayısı:', result.affected);
+    await qb.execute();
   }
 
   async insertEngagement(
