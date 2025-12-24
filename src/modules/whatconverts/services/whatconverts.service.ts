@@ -463,11 +463,11 @@ export class WhatConvertsService {
       }
     }
 
-    // ✅ Additional Fields'ı buraya ekle
+
+
     if (lead.additional_fields && Object.keys(lead.additional_fields).length > 0) {
       lines.push('\n📋 Form Verileri:');
       Object.entries(lead.additional_fields).forEach(([key, value]) => {
-        // HTML taglarını temizle
         const cleanValue = typeof value === 'string'
           ? value.replace(/<[^>]*>/g, '').trim()
           : value;
@@ -478,7 +478,17 @@ export class WhatConvertsService {
       });
     }
 
-    return lines.join('\n');
+    // ✅ MAX LENGTH kontrolü ekle (description sütunu TEXT ise 65535 char)
+    const fullDescription = lines.join('\n');
+
+    // Eğer çok uzunsa kısalt
+    if (fullDescription.length > 10000) {
+      return fullDescription.substring(0, 9997) + '...';
+    }
+
+    return fullDescription;
+
+
   }
 
 
