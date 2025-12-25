@@ -24,7 +24,7 @@ export class LanguageService {
     private translationRepository: Repository<Translation>,
     @InjectRepository(TranslationKey)
     private translationKeyRepository: Repository<TranslationKey>,
-  ) {}
+  ) { }
 
   // ==================== LANGUAGE OPERATIONS ====================
 
@@ -173,25 +173,41 @@ export class LanguageService {
     return await this.translationRepository.save(translation);
   }
 
+
   async updateTranslation(
     languageId: number,
     translationKeyId: number,
     updateTranslationDto: UpdateTranslationDto,
   ): Promise<Translation> {
+    // Translation'ı bul veya oluştur
     let translation = await this.translationRepository.findOne({
       where: { languageId, translationKeyId },
     });
 
     if (!translation) {
-      // Translation doesn't exist, create it (upsert behavior)
+      // Translation yoksa oluştur (upsert)
       translation = this.translationRepository.create({
         languageId,
         translationKeyId,
         value: updateTranslationDto.value,
       });
     } else {
-      // Translation exists, update it
-      Object.assign(translation, updateTranslationDto);
+      // Translation varsa güncelle
+      if (updateTranslationDto.value !== undefined) {
+        translation.value = updateTranslationDto.value;
+      }
+    }
+
+    // ✅ Description varsa Translation Key'i de güncelle
+    if (updateTranslationDto.description !== undefined) {
+      const translationKey = await this.translationKeyRepository.findOne({
+        where: { id: translationKeyId },
+      });
+
+      if (translationKey) {
+        translationKey.description = updateTranslationDto.description;
+        await this.translationKeyRepository.save(translationKey);
+      }
     }
 
     return await this.translationRepository.save(translation);

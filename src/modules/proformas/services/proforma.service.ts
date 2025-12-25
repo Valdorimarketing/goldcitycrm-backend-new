@@ -358,12 +358,29 @@ export class ProformaService {
   /**
  * Generate HTML for PDF - WITH AGGRESSIVE PATH FINDING
  */
+
+
+
   private async generateHTML(proforma: Proforma): Promise<string> {
     let html: string;
 
-    // ✅ Dil bazlı template seçimi
-    const templateName = "proforma-template.html";
+    // ✅ Template seçimi - templateType'a göre
+    let templateName: string;
 
+    switch (proforma.templateType) {
+      case 'medical-red':
+        templateName = 'proforma-template-medical-red.html';
+        break;
+      case 'istinye-blue':
+        templateName = 'proforma-template-istinye-blue.html';
+        break;
+      case 'liv-blue':
+      default:
+        templateName = 'proforma-template.html';
+        break;
+    }
+
+    console.log(`🎨 Selected template: ${templateName} (Type: ${proforma.templateType})`);
 
     // 🔥 Path kombinasyonları - HER OLASI YER
     const basePaths = [
@@ -450,6 +467,27 @@ export class ProformaService {
       throw new Error(`Template file not found: ${templateName}. Searched ${paths.length} locations.`);
     }
 
+    // ✅ Template'e göre farklı replacement stratejileri
+    if (proforma.templateType === 'medical-red' || proforma.templateType === 'istinye-blue') {
+      return this.fillNewStyleTemplate(html, proforma);
+    } else {
+      return this.fillLivBlueTemplate(html, proforma);
+    }
+  }
+
+
+
+  /**
+ * ✅ Liv Blue Template (mevcut) için replacement
+ */
+
+  /**
+ * ✅ Liv Blue Template (mevcut) için replacement - PARAGRAF DÜZENLEME İLE
+ */
+  /**
+   * ✅ Liv Blue Template (mevcut) için replacement - PARAGRAF DÜZENLEME VE BİN AYIRICI İLE
+   */
+  private fillLivBlueTemplate(html: string, proforma: Proforma): string {
     // Basic Info
     html = html.replace('{{PROFORMA_NUMBER}}', proforma.proformaNumber);
     html = html.replace('{{DATE}}', new Date(proforma.date).toLocaleDateString('en-US'));
@@ -469,17 +507,24 @@ export class ProformaService {
     html = html.replace('{{ADDITIONAL_INFO_DISPLAY}}', hasAdditionalInfo ? 'block' : 'none');
     html = html.replace('{{ADDITIONAL_INFO}}', this.escapeHtml(proforma.additionalInfo || ''));
 
+    // ✅ PHYSICIAN'S OPINION - PARAGRAF DÜZENLEME İLE
     const hasPhysicianOpinion = proforma.physicianOpinion && proforma.physicianOpinion.trim().length > 0;
     html = html.replace('{{PHYSICIAN_OPINION_DISPLAY}}', hasPhysicianOpinion ? 'block' : 'none');
-    html = html.replace('{{PHYSICIAN_OPINION}}', this.escapeHtml(proforma.physicianOpinion || ''));
 
-    // Treatment Items
+    if (hasPhysicianOpinion) {
+      const formattedOpinion = this.formatPhysicianOpinion(proforma.physicianOpinion);
+      html = html.replace('{{PHYSICIAN_OPINION}}', formattedOpinion);
+    } else {
+      html = html.replace('{{PHYSICIAN_OPINION}}', '');
+    }
+
+    // Treatment Items (Eski stil - visitType var, quantity yok)
     const treatmentRows = proforma.treatmentItems
       .map((item) => `
     <tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.procedure)}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(proforma.physicianDepartment || '-')}</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.visitType)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.visitType || '-')}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 10.5px; min-width: 140px;">${this.escapeHtml(item.estimatedCost)}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 10.5px;">${this.escapeHtml(item.notes || '')}</td>
     </tr>
@@ -487,9 +532,9 @@ export class ProformaService {
       .join('');
     html = html.replace('{{TREATMENT_ITEMS}}', treatmentRows);
 
-    // Grand Total
+    // ✅ Grand Total - BİN AYIRICI İLE
     const grandTotalValue = this.toNumber(proforma.grandTotal);
-    html = html.replace('{{GRAND_TOTAL}}', `${grandTotalValue.toFixed(2)} ${proforma.currency}`);
+    html = html.replace('{{GRAND_TOTAL}}', `${this.formatCurrency(grandTotalValue, proforma.currency)} ${proforma.currency}`);
 
     // Services Included
     const hasServices = proforma.servicesIncluded && proforma.servicesIncluded.length > 0;
@@ -518,9 +563,138 @@ export class ProformaService {
     html = html.replace('{{HOSPITAL_PHONE}}', this.escapeHtml(proforma.hospitalPhone || '-'));
     html = html.replace('{{HOSPITAL_EMAIL}}', this.escapeHtml(proforma.hospitalEmail || '-'));
 
-    console.log('✅ HTML generated successfully');
+    return html;
+  }
+
+
+  /**
+ * ✅ Medical Red & Istinye Blue Template için replacement
+ * Bu template'lerde farklı tablo yapısı var (Unit Price, Quantity, Total)
+ */
+
+  /**
+ * ✅ Medical Red & Istinye Blue Template için replacement - BİN AYIRICI İLE
+ * Bu template'lerde farklı tablo yapısı var (Unit Price, Quantity, Total)
+ */
+  private fillNewStyleTemplate(html: string, proforma: Proforma): string {
+    // Basic Info
+    html = html.replace('{{PROFORMA_NUMBER}}', proforma.proformaNumber);
+    html = html.replace('{{DATE}}', new Date(proforma.date).toLocaleDateString('en-US'));
+    html = html.replace('{{CURRENCY}}', proforma.currency);
+
+    // GENERAL INFORMATION
+    html = html.replace(/{{PATIENT_NAME}}/g, this.escapeHtml(proforma.patientName || '-'));
+    html = html.replace(/{{HOSPITAL}}/g, this.escapeHtml(proforma.hospital || 'Liv Hospital Vadistanbul'));
+    html = html.replace('{{PHYSICIAN_NAME}}', this.escapeHtml(proforma.physicianName || '-'));
+    html = html.replace('{{PHYSICIAN_DEPARTMENT}}', this.escapeHtml(proforma.physicianDepartment || '-'));
+    html = html.replace('{{AGE}}', this.escapeHtml(proforma.age || '-'));
+    html = html.replace('{{COUNTRY}}', this.escapeHtml(proforma.country || '-'));
+    html = html.replace('{{COMED_NO}}', this.escapeHtml(proforma.comedNo || '-'));
+
+    // Optional Fields
+    const hasAdditionalInfo = proforma.additionalInfo && proforma.additionalInfo.trim().length > 0;
+    html = html.replace('{{ADDITIONAL_INFO_DISPLAY}}', hasAdditionalInfo ? 'block' : 'none');
+    html = html.replace('{{ADDITIONAL_INFO}}', this.escapeHtml(proforma.additionalInfo || ''));
+
+    // ✅ PHYSICIAN'S OPINION - PARAGRAF DÜZENLEME İLE
+    const hasPhysicianOpinion = proforma.physicianOpinion && proforma.physicianOpinion.trim().length > 0;
+    html = html.replace('{{PHYSICIAN_OPINION_DISPLAY}}', hasPhysicianOpinion ? 'block' : 'none');
+
+    if (hasPhysicianOpinion) {
+      const formattedOpinion = this.formatPhysicianOpinion(proforma.physicianOpinion);
+      html = html.replace('{{PHYSICIAN_OPINION}}', formattedOpinion);
+    } else {
+      html = html.replace('{{PHYSICIAN_OPINION}}', '');
+    }
+
+    // ✅ YENİ TABLO YAPISI: Treatment Items with Unit Price, Quantity, Total - BİN AYIRICI İLE
+    const treatmentRows = proforma.treatmentItems
+      .map((item) => {
+        const costMatch = item.estimatedCost.match(/[\d,]+\.?\d*/);
+        const unitPrice = costMatch ? parseFloat(costMatch[0].replace(/,/g, '')) : 0;
+        const quantity = item.quantity || 1;
+        const total = unitPrice * quantity;
+
+        return `
+    <tr>
+      <td>${this.escapeHtml(item.procedure)}</td>
+      <td style="text-align: center;">${this.formatCurrency(unitPrice, proforma.currency)} ${proforma.currency}</td>
+      <td style="text-align: center;">${quantity}</td>
+      <td style="text-align: right;">${this.formatCurrency(total, proforma.currency)} ${proforma.currency}</td>
+      <td>${this.escapeHtml(item.notes || '-')}</td>
+    </tr>
+  `;
+      })
+      .join('');
+
+    html = html.replace('{{TREATMENT_ITEMS}}', treatmentRows);
+
+    // ✅ Grand Total - formatCurrency ile bin ayırıcılı
+    const grandTotalValue = this.toNumber(proforma.grandTotal);
+    html = html.replace('{{GRAND_TOTAL}}', `${this.formatCurrency(grandTotalValue, proforma.currency)} ${proforma.currency}`);
+
+    // Services Included
+    const hasServices = proforma.servicesIncluded && proforma.servicesIncluded.length > 0;
+    html = html.replace('{{SERVICES_DISPLAY}}', hasServices ? 'block' : 'none');
+
+    if (hasServices) {
+      const servicesList = proforma.servicesIncluded
+        .map((service) => `<li>${this.escapeHtml(service)}</li>`)
+        .join('');
+      html = html.replace('{{SERVICES_INCLUDED}}', `<ul>${servicesList}</ul>`);
+    } else {
+      html = html.replace('{{SERVICES_INCLUDED}}', '');
+    }
+
+    // Bank Information
+    html = html.replace('{{BANK_NAME}}', this.escapeHtml(proforma.bankName || '-'));
+    html = html.replace('{{RECEIVER_NAME}}', this.escapeHtml(proforma.receiverName || '-'));
+    html = html.replace('{{BRANCH_NAME}}', this.escapeHtml(proforma.branchName || '-'));
+    html = html.replace('{{BRANCH_CODE}}', this.escapeHtml(proforma.branchCode || '-'));
+    html = html.replace(/{{BANK_CURRENCY}}/g, proforma.bankCurrency || proforma.currency);
+    html = html.replace('{{IBAN}}', this.escapeHtml(proforma.iban || '-'));
+    html = html.replace('{{SWIFT_CODE}}', this.escapeHtml(proforma.swiftCode || '-'));
+
+    // Hospital Contact Info
+    html = html.replace('{{HOSPITAL_ADDRESS}}', this.escapeHtml(proforma.hospitalAddress || '-'));
+    html = html.replace('{{HOSPITAL_PHONE}}', this.escapeHtml(proforma.hospitalPhone || '-'));
+    html = html.replace('{{HOSPITAL_EMAIL}}', this.escapeHtml(proforma.hospitalEmail || '-'));
 
     return html;
+  }
+
+  /**
+   * ✅ YENİ: Physician Opinion paragraflarını düzenle
+   * Her paragrafı ayrı <p> tag'i içine al ve page-break koruması ekle
+   */
+  private formatPhysicianOpinion(opinion: string): string {
+    if (!opinion) return '';
+
+    // Satır sonlarına göre paragrafları ayır
+    const paragraphs = opinion
+      .split(/\n\n+/)  // Çift newline ile ayır
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+
+    if (paragraphs.length === 0) return this.escapeHtml(opinion);
+
+    // Her paragrafı ayrı <p> tag'i içinde wrap et
+    // Son paragraflar için özel class ekle (sayfa kırılması kontrolü için)
+    const formattedParagraphs = paragraphs.map((para, index) => {
+      const isLastTwo = index >= paragraphs.length - 2;
+      const isLast = index === paragraphs.length - 1;
+
+      let className = 'opinion-paragraph';
+      if (isLast) {
+        className += ' keep-with-previous-two';
+      } else if (isLastTwo) {
+        className += ' keep-with-next';
+      }
+
+      return `<p class="${className}">${this.escapeHtml(para)}</p>`;
+    }).join('\n');
+
+    return formattedParagraphs;
   }
 
   /**
@@ -591,6 +765,7 @@ export class ProformaService {
     }
   }
 
+
   /**
    * Helper: Safely convert to number
    */
@@ -598,6 +773,27 @@ export class ProformaService {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') return parseFloat(value) || 0;
     return 0;
+  }
+
+  /**
+   * ✅ Format currency with thousand separators
+   * USD/EUR: 10,550.00 (comma separator, dot decimal)
+   * TRY: 10.550,00 (dot separator, comma decimal)
+   */
+  private formatCurrency(amount: number, currency: string): string {
+    if (currency === 'TRY') {
+      // Türk Lirası için Avrupa formatı: 10.550,00
+      return amount.toLocaleString('tr-TR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    } else {
+      // USD, EUR için ABD formatı: 10,550.00
+      return amount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
   }
 
   /**
@@ -612,4 +808,5 @@ export class ProformaService {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
+
 }

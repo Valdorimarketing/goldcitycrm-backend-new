@@ -4,9 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIV Hospital - Proforma Invoice</title>
+    <title>İstinye Dental - Proforma Invoice</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-blue: #1e40af;
+            --light-blue: #dbeafe;
+            --dark-blue: #1e3a8a;
+            --border-color: #e5e7eb;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -42,7 +49,6 @@
             box-sizing: border-box;
         }
 
-        /* FIX: Minimal margin prevents blank pages */
         .image-page {
             margin: 0 !important;
             padding: 1px !important;
@@ -85,21 +91,8 @@
             background: #fff;
         }
 
-
-        .image-page img {
-            width: 100%;
-            height: auto;
-            display: block;
-            margin: 0;
-            padding: 0;
-            border: none;
-            object-fit: cover;
-        }
-
-
-
         h1 {
-            color: #0891b2;
+            color: var(--primary-blue);
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 15px;
@@ -113,7 +106,7 @@
         }
 
         h3 {
-            color: #0891b2;
+            color: var(--primary-blue);
             font-size: 14px;
             font-weight: 600;
             margin-top: 25px;
@@ -127,8 +120,26 @@
             line-height: 1.6;
         }
 
-        /* TABLO */
-        table {
+        /* ✅ PARAGRAF DÜZENLEME CSS - İÇİ BÖLÜNMEYEN */
+        .opinion-paragraph {
+            text-align: justify;
+            line-height: 1.7;
+            margin-bottom: 12px;
+            page-break-inside: avoid !important;  /* ✅ Paragraf içi bölünme yasak */
+            orphans: 3;  /* Sayfa sonunda minimum 3 satır */
+            widows: 3;   /* Sayfa başında minimum 3 satır */
+        }
+
+        .keep-with-next {
+            page-break-after: avoid !important;
+        }
+
+        .keep-with-previous-two {
+            page-break-before: avoid !important;
+        }
+
+        /* GENERAL INFO TABLE */
+        table.general-info-table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
@@ -136,7 +147,7 @@
             page-break-inside: avoid;
         }
 
-        table th {
+        table.general-info-table th {
             text-align: left;
             padding: 12px 15px;
             font-weight: 600;
@@ -144,9 +155,10 @@
             color: #374151;
             background: #f9fafb;
             border: 1px solid #d1d5db;
+            width: 35%;
         }
 
-        table td {
+        table.general-info-table td {
             padding: 12px 15px;
             font-size: 14px;
             color: #4b5563;
@@ -154,26 +166,61 @@
             vertical-align: top;
         }
 
-        .general-info-table th {
-            width: 35%;
-            background: #f9fafb;
+        /* ✅ NEW PRICING TABLE */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        .total-row {
+        .pricing-table thead {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .pricing-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-table th:last-child,
+        .pricing-table td:last-child {
+            text-align: left;
+        }
+
+        .pricing-table tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .pricing-table tbody tr:hover {
+            background: var(--light-blue);
+        }
+
+        .pricing-table td {
+            padding: 12px 15px;
+            font-size: 13px;
+        }
+
+        .pricing-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .visit-total {
             text-align: right;
-            padding: 15px 0;
-            font-size: 1em;
-            color: #374151;
-        }
-
-        .total-row strong {
-            color: #1a1a1a;
+            font-size: 20px;
             font-weight: 700;
-            font-size: 1em;
-        }
-        .total-row td {
-            border: none;
-            padding: 5px;
+            color: var(--primary-blue);
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--light-blue);
+            border-radius: 4px;
         }
 
         /* LISTE */
@@ -200,7 +247,7 @@
         }
 
         .bank-title {
-            color: #0891b2;
+            color: var(--primary-blue);
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 20px;
@@ -242,7 +289,7 @@
         }
 
         .issued-by {
-            color: #0891b2;
+            color: var(--primary-blue);
             font-size: 12px;
             font-weight: 600;
             margin-bottom: 20px;
@@ -256,32 +303,13 @@
             line-height: 1.5;
         }
 
-        /* Sayfa kırılmasını önle */
-        .no-break {
-            page-break-inside: avoid;
-        }
-
         /* Services box */
         .services-box {
-            background: #f0f9ff;
+            background: var(--light-blue);
             padding: 5px 30px;
-            border-left: 3px solid #0891b2;
+            border-left: 3px solid var(--primary-blue);
             border-radius: 4px;
             page-break-inside: avoid;
-        }
-
-        .opinion-paragraph {
-            text-align: justify;
-            line-height: 1.7;
-            margin-bottom: 12px;
-        }
-
-        .keep-with-next {
-            page-break-after: avoid !important;
-        }
-
-        .keep-with-previous-two {
-            page-break-before: avoid !important;
         }
     </style>
 </head>
@@ -291,9 +319,10 @@
     <div class="container">
 
         <!-- KAPAK SAYFASI (Sayfa 1) -->
+               
         <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/1.jpg" alt="Cover" />
-            <!-- <img src="http://localhost:3000/1.jpg" alt="Cover" /> -->
+            <img src="https://vcrm.mlpcare.com/istinye-1.jpg" alt="Cover" />
+            <!-- <img src="http://localhost:3000/istinye-1.jpg" alt="Cover" /> -->
         </div>
 
         <!-- GENEL BİLGİLER + TEDAVİ DETAYLARI (Sayfa 2-3, tek akış) -->
@@ -305,10 +334,9 @@
             <p class="address">{{HOSPITAL_ADDRESS}}</p>
 
             <p>
-                Thank you for choosing LIV Hospital Group for your healthcare needs. We are committed to providing you
-                with excellent medical care and a comfortable experience. Below, you will find detailed information
-                about
-                your requested treatment.
+                Thank you for choosing İstinye Dental Hospital for your healthcare needs. We are committed to providing you
+                with excellent dental care and a comfortable experience. Below, you will find detailed information
+                about your requested treatment.
             </p>
 
             <h1 style="margin-top: 35px;">GENERAL INFORMATION</h1>
@@ -343,46 +371,42 @@
                 </tr>
             </table>
 
-            <!-- EK BİLGİLER (varsa, aynı sayfada) -->
+            <!-- EK BİLGİLER (varsa) -->
             <div style="display: {{ADDITIONAL_INFO_DISPLAY}};" class="no-break">
                 <h1 style="margin-top: 35px;">ADDITIONAL INFORMATION</h1>
                 <p>{{ADDITIONAL_INFO}}</p>
             </div>
 
-            <!-- HEKİM GÖRÜŞÜ (varsa, yeni sayfada) -->
+            <!-- ✅ HEKİM GÖRÜŞÜ - PARAGRAF İÇİ BÖLÜNME KORUMASINDA -->
             <div style="padding-top: 30px;display: {{PHYSICIAN_OPINION_DISPLAY}};" class="no-break">
                 <p class="issued-by">Issued by:</p>
                 <h1>PHYSICIAN'S OPINION</h1>
                 {{PHYSICIAN_OPINION}}
             </div>
 
-
-            <!-- TEDAVİ DETAYLARI (yeni sayfada) -->
+            <!-- TEDAVİ DETAYLARI - YENİ TABLO YAPISI -->
             <div class="page-break" style="margin-top: 35px;">
                 <p class="issued-by">Issued by:</p>
                 <h1>RECOMMENDED TREATMENT & ESTIMATED COST DETAILS</h1>
 
-                <table>
+                <table class="pricing-table">
                     <thead>
                         <tr>
-                            <th>Procedure</th>
-                            <th>Physician Department</th>
-                            <th>Visit Type</th>
-                            <th style="text-align: center; min-width: 140px;">Estimated Cost</th>
+                            <th>Treatment / Service</th>
+                            <th style="text-align: center;">Unit Price</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: right;">Total</th>
                             <th>Notes</th>
                         </tr>
                     </thead>
                     <tbody>
                         {{TREATMENT_ITEMS}}
                     </tbody>
-                    <tfoot>
-                        <tr class="total-row" style="border:none">
-                            <td colspan="3" style="text-align: right; padding-right: 0;"><strong>GRAND TOTAL:</strong></td>
-                            <td style="text-align: center;"><strong>{{GRAND_TOTAL}}</strong></td>
-                        </tr>
-                    </tfoot>
                 </table>
-                
+
+                <div class="visit-total">
+                    TOTAL: <span>{{GRAND_TOTAL}}</span>
+                </div>
 
                 <!-- SERVICES (varsa) -->
                 <div style="display: {{SERVICES_DISPLAY}};" class="no-break">
@@ -397,11 +421,9 @@
                     <h3>Treatment Information</h3>
                     <p>
                         The Medical Second Opinion is not intended to replace a full medical evaluation, the exact
-                        investigation
-                        and treatment plan may be only known according to the outcomes of the initial consultations and
+                        investigation and treatment plan may be only known according to the outcomes of the initial consultations and
                         investigations which will be done in our hospital. The exact cost of treatment will be confirmed
-                        according
-                        to the result of the investigation process.
+                        according to the result of the investigation process.
                     </p>
                 </div>
 
@@ -416,7 +438,7 @@
                     </ul>
                 </div>
 
-                <div class="no-break">
+                <div class="no-break" style="padding-top: 20px;">
                     <h3>Financial Information</h3>
                     <ul>
                         <li>Listed costs are estimates and may vary.</li>
@@ -429,16 +451,12 @@
                         <li>Patients are responsible for transfer costs (air/land ambulance) during or after treatment.
                         </li>
                     </ul>
-                </div>
-
-                <!-- BANKA BİLGİLERİ (yeni sayfada) -->
-                <div class="page-break" style="margin-top: 35px;">
+                
                     <p class="issued-by">Issued by:</p>
 
                     <p>
-                        Please feel free to contact the Liv Hospital Group International Patients Services Department if
-                        you have any
-                        further questions or inquiries. Contact details are mentioned below.
+                        Please feel free to contact the İstinye Dental Hospital International Patients Services Department if
+                        you have any further questions or inquiries. Contact details are mentioned below.
                     </p>
 
                     <div class="bank-box">
@@ -475,23 +493,16 @@
 
                     <div class="stamp">
                         <img src="https://vcrm.mlpcare.com/4.jpg" alt="Stamp" />
-                        <!-- <img src="http://localhost:3000/4.jpg" alt="Stamp" /> -->
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SON 2 RESİM (Sayfa 4-5) -->
+        <!-- SON RESİM -->
         <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/2.jpg" alt="Info 1" />
-            <!-- <img src="http://localhost:3000/2.jpg" alt="Info 1" /> -->
+            <img src="https://vcrm.mlpcare.com/istinye-2.jpg" alt="Image-1" />
+            <!-- <img src="http://localhost:3000/istinye-2.jpg" alt="Image-1" /> -->
         </div>
-
-        <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/3.jpg" alt="Info 2" />
-            <!-- <img src="http://localhost:3000/3.jpg" alt="Info 2" /> -->
-        </div>
-
     </div>
 
 </body>
