@@ -10,6 +10,8 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
+// create.proforma.dto.ts güncelleme
+
 export class TreatmentItemDto {
   @IsOptional()
   @IsString()
@@ -18,11 +20,16 @@ export class TreatmentItemDto {
   @IsString()
   procedure: string;
 
+  @IsOptional()
   @IsString()
-  visitType: string;
+  visitType?: string;
 
   @IsString()
   estimatedCost: string;
+
+  @IsOptional()
+  @IsNumber()
+  quantity?: number;
 
   @IsOptional()
   @IsString()
@@ -157,6 +164,10 @@ export class CreateProformaDto {
   @IsOptional()
   @IsString()
   hospitalPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  templateType?: string;
 
   @IsOptional()
   @IsString()

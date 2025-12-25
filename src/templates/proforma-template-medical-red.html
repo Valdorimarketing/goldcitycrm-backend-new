@@ -4,9 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIV Hospital - Proforma Invoice</title>
+    <title>Medical Group - Proforma Invoice</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-red: #dc2626;
+            --light-red: #fee2e2;
+            --dark-red: #991b1b;
+            --border-color: #e5e7eb;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -34,15 +41,6 @@
             margin: 0;
         }
 
-        html,
-        body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            box-sizing: border-box;
-        }
-
-        /* FIX: Minimal margin prevents blank pages */
         .image-page {
             margin: 0 !important;
             padding: 1px !important;
@@ -85,21 +83,8 @@
             background: #fff;
         }
 
-
-        .image-page img {
-            width: 100%;
-            height: auto;
-            display: block;
-            margin: 0;
-            padding: 0;
-            border: none;
-            object-fit: cover;
-        }
-
-
-
         h1 {
-            color: #0891b2;
+            color: var(--primary-red);
             font-size: 20px;
             font-weight: 700;
             margin-bottom: 15px;
@@ -113,7 +98,7 @@
         }
 
         h3 {
-            color: #0891b2;
+            color: var(--primary-red);
             font-size: 14px;
             font-weight: 600;
             margin-top: 25px;
@@ -127,7 +112,56 @@
             line-height: 1.6;
         }
 
-        /* TABLO */
+        /* ✅ PARAGRAF DÜZENLEME CSS - İÇİ BÖLÜNMEYEN */
+        .opinion-paragraph {
+            text-align: justify;
+            line-height: 1.7;
+            margin-bottom: 12px;
+            page-break-inside: avoid !important;
+            /* ✅ Paragraf içi bölünme yasak */
+            orphans: 3;
+            /* Sayfa sonunda minimum 3 satır */
+            widows: 3;
+            /* Sayfa başında minimum 3 satır */
+        }
+
+        .keep-with-next {
+            page-break-after: avoid !important;
+        }
+
+        .keep-with-previous-two {
+            page-break-before: avoid !important;
+        }
+
+        /* GENERAL INFO TABLE */
+        table.general-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: none;
+            page-break-inside: avoid;
+        }
+
+        table.general-info-table th {
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            width: 35%;
+        }
+
+        table.general-info-table td {
+            padding: 12px 15px;
+            font-size: 14px;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            vertical-align: top;
+        }
+
+        /* NORMAL TABLE */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -141,22 +175,17 @@
             padding: 12px 15px;
             font-weight: 600;
             font-size: 13px;
-            color: #374151;
-            background: #f9fafb;
-            border: 1px solid #d1d5db;
+            color: white;
+            background: var(--primary-red);
+            border: 1px solid var(--border-color);
         }
 
         table td {
             padding: 12px 15px;
             font-size: 14px;
             color: #4b5563;
-            border: 1px solid #d1d5db;
+            border: 1px solid var(--border-color);
             vertical-align: top;
-        }
-
-        .general-info-table th {
-            width: 35%;
-            background: #f9fafb;
         }
 
         .total-row {
@@ -171,6 +200,7 @@
             font-weight: 700;
             font-size: 1em;
         }
+
         .total-row td {
             border: none;
             padding: 5px;
@@ -200,7 +230,7 @@
         }
 
         .bank-title {
-            color: #0891b2;
+            color: var(--primary-red);
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 20px;
@@ -242,7 +272,7 @@
         }
 
         .issued-by {
-            color: #0891b2;
+            color: var(--primary-red);
             font-size: 12px;
             font-weight: 600;
             margin-bottom: 20px;
@@ -256,32 +286,13 @@
             line-height: 1.5;
         }
 
-        /* Sayfa kırılmasını önle */
-        .no-break {
-            page-break-inside: avoid;
-        }
-
         /* Services box */
         .services-box {
-            background: #f0f9ff;
+            background: var(--light-red);
             padding: 5px 30px;
-            border-left: 3px solid #0891b2;
+            border-left: 3px solid var(--primary-red);
             border-radius: 4px;
             page-break-inside: avoid;
-        }
-
-        .opinion-paragraph {
-            text-align: justify;
-            line-height: 1.7;
-            margin-bottom: 12px;
-        }
-
-        .keep-with-next {
-            page-break-after: avoid !important;
-        }
-
-        .keep-with-previous-two {
-            page-break-before: avoid !important;
         }
     </style>
 </head>
@@ -290,13 +301,14 @@
 
     <div class="container">
 
-        <!-- KAPAK SAYFASI (Sayfa 1) -->
+        <!-- KAPAK SAYFASI -->
         <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/1.jpg" alt="Cover" />
-            <!-- <img src="http://localhost:3000/1.jpg" alt="Cover" /> -->
+            <img src="https://vcrm.mlpcare.com/medical-1.jpg" alt="Info 1" />
+            <!-- <img src="http://localhost:3000/medical-1.jpg" alt="Info 1" /> -->
         </div>
 
-        <!-- GENEL BİLGİLER + TEDAVİ DETAYLARI (Sayfa 2-3, tek akış) -->
+
+        <!-- GENEL BİLGİLER + TEDAVİ DETAYLARI -->
         <div class="content-page first">
             <p class="issued-by">Issued by:</p>
 
@@ -305,10 +317,9 @@
             <p class="address">{{HOSPITAL_ADDRESS}}</p>
 
             <p>
-                Thank you for choosing LIV Hospital Group for your healthcare needs. We are committed to providing you
+                Thank you for choosing our medical services for your healthcare needs. We are committed to providing you
                 with excellent medical care and a comfortable experience. Below, you will find detailed information
-                about
-                your requested treatment.
+                about your requested treatment.
             </p>
 
             <h1 style="margin-top: 35px;">GENERAL INFORMATION</h1>
@@ -343,21 +354,20 @@
                 </tr>
             </table>
 
-            <!-- EK BİLGİLER (varsa, aynı sayfada) -->
+            <!-- EK BİLGİLER -->
             <div style="display: {{ADDITIONAL_INFO_DISPLAY}};" class="no-break">
                 <h1 style="margin-top: 35px;">ADDITIONAL INFORMATION</h1>
                 <p>{{ADDITIONAL_INFO}}</p>
             </div>
 
-            <!-- HEKİM GÖRÜŞÜ (varsa, yeni sayfada) -->
-            <div style="padding-top: 30px;display: {{PHYSICIAN_OPINION_DISPLAY}};" class="no-break">
+            <!-- HEKİM GÖRÜŞÜ - PARAGRAF İÇİ BÖLÜNME KORUMASINDA -->
+            <div style="padding-top: 30px;display: {{PHYSICIAN_OPINION_DISPLAY}}" class="no-break">
                 <p class="issued-by">Issued by:</p>
                 <h1>PHYSICIAN'S OPINION</h1>
                 {{PHYSICIAN_OPINION}}
             </div>
 
-
-            <!-- TEDAVİ DETAYLARI (yeni sayfada) -->
+            <!-- TEDAVİ DETAYLARI - NORMAL TABLO (quantity YOK) -->
             <div class="page-break" style="margin-top: 35px;">
                 <p class="issued-by">Issued by:</p>
                 <h1>RECOMMENDED TREATMENT & ESTIMATED COST DETAILS</h1>
@@ -376,15 +386,16 @@
                         {{TREATMENT_ITEMS}}
                     </tbody>
                     <tfoot>
-                        <tr class="total-row" style="border:none">
-                            <td colspan="3" style="text-align: right; padding-right: 0;"><strong>GRAND TOTAL:</strong></td>
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align: right; padding-right: 0;"><strong>GRAND TOTAL:</strong>
+                            </td>
                             <td style="text-align: center;"><strong>{{GRAND_TOTAL}}</strong></td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
-                
 
-                <!-- SERVICES (varsa) -->
+                <!-- SERVICES -->
                 <div style="display: {{SERVICES_DISPLAY}};" class="no-break">
                     <h3>Services Included in the Treatment Plan</h3>
                     <div class="services-box">
@@ -397,15 +408,14 @@
                     <h3>Treatment Information</h3>
                     <p>
                         The Medical Second Opinion is not intended to replace a full medical evaluation, the exact
-                        investigation
-                        and treatment plan may be only known according to the outcomes of the initial consultations and
+                        investigation and treatment plan may be only known according to the outcomes of the initial
+                        consultations and
                         investigations which will be done in our hospital. The exact cost of treatment will be confirmed
-                        according
-                        to the result of the investigation process.
+                        according to the result of the investigation process.
                     </p>
                 </div>
 
-                <div class="no-break">
+                <div class="no-break" style="padding-top: 20px;">
                     <h3>General Information</h3>
                     <ul>
                         <li>Free airport transfer for hotels in Şişli, Beşiktaş, Beyoğlu, Kağıthane, or Sarıyer.</li>
@@ -414,9 +424,7 @@
                         <li>Patients must present their passports for registration.</li>
                         <li>Contact our office for international insurance verification.</li>
                     </ul>
-                </div>
 
-                <div class="no-break">
                     <h3>Financial Information</h3>
                     <ul>
                         <li>Listed costs are estimates and may vary.</li>
@@ -431,66 +439,57 @@
                     </ul>
                 </div>
 
-                <!-- BANKA BİLGİLERİ (yeni sayfada) -->
-                <div class="page-break" style="margin-top: 35px;">
-                    <p class="issued-by">Issued by:</p>
+                <p class="issued-by">Issued by:</p>
 
-                    <p>
-                        Please feel free to contact the Liv Hospital Group International Patients Services Department if
-                        you have any
-                        further questions or inquiries. Contact details are mentioned below.
-                    </p>
+                <p>
+                    Please feel free to contact the Medical Group International Patients Services Department if
+                    you have any further questions or inquiries. Contact details are mentioned below.
+                </p>
 
-                    <div class="bank-box">
-                        <div class="bank-title">Bank Account Information – {{BANK_CURRENCY}}</div>
-                        <div class="bank-row">
-                            <span class="bank-label">Bank</span>
-                            <span class="bank-value">{{BANK_NAME}}</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">Receiver Name</span>
-                            <span class="bank-value">{{RECEIVER_NAME}}</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">Branch Name</span>
-                            <span class="bank-value">{{BRANCH_NAME}}</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">Branch Code</span>
-                            <span class="bank-value">{{BRANCH_CODE}}</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">Currency</span>
-                            <span class="bank-value">{{BANK_CURRENCY}}</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">IBAN No</span>
-                            <span class="bank-value">{{IBAN}}</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label">SWIFT</span>
-                            <span class="bank-value">{{SWIFT_CODE}}</span>
-                        </div>
+                <div class="bank-box">
+                    <div class="bank-title">Bank Account Information – {{BANK_CURRENCY}}</div>
+                    <div class="bank-row">
+                        <span class="bank-label">Bank</span>
+                        <span class="bank-value">{{BANK_NAME}}</span>
                     </div>
-
-                    <div class="stamp">
-                        <img src="https://vcrm.mlpcare.com/4.jpg" alt="Stamp" />
-                        <!-- <img src="http://localhost:3000/4.jpg" alt="Stamp" /> -->
+                    <div class="bank-row">
+                        <span class="bank-label">Receiver Name</span>
+                        <span class="bank-value">{{RECEIVER_NAME}}</span>
                     </div>
+                    <div class="bank-row">
+                        <span class="bank-label">Branch Name</span>
+                        <span class="bank-value">{{BRANCH_NAME}}</span>
+                    </div>
+                    <div class="bank-row">
+                        <span class="bank-label">Branch Code</span>
+                        <span class="bank-value">{{BRANCH_CODE}}</span>
+                    </div>
+                    <div class="bank-row">
+                        <span class="bank-label">Currency</span>
+                        <span class="bank-value">{{BANK_CURRENCY}}</span>
+                    </div>
+                    <div class="bank-row">
+                        <span class="bank-label">IBAN No</span>
+                        <span class="bank-value">{{IBAN}}</span>
+                    </div>
+                    <div class="bank-row">
+                        <span class="bank-label">SWIFT</span>
+                        <span class="bank-value">{{SWIFT_CODE}}</span>
+                    </div>
+                </div>
+
+                <div class="stamp">
+                    <img src="https://vcrm.mlpcare.com/4.jpg" alt="Stamp" />
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- SON 2 RESİM (Sayfa 4-5) -->
-        <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/2.jpg" alt="Info 1" />
-            <!-- <img src="http://localhost:3000/2.jpg" alt="Info 1" /> -->
-        </div>
-
-        <div class="image-page">
-            <img src="https://vcrm.mlpcare.com/3.jpg" alt="Info 2" />
-            <!-- <img src="http://localhost:3000/3.jpg" alt="Info 2" /> -->
-        </div>
+    <!-- SON 2 RESİM -->
+    <div class="image-page">
+        <img src="https://vcrm.mlpcare.com/medical-2.jpg" alt="Info 1" />
+        <!-- <img src="http://localhost:3000/medical-2.jpg" alt="Info 1" /> -->
+    </div>
 
     </div>
 

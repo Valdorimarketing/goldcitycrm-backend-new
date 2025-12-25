@@ -1,12 +1,18 @@
-// src/language/dto/translation.dto.ts
-
-import { IsString, IsNotEmpty, IsNumber, IsOptional, MaxLength, IsObject, IsArray, ValidateNested } from 'class-validator';
+import { 
+  IsString, 
+  IsNotEmpty, 
+  IsInt, 
+  IsOptional, 
+  IsArray, 
+  ValidateNested,
+  IsObject 
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
+// Translation Key DTO
 export class CreateTranslationKeyDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(255)
   keyName: string;
 
   @IsString()
@@ -14,12 +20,13 @@ export class CreateTranslationKeyDto {
   description?: string;
 }
 
+// Single Translation DTO
 export class CreateTranslationDto {
-  @IsNumber()
+  @IsInt()
   @IsNotEmpty()
   languageId: number;
 
-  @IsNumber()
+  @IsInt()
   @IsNotEmpty()
   translationKeyId: number;
 
@@ -30,11 +37,16 @@ export class CreateTranslationDto {
 
 export class UpdateTranslationDto {
   @IsString()
+  @IsNotEmpty()
+  value: string;
+
+  @IsString()
   @IsOptional()
-  value?: string;
+  description?: string;
 }
 
-export class BulkTranslationDto {
+// Bulk Translation Item
+export class BulkTranslationItemDto {
   @IsString()
   @IsNotEmpty()
   keyName: string;
@@ -45,23 +57,25 @@ export class BulkTranslationDto {
 
   @IsObject()
   @IsNotEmpty()
-  translations: Record<string, string>; // { "tr": "Merhaba", "en": "Hello" }
+  translations: Record<string, string>; // { "tr": "değer", "en": "value" }
 }
 
+// ✅ Bulk Create DTO - DOĞRU FORMAT
 export class BulkCreateTranslationsDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => BulkTranslationDto)
-  items: BulkTranslationDto[];
+  @Type(() => BulkTranslationItemDto)
+  items: BulkTranslationItemDto[];
 }
 
+// Get Translations DTO
 export class GetTranslationsDto {
   @IsString()
   @IsOptional()
   languageCode?: string;
 
   @IsArray()
-  @IsOptional()
   @IsString({ each: true })
+  @IsOptional()
   keys?: string[];
 }

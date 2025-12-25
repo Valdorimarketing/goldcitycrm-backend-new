@@ -118,6 +118,9 @@ export class Proforma {
   @Column({ name: 'hospital_email', nullable: true })
   hospitalEmail: string;
 
+  @Column({ name: 'templateType', nullable: true })
+  templateType: string;
+
   // Status
   @Column({ 
     type: 'enum', 
@@ -165,7 +168,8 @@ export class Proforma {
 export interface TreatmentItem {
   id?: string;
   procedure: string;
-  visitType: string;
+  visitType?: string;
   estimatedCost: string;
-  notes: string;
+  quantity?: number;
+  notes?: string;
 }
