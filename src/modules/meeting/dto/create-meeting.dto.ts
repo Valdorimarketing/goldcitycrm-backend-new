@@ -26,27 +26,24 @@ export class CreateMeetingDto {
   @IsDateString()
   @IsOptional()
   @Expose()
-  remindingAt?: Date;
+  remindingAt?: string;  // ✅ Date → string
+
+  @IsDateString()  // ✅ Required (frontend'de de required)
+  @Expose()
+  startTime: string;  // ✅ Date → string ve optional kaldırıldı
 
   @IsDateString()
   @IsOptional()
   @Expose()
-  startTime?: Date;
-
-  @IsDateString()
-  @IsOptional()
-  @Expose()
-  endTime?: Date;
+  endTime?: string;  // ✅ Date → string
 
   @IsInt()
   @Expose()
   user: number;
 
-  // ✅ DÜZELTİLDİ: meetingStatus → meetingStatusId
-  @IsInt()
-  @IsOptional()
+  @IsInt()  // ✅ Required (frontend'de de required)
   @Expose()
-  meetingStatusId?: number;
+  meetingStatusId: number;  // ✅ optional kaldırıldı
 
   @IsString()
   @IsOptional()
@@ -83,24 +80,23 @@ export class UpdateMeetingDto {
   @IsDateString()
   @IsOptional()
   @Expose()
-  remindingAt?: Date;
+  remindingAt?: string;  // ✅ Date → string
 
   @IsDateString()
   @IsOptional()
   @Expose()
-  startTime?: Date;
+  startTime?: string;  // ✅ Date → string
 
   @IsDateString()
   @IsOptional()
   @Expose()
-  endTime?: Date;
+  endTime?: string;  // ✅ Date → string
 
   @IsInt()
   @IsOptional()
   @Expose()
   user?: number;
 
-  // ✅ DÜZELTİLDİ: meetingStatus → meetingStatusId
   @IsInt()
   @IsOptional()
   @Expose()
@@ -157,7 +153,6 @@ export class MeetingResponseDto {
   @Expose()
   user: number;
 
-  // ✅ DÜZELTİLDİ: Hem ID hem relation
   @Expose()
   meetingStatusId?: number;
 
