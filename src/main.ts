@@ -57,16 +57,12 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'http://127.0.0.1:5500',
-      'http://127.0.0.1:8000',
       'http://localhost:3001',
-      'https://panel.valdori.com',
-      'https://team.valdori.com',
+      'https://panel.goldcitycrm.com',
+      'https://team.goldcitycrm.com',
       'http://localhost:8092',
-      'http://vcrm.mlpcare.com',
-      'https://vcrm.mlpcare.com',
-      'http://vcrmtest.mlpcare.com',
-      'https://vcrmtest.mlpcare.com'
+      'http://goldcitycrm.com',
+      'https://api.goldcitycrm.com',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -105,6 +101,6 @@ async function bootstrap() {
 
 
 
-  await app.listen(3000);
+  await app.listen(4000);
 }
 bootstrap();
