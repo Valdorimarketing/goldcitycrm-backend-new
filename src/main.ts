@@ -62,6 +62,8 @@ async function bootstrap() {
       'https://team.goldcitycrm.com',
       'http://localhost:8092',
       'http://goldcitycrm.com',
+      'https://goldcitycrm.com',
+      'https://www.goldcitycrm.com',
       'https://api.goldcitycrm.com',
     ],
     credentials: true,
