@@ -58,13 +58,10 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:3001',
-      'https://panel.goldcitycrm.com',
-      'https://team.goldcitycrm.com',
       'http://localhost:8092',
-      'http://goldcitycrm.com',
-      'https://goldcitycrm.com',
-      'https://www.goldcitycrm.com',
-      'https://api.goldcitycrm.com',
+      'https://tr1.goldcitycrm.com',
+      'https://www.tr1.goldcitycrm.com',
+      'https://api1.goldcitycrm.com',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -103,6 +100,6 @@ async function bootstrap() {
 
 
 
-  await app.listen(4000);
+  await app.listen(4001);
 }
 bootstrap();
