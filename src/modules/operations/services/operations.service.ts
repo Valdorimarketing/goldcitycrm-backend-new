@@ -111,8 +111,6 @@ export class OperationsService {
         'customer',
         'customer.relevantUserData',
         'customer.statusData',
-        'customer.subSegment',
-        'customer.subSegment.parentStatus'
       ],
       order: { scheduled_at: 'ASC' },
     });
