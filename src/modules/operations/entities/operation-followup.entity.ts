@@ -1,7 +1,20 @@
 import { CustomBaseEntity } from 'src/core/base/entities/base.entity';
-import { Entity, Column, CreateDateColumn, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { OperationType } from './operation-type.entity';
 import { Customer } from 'src/modules/customer/entities/customer.entity';
+
+interface FollowupItem {
+    offset: number;
+    date: string;
+    done: boolean;
+    note: string;
+    kind: 'day' | 'month';
+}
+
+interface FollowupsData {
+    days: FollowupItem[];
+    months: FollowupItem[];
+}
 
 @Entity({ name: 'operation_followups' })
 export class OperationFollowup extends CustomBaseEntity {
@@ -12,7 +25,6 @@ export class OperationFollowup extends CustomBaseEntity {
     @ManyToOne(() => Customer, { eager: true })
     @JoinColumn({ name: 'customer_id' })
     customer: Customer;
- 
 
     @Column({ type: 'int' })
     operation_type_id: number;
@@ -21,22 +33,16 @@ export class OperationFollowup extends CustomBaseEntity {
     @JoinColumn({ name: 'operation_type_id' })
     operationType: OperationType;
 
-    // ✅ kind alanı eklendi (day | month)
+    // Günler ve aylar için takip verileri (note dahil)
     @Column({ type: 'json', nullable: true })
-    followups: {
-        days: { offset: number; date: string; done: boolean; kind: 'day' }[];
-        months: { offset: number; date: string; done: boolean; kind: 'month' }[];
-    };
+    followups: FollowupsData;
 
     @Column({ default: false })
-    done: boolean
-
+    done: boolean;
 
     @Column({ type: 'datetime' })
     scheduled_at: Date;
 
-
     @Column({ type: 'int', nullable: true })
     created_by?: number | null;
-
 }

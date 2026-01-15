@@ -8,12 +8,15 @@ import {
     ValidationPipe,
     Param,
     Delete,
-    Patch
+    Patch,
+    UseGuards,
+    Req
 } from '@nestjs/common';
 import { OperationsService } from '../services/operations.service';
-import { CreateScheduleDto } from '../dto/create-schedule.dto';
+import { CreateScheduleDto, UpdateFollowupItemDto } from '../dto/create-schedule.dto';
 import { CreateOperationTypeDto } from '../dto/create-operation-type.dto';
 import { CurrentUserId } from 'src/core/decorators/current-user.decorator';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 
 @Controller('operations')
 export class OperationsController {
@@ -39,8 +42,6 @@ export class OperationsController {
         return { success: true, data: result };
     }
 
-
-
     // Müşteriye ait operasyon kayıtlarını getir (her kaydın içinde followups JSON var)
     @Get('/followups/:customerId')
     async listCustomerFollowups(@Param('customerId') customerId: number) {
@@ -54,16 +55,31 @@ export class OperationsController {
         return { success: true, deleted: result };
     }
 
+    @Patch('followups/:id/item')
+    @UseGuards(JwtAuthGuard)
+    async updateFollowupItem(
+    @Param('id') id: number,
+    @Body() payload: { kind: 'day' | 'month'; offset: number; done?: boolean; note?: string },
+    @Req() req: any
+    ) {
+    const userId = req.user?.id || req.user?.userId;
+    return this.operationsService.updateFollowupInSchedule(id, payload, userId);
+    }
+
     // Root schedule içindeki followup (gün/ay) öğesini güncellemek için
-    // Body: { kind: 'day'|'month', offset: number, done: boolean }
+    // Body: { kind: 'day'|'month', offset: number, done?: boolean, note?: string }
     @Patch('/followups/:id/followup')
+    @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
     async updateFollowupInSchedule(
         @Param('id') id: number,
-        @Body('kind') kind: 'day' | 'month',
-        @Body('offset') offset: number,
-        @Body('done') done: boolean
+        @Body() dto: UpdateFollowupItemDto
     ) {
-        const result = await this.operationsService.updateFollowupInSchedule(id, { kind, offset, done });
+        const result = await this.operationsService.updateFollowupInSchedule(id, {
+            kind: dto.kind,
+            offset: dto.offset,
+            done: dto.done,
+            note: dto.note,
+        });
         return { success: true, data: result };
     }
 
@@ -72,6 +88,4 @@ export class OperationsController {
         const data = await this.operationsService.checkDueFollowups();
         return data;
     }
-
- 
 }
