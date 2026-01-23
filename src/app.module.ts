@@ -48,6 +48,7 @@ import { SalesSheetSyncModule } from './modules/sales-sheet-sync/sync.module';
 import { HealthController } from './modules/system/health.controller';
 import { ProformaModule } from './modules/proformas/proforma.module';
 import { LanguageModule } from './modules/language/language.module';
+import { GmailModule } from './modules/gmail/gmail.module';
 
 @Module({
   imports: [
@@ -110,7 +111,8 @@ import { LanguageModule } from './modules/language/language.module';
     WhatConvertsModule,
     SalesSheetSyncModule,
     ProformaModule,
-    LanguageModule
+    LanguageModule,
+    GmailModule
   ],
   controllers: [AppController, HealthController],
   providers: [

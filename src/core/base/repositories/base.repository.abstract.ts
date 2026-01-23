@@ -46,10 +46,7 @@ export abstract class BaseRepositoryAbstract<T extends HasId>
   public async findOneById(id: any): Promise<T> {
     const options: FindOptionsWhere<T> = { id: id } as FindOptionsWhere<T>;
     const entity = await this.entity.findOneBy(options);
-    if (!entity) {
-      throw CustomHttpException.notFound(this.entityName);
-    }
-    return entity;
+    if (entity) return entity;
   }
 
   public async findByIdBaseQuery(id: any): Promise<SelectQueryBuilder<T>> {

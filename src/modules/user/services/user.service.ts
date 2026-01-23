@@ -51,8 +51,17 @@ export class UserService extends BaseService<User> {
   }
 
 async updateLastActiveTime(userId: number): Promise<User> {
+
+  if (!userId || isNaN(userId)) {
+    return;
+  }
+
   const user = await this.getUserById(userId);  
   
+  if (!user) {
+    return;
+  }
+
   user.lastActiveTime = new Date();
   return this.userRepository.save(user);
 }

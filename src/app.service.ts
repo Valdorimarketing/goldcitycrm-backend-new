@@ -3,6 +3,6 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Valdori CRM API';
+    return 'Valdori CRM API TR 1';
   }
 }
