@@ -44,6 +44,13 @@ export class CustomerQueryFilterDto extends BaseQueryFilterDto {
   relevantUser?: number;
 
   @ApiPropertyOptional({
+    description: 'Filter by multiple relevant user IDs (comma-separated or single)',
+    examples: [56, '56,57,58'],
+  })
+  @IsOptional()
+  relevantUsers?: number | string;
+
+  @ApiPropertyOptional({
     description: 'Filter by source ID',
     example: 4,
   })

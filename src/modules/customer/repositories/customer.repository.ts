@@ -120,6 +120,23 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
+    // 👥 Relevant users filter (çoklu kullanıcı desteği)
+    if (filters.relevantUsers !== undefined && filters.relevantUsers !== null) {
+      const relevantUsersValue = String(filters.relevantUsers);
+
+      if (relevantUsersValue.includes(',')) {
+        const userIds = relevantUsersValue.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        if (userIds.length > 0) {
+          queryBuilder.andWhere('customer.relevant_user IN (:...relevantUserIds)', { relevantUserIds: userIds });
+        }
+      } else {
+        const userId = parseInt(relevantUsersValue, 10);
+        if (!isNaN(userId)) {
+          queryBuilder.andWhere('customer.relevant_user = :relevantUserId', { relevantUserId: userId });
+        }
+      }
+    }
+
     // 🔗 Status table join (only if status-related filters exist)
     const needsStatusJoin =
       filters.isFirst !== undefined ||
@@ -591,11 +608,30 @@ export class CustomerRepository extends BaseRepositoryAbstract<Customer> {
       });
     }
 
-    // 👤 Relevant user filter
+    // 👤 Relevant user filter (tek kullanıcı)
     if (filters.relevantUser !== undefined && filters.relevantUser !== null) {
       queryBuilder.andWhere('customer.relevant_user = :relevantUser', {
         relevantUser: filters.relevantUser,
       });
+    }
+
+    // 👥 Relevant users filter (çoklu kullanıcı desteği)
+    if (filters.relevantUsers !== undefined && filters.relevantUsers !== null) {
+      const relevantUsersValue = String(filters.relevantUsers);
+
+      if (relevantUsersValue.includes(',')) {
+        // Virgülle ayrılmış çoklu ID
+        const userIds = relevantUsersValue.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        if (userIds.length > 0) {
+          queryBuilder.andWhere('customer.relevant_user IN (:...relevantUserIds)', { relevantUserIds: userIds });
+        }
+      } else {
+        // Tek ID
+        const userId = parseInt(relevantUsersValue, 10);
+        if (!isNaN(userId)) {
+          queryBuilder.andWhere('customer.relevant_user = :relevantUserId', { relevantUserId: userId });
+        }
+      }
     }
 
     // ✅ DÜZELTME: Artık ekstra JOIN yapmaya gerek yok, statusData zaten var

@@ -49,6 +49,7 @@ import { HealthController } from './modules/system/health.controller';
 import { ProformaModule } from './modules/proformas/proforma.module';
 import { LanguageModule } from './modules/language/language.module';
 import { GmailModule } from './modules/gmail/gmail.module';
+import { ExcelSyncModule } from './modules/excel-sync';
 
 @Module({
   imports: [
@@ -112,7 +113,8 @@ import { GmailModule } from './modules/gmail/gmail.module';
     SalesSheetSyncModule,
     ProformaModule,
     LanguageModule,
-    GmailModule
+    GmailModule,
+    ExcelSyncModule
   ],
   controllers: [AppController, HealthController],
   providers: [
