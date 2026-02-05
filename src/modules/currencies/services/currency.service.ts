@@ -21,8 +21,9 @@ export class CurrencyService implements OnModuleInit {
         { code: 'TRY', name: 'Türk Lirası', rateToTRY: 1 },
         { code: 'USD', name: 'Amerikan Doları', rateToTRY: 35.2 },
         { code: 'EUR', name: 'Euro', rateToTRY: 38.5 },
+        { code: 'GBP', name: 'İngiliz Sterlini', rateToTRY: 44.0 },
       ]);
-      this.logger.log('✅ Default currencies (TRY, USD, EUR) successfully seeded.');
+      this.logger.log('✅ Default currencies (TRY, USD, EUR, GBP) successfully seeded.');
     } else {
       this.logger.log('✅ Currency table already seeded.');
     }
